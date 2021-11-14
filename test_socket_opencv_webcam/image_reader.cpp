@@ -93,8 +93,8 @@ int main(int argc, char ** argv) {
             if (!previous.empty()) {
               int diff_pixel_count = 0;
               // compute difference
+              int pos = 0;
               for (int i = 0; i < frame.rows; i++) {
-                int pos = 0;
                 for (int j = 0; j < frame.cols; j++) {
                   unsigned char * p = frame.ptr(i, j); // Y first, X after
                   unsigned char * p2 = previous.ptr(i, j);
@@ -113,11 +113,10 @@ int main(int argc, char ** argv) {
                   buffer[pos++] = (uint8_t) p[0];
                   buffer[pos++] = (uint8_t) p[1];
                   buffer[pos++] = (uint8_t) p[2];
-                  write(sfd2, buffer, sizeof buffer);
                 }
               }
 
-                  write(sfd2, buffer, 3*480*640*sizeof *buffer);
+                  write(sfd2, buffer, 3*480*640*sizeof*buffer);
                   //write(sfd2, frame.data, 3*480*640*sizeof *frame.data);
               printf("Pixel changed: %d\n", diff_pixel_count);
             }
