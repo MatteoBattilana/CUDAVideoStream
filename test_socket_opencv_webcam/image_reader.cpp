@@ -17,22 +17,7 @@
 using namespace cv;
 
 int main(int argc, char ** argv) {
-  uint8_t * buffer = new uint8_t[3 * 480 * 640];
-  VideoCapture cap;
-  // open the default camera, use something different from 0 otherwise;
-  // Check VideoCapture documentation.
-  if (!cap.open(2))
-    return 0;
-  Mat previous;
 
-  Mat frame;
-  cap >> frame;
-
-  printf("%d %d\n", frame.rows, frame.cols);
-  if (frame.empty()) return 1;
-  int r[frame.rows][frame.cols];
-  int g[frame.rows][frame.cols];
-  int b[frame.rows][frame.cols];
 
   struct epoll_event ev, events[10];
   struct addrinfo * result, * rp;
@@ -60,7 +45,25 @@ int main(int argc, char ** argv) {
 
   if (listen(sfd, 10) < 0) {
     perror("OH!");
+    return -1;
   }
+
+  uint8_t * buffer = new uint8_t[3 * 480 * 640];
+  VideoCapture cap;
+  // open the default camera, use something different from 0 otherwise;
+  // Check VideoCapture documentation.
+  if (!cap.open(2))
+    return 0;
+  Mat previous;
+
+  Mat frame;
+  cap >> frame;
+
+  printf("%d %d\n", frame.rows, frame.cols);
+  if (frame.empty()) return 1;
+  int r[frame.rows][frame.cols];
+  int g[frame.rows][frame.cols];
+  int b[frame.rows][frame.cols];
 
   while (1) {
     printf("wait..\n");
@@ -90,7 +93,6 @@ int main(int argc, char ** argv) {
             if (frame.empty()) break; // end of video stream
             imshow("this is you, smile! :)", frame);
             if (waitKey(10) == 27) break; // stop capturing by pressing ESC 
-            if (!previous.empty()) {
               int diff_pixel_count = 0;
               // compute difference
               int pos = 0;
@@ -99,27 +101,34 @@ int main(int argc, char ** argv) {
                   unsigned char * p = frame.ptr(i, j); // Y first, X after
                   unsigned char * p2 = previous.ptr(i, j);
                   //printf("%d\n", p[0]);
-                  
-                  //				  r[i][j] = p[0] - p2[0];
-                  //				  g[i][j] = p[1] - p2[1];
-                  //				  b[i][j] = p[2] - p2[2];
+                            if(!previous.empty()){
+                  				  uint8_t r = p[0] - p2[0];
+                  				  uint8_t g = p[1] - p2[1];
+                  				  uint8_t b = p[2] - p2[2];
 
-                  //				  if (abs(r[i][j]) + abs(g[i][j]) + abs(b[i][j]) > 70) 
-                  //					diff_pixel_count++;
+                              if (abs(r) + abs(g) + abs(b) > 0) {
+                                diff_pixel_count++;	
+                                buffer[pos++] = r;
+                                buffer[pos++] = g;
+                                buffer[pos++] = b;
+                              } else {
+                                buffer[pos++] = 0;
+                                buffer[pos++] = 0;
+                                buffer[pos++] = 0;
+                              }
 
-                  //write(sfd2, &p[0], sizeof p[0]);
-                  //write(sfd2, &p[1], sizeof p[1]);
-                  //write(sfd2, &p[2], sizeof p[2]);	
-                  buffer[pos++] = (uint8_t) p[0];
-                  buffer[pos++] = (uint8_t) p[1];
-                  buffer[pos++] = (uint8_t) p[2];
+                            }else {
+                              buffer[pos++] = p[0];
+                              buffer[pos++] = p[1];
+                              buffer[pos++] = p[2];
+                            }
+
                 }
               }
 
                   write(sfd2, buffer, 3*480*640*sizeof*buffer);
                   //write(sfd2, frame.data, 3*480*640*sizeof *frame.data);
               printf("Pixel changed: %d\n", diff_pixel_count);
-            }
             previous = frame.clone();
           }
           printf("so.. %d\n", max);

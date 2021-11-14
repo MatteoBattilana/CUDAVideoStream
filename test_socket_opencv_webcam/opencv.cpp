@@ -32,6 +32,8 @@ int main() {
     close(sfd);
   }
 
+  int iteration = 0;
+  Mat frame2;
   Mat frame = imread("Untitled-2.bmp", IMREAD_ANYCOLOR);
   while (1) {
     int btot = 0;
@@ -40,11 +42,23 @@ int main() {
     }
 
     printf("read\n");
-
-    vector < uint8_t > v(buffer, buffer + 3 * 480 * 640 * sizeof * buffer);
-    Mat frame2 = Mat(480, 640, frame.type(), & v[0]).clone();
+    int buffer_id = 0;
+    if(iteration == 0){
+      vector < uint8_t > v(buffer, buffer + 3 * 480 * 640 * sizeof * buffer);
+      frame2 = Mat(480, 640, frame.type(), & v[0]).clone();
+    } else {
+      for (int i = 0; i < frame2.rows; i++) {
+                for (int j = 0; j < frame2.cols; j++) {
+                  unsigned char * p = frame2.ptr(i, j); // Y first, X after
+                  p[0] += buffer[buffer_id++];
+                  p[1] += buffer[buffer_id++];
+                  p[2] += buffer[buffer_id++];
+                }
+          }
+    }
     imshow("hi", frame2);
     if (waitKey(10) == 27) break; // stop capturing by pressing ESC 
+    iteration++;
   }
   freeaddrinfo(result);
   return 0;
