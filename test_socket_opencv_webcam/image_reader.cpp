@@ -99,13 +99,13 @@ int main(int argc, char ** argv) {
                   unsigned char * p = frame.ptr(i, j); // Y first, X after
                   unsigned char * p2 = previous.ptr(i, j);
                   //printf("%d\n", p[0]);
-                  /*
-                  				  r[i][j] = p[0] - p2[0];
-                  				  g[i][j] = p[1] - p2[1];
-                  				  b[i][j] = p[2] - p2[2];
+                  
+                  //				  r[i][j] = p[0] - p2[0];
+                  //				  g[i][j] = p[1] - p2[1];
+                  //				  b[i][j] = p[2] - p2[2];
 
-                  				  if (abs(r[i][j]) + abs(g[i][j]) + abs(b[i][j]) > 70) 
-                  					diff_pixel_count++;*/
+                  //				  if (abs(r[i][j]) + abs(g[i][j]) + abs(b[i][j]) > 70) 
+                  //					diff_pixel_count++;
 
                   //write(sfd2, &p[0], sizeof p[0]);
                   //write(sfd2, &p[1], sizeof p[1]);
@@ -116,6 +116,9 @@ int main(int argc, char ** argv) {
                   write(sfd2, buffer, sizeof buffer);
                 }
               }
+
+                  write(sfd2, buffer, 3*480*640*sizeof *buffer);
+                  //write(sfd2, frame.data, 3*480*640*sizeof *frame.data);
               printf("Pixel changed: %d\n", diff_pixel_count);
             }
             previous = frame.clone();
