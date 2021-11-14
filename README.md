@@ -25,3 +25,7 @@ To compile:
 ```
 g++ -std=c++11 frames.cpp -ograb -lv4l2 -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -L/usr/local/lib -lopencv_shape -lopencv_videoio -o frames.out
 ```
+
+
+## Useful link
+[https://stackoverflow.com/questions/27035672/cv-extract-differences-between-two-images](https://stackoverflow.com/questions/27035672/cv-extract-differences-between-two-images)
