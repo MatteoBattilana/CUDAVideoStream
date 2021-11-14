@@ -49,6 +49,7 @@ int main(int argc, char ** argv) {
   }
 
   uint8_t * buffer = new uint8_t[3 * 480 * 640];
+  uint8_t * cumulative = new uint8_t[3 * 480 * 640];
   VideoCapture cap;
   // open the default camera, use something different from 0 otherwise;
   // Check VideoCapture documentation.
@@ -96,6 +97,7 @@ int main(int argc, char ** argv) {
               int diff_pixel_count = 0;
               // compute difference
               int pos = 0;
+              int pos2 = 0;
               for (int i = 0; i < frame.rows; i++) {
                 for (int j = 0; j < frame.cols; j++) {
                   unsigned char * p = frame.ptr(i, j); // Y first, X after
@@ -105,19 +107,27 @@ int main(int argc, char ** argv) {
                   				  uint8_t r = p[0] - p2[0];
                   				  uint8_t g = p[1] - p2[1];
                   				  uint8_t b = p[2] - p2[2];
+                            cumulative[pos2] += r;
+                            cumulative[pos2+1] += g;
+                            cumulative[pos2+2] += b;
 
-                              if (abs(r) + abs(g) + abs(b) > 0) {
+                              if (abs(cumulative[pos2]) + abs(cumulative[pos2+1]) + abs(cumulative[pos2+2]) > 25) {
                                 diff_pixel_count++;	
-                                buffer[pos++] = r;
-                                buffer[pos++] = g;
-                                buffer[pos++] = b;
+                                buffer[pos++] = cumulative[pos2];
+                                buffer[pos++] = cumulative[pos2+1];
+                                buffer[pos++] = cumulative[pos2+2];
+                                cumulative[pos2] = 0;
+                                cumulative[pos2+1] = 0;
+                                cumulative[pos2+2] = 0;
                               } else {
                                 buffer[pos++] = 0;
                                 buffer[pos++] = 0;
                                 buffer[pos++] = 0;
                               }
+                              pos2+=3;
 
                             }else {
+                              // Send new frame and not the difference
                               buffer[pos++] = p[0];
                               buffer[pos++] = p[1];
                               buffer[pos++] = p[2];
