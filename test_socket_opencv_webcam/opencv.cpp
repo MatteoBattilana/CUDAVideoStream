@@ -38,7 +38,7 @@ int main() {
     while (1) {
         int btot = 0;
         while (btot < 3 * 1080 * 1920 * sizeof *buffer) {
-            btot += read(sfd, buffer + btot, 3 * 1080 * 1920 * sizeof *buffer);
+            btot += read(sfd, buffer + btot, 3 * 1080 * 1920 * sizeof *buffer - btot);
         }
 
         int buffer_id = 0;
@@ -55,6 +55,7 @@ int main() {
                 }
             }
         }
+
         imshow("hi", frame2);
         if (waitKey(10) == 27) break;  // stop capturing by pressing ESC
         iteration++;

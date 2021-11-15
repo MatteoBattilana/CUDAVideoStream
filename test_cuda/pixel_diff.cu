@@ -7,6 +7,8 @@
 #include <string.h>
 #include <time.h>
 
+#include <cuda_runtime.h>
+
 __global__ void diff_kernel(int *current, int *prev, int *diff, int sectors) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;   
     for (int a = 0; a < sectors; a++){

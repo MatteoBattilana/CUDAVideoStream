@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     VideoCapture cap;
     // open the default camera, use something different from 0 otherwise;
     // Check VideoCapture documentation.
-    if (!cap.open("video2.mp4")) return 0;
+    if (!cap.open("video.mp4")) return 0;
     Mat previous;
 
     Mat frame;

@@ -42,7 +42,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "build-all",
+            "preLaunchTask": "opencv",
             "miDebuggerPath": "/usr/bin/gdb"
         }
     ]

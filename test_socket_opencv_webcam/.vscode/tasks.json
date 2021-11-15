@@ -2,14 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build-all",
+      "label": "opencv",
       "type": "shell",
       "options": {
           "cwd": "${workspaceFolder}",
           "env": {
           }
       },
-      "command": "make -f Makefile m1",
+      "command": "make -f Makefile m2",
     },
     {
       "label": "image_reader",
