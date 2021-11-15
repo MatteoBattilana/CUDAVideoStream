@@ -13,6 +13,7 @@
 #include "opencv2/opencv.hpp"
 #include <time.h>
 #include <math.h>
+#include <time.h>
 
 using namespace cv;
 
@@ -48,12 +49,12 @@ int main(int argc, char ** argv) {
     return -1;
   }
 
-  uint8_t * buffer = new uint8_t[3 * 480 * 640];
-  uint8_t * cumulative = new uint8_t[3 * 480 * 640];
+  uint8_t * buffer = new uint8_t[3 * 1080 * 1920];
+  uint8_t * cumulative = new uint8_t[3 * 1080 * 1920];
   VideoCapture cap;
   // open the default camera, use something different from 0 otherwise;
   // Check VideoCapture documentation.
-  if (!cap.open(2))
+  if (!cap.open("video.mp4"))
     return 0;
   Mat previous;
 
@@ -62,9 +63,6 @@ int main(int argc, char ** argv) {
 
   printf("%d %d\n", frame.rows, frame.cols);
   if (frame.empty()) return 1;
-  int r[frame.rows][frame.cols];
-  int g[frame.rows][frame.cols];
-  int b[frame.rows][frame.cols];
 
   while (1) {
     printf("wait..\n");
@@ -81,8 +79,9 @@ int main(int argc, char ** argv) {
         printf("stored!\n");
 
         max = 0;
+        int fps = 0;
+      clock_t start = clock();
         while (1) {
-
           /*for (j = bmp1.dip.heigth * bmp1.dip.width; j >= 0; j--) {
               write(sfd2, &bmp1.pixels[j].blue, sizeof bmp1.pixels[j].blue);
               write(sfd2, &bmp1.pixels[j].green, sizeof bmp1.pixels[j].green);
@@ -91,6 +90,7 @@ int main(int argc, char ** argv) {
           }*/
           {
             cap >> frame;
+            fps++;
             if (frame.empty()) break; // end of video stream
             imshow("this is you, smile! :)", frame);
             if (waitKey(10) == 27) break; // stop capturing by pressing ESC 
@@ -136,9 +136,9 @@ int main(int argc, char ** argv) {
                 }
               }
 
-                  write(sfd2, buffer, 3*480*640*sizeof*buffer);
-                  //write(sfd2, frame.data, 3*480*640*sizeof *frame.data);
-              printf("Pixel changed: %d\n", diff_pixel_count);
+                  write(sfd2, buffer, 3*1080*1920*sizeof*buffer);
+                  //write(sfd2, frame.data, 3*1080*1920*sizeof *frame.data);
+                  printf("FPS: %f\n", fps/(float(clock() - start)/CLOCKS_PER_SEC));
             previous = frame.clone();
           }
           printf("so.. %d\n", max);
