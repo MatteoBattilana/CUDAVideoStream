@@ -29,3 +29,5 @@ g++ -std=c++11 frames.cpp -ograb -lv4l2 -lopencv_core -lopencv_highgui -lopencv_
 
 ## Useful link
 [https://stackoverflow.com/questions/27035672/cv-extract-differences-between-two-images](https://stackoverflow.com/questions/27035672/cv-extract-differences-between-two-images)
+
+[https://github.com/intel-iot-devkit/motion-heatmap-cpp](https://github.com/intel-iot-devkit/motion-heatmap-cpp)
