@@ -25,6 +25,7 @@
 #define BLOCK_SIZE (TILE_SIZE + K - 1)
 #define NSTREAMS 1
 #define GPU
+#define FILTER
 
 using namespace cv;
 
