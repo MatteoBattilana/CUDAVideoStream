@@ -52,65 +52,25 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int m
     for (int i = x * maxSect; i < max; i++) {
 
         df = current[i] - previous[i];
-        if (df < -10 || df > 10) {
+        if (df < -20 || df > 20) {
             npos = atomicInc(pos, 6220801);
-            // printf("npos %d\n", npos);
-
-            // if (xs[npos] != 0) {
-            //     printf("OOOOH WTF MAN!\n");
-            // }
-
             diff[npos] = df;
             xs[npos] = i;
-
-            // if (npos < 10) {
-            //     printf("gpu xs %d] %d = %d\n", npos, xs[npos], diff[npos]);
-            // }
         } else {
             current[i] -= df;
         }
-        // diff[i] = current[i] - previous[i];
 
-        // xs[i] = 0;
-        // if (true) {
-        //     npos = atomicInc(pos, 6220801);
-        //     diff[npos].x = i;
-        //     diff[npos].diff = df;
-        //     printf("%u] %d %d\n", npos, i, df);
-        // }
     }
 }
-
-// __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs) {
-//     int x = threadIdx.x + blockDim.x * blockIdx.x;
-//     int df, npos;
-
-//     int max = x * maxSect + maxSect;
-//     for (int i = x * maxSect; i < max; i++) {
-
-//         df = current[i] - previous[i];
-//         if (true) {
-//             npos = atomicInc(pos, 6220801);
-
-//             diff[i] = df;
-//             xs[i] = i;
-
-//         }
-//     }
-// }
 #endif
 
 void *th_cap_hdl(void *args) {
-    int fifosize;
-    // Mat *pframe;
-    struct mat_ready *pready;
 
+    struct mat_ready *pready;
     struct ctxs *pctx = (struct ctxs *)args;
 
     while(1) {
-        // Mat *frame = new Mat(pctx->sampleMat->rows, pctx->sampleMat->cols, pctx->sampleMat->type());
         read(pctx->ptr_r_fd, &pready, sizeof pready);
-        // printf("cap on %p\n", pframe);
         *pctx->cap >> *(pready->pframe);
 
         write(pctx->cap_w_fd, &pready, sizeof pready);
@@ -123,7 +83,6 @@ void *th_show_hdl(void *args) {
     struct epoll_event ev, events[10];
     struct addrinfo *result, *rp;
     int sfd, epollfd, nfds, sfd2;
-    // Mat *pframe;
     struct mat_ready *pready;
     bool skip = true;
 
@@ -152,7 +111,6 @@ void *th_show_hdl(void *args) {
     }
 
     nfds = epoll_wait(epollfd, events, 10, -1);
-    printf("Connected!\n");
 
     for (int i = 0; i < nfds; i++) {
         if (events[i].data.fd == sfd) {
@@ -165,9 +123,8 @@ void *th_show_hdl(void *args) {
     int tot = 3 * pctx->sampleMat->cols * pctx->sampleMat->rows;
 
     // uint8_t *mem = new uint8_t[sizeof **pctx->phpos + tot * sizeof **pctx->phpos + tot];
-    printf("Writing base\n");
     write(sfd2, pctx->sampleMat->data, tot);
-    Mat previous = pctx->sampleMat->clone();
+    // Mat previous = pctx->sampleMat->clone();
 
     while(1) {
         read(pctx->show_r_fd, &pready, sizeof pready);
@@ -205,25 +162,7 @@ void *th_show_hdl(void *args) {
         }
 
 
-        // int ret = write(sfd2, mem, sizeof **pctx->phpos + **pctx->phpos * sizeof *pready->h_xs + **pctx->phpos);
-        // if (ret != sizeof **pctx->phpos + **pctx->phpos * sizeof *pready->h_xs + **pctx->phpos) {
-        //     perror("WTF!!!!!");
-        // }
-
-        // for (int i = 0; i < tot; i++) {
-        //     // if (i != (*(pctx->pxs))[i]) {
-        //     //     printf("buttanazza %d\n", (*(pctx->pxs))[i]);
-        //     // }
-
-        //     previous.data[pready->h_xs[i]] += pready->pframe->data[i];
-        // }
-
-        // namedWindow("hi", WINDOW_GUI_NORMAL);
-        // imshow("hi", previous);
-        // if (waitKey(10) == 27) break;
-
         write(pctx->ptr_w_fd, &pready, sizeof pready);
-
     }
 
     return NULL;
@@ -235,7 +174,6 @@ int main() {
     if (!cap.open(0, CAP_V4L2)) return 1;
     auto codec = cv::VideoWriter::fourcc('M','J','P','G');
     cap.set(cv::CAP_PROP_FOURCC, codec);
-    // if (!cap.open("./video.mp4")) return 1;
 
 
     cap.set(3, 1920);
@@ -269,8 +207,6 @@ int main() {
         .ptr_r_fd = ptr_pipe[0],
         .proc_w_fd = fork_pipe[1],
         .proc_w_fd_B = fork_pipe_B[1]
-        // .phpos = &h_pos
-        // .pxs = &h_xs
     };
 
     pthread_t th_cap;
@@ -278,21 +214,21 @@ int main() {
     pthread_create(&th_cap, NULL, th_cap_hdl, &ctx);
     pthread_create(&th_show, NULL, th_show_hdl, &ctx);
 
-    // Mat *pframe;
     struct mat_ready *pready;
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 20; i++) {
 
         pready = new struct mat_ready;
 
 #ifdef GPU
         uint8_t *h_frame;
         cudaMallocHost((void **)&h_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *h_frame);
-        pready->pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type());
+        cudaMallocHost((void **)&pready->h_xs, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *pready->h_xs);
+        pready->pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type(), h_frame);
 #else
         pready->pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type());
+        pready->h_xs = new int[3 * ctx.sampleMat->rows * ctx.sampleMat->cols];
 #endif
 
-        pready->h_xs = new int[3 * ctx.sampleMat->rows * ctx.sampleMat->cols];
         pready->h_pos = 0;
         write(ctx.ptr_w_fd, &pready, sizeof pready);
     }
@@ -340,17 +276,17 @@ int main() {
     int tot4 = total / 1;
     int max4 = maxAtTime / 1;
     uint8_t *dcurr4_0 = d_current;
-    uint8_t *dcurr4_1 = d_current + total/4;
-    uint8_t *dcurr4_2 = d_current + total/2;
-    uint8_t *dcurr4_3 = d_current + 3*total/4;
+    uint8_t *dcurr4_1 = d_current + tot4;
+    uint8_t *dcurr4_2 = d_current + tot4;
+    uint8_t *dcurr4_3 = d_current + 3*tot4;
     uint8_t *dprev4_0 = d_previous;
-    uint8_t *dprev4_1 = d_previous + total/4;
-    uint8_t *dprev4_2 = d_previous + total/2;
-    uint8_t *dprev4_3 = d_previous + 3*total/4;
+    uint8_t *dprev4_1 = d_previous + tot4;
+    uint8_t *dprev4_2 = d_previous + tot4;
+    uint8_t *dprev4_3 = d_previous + 3*tot4;
     uint8_t *ddiff_0 = d_diff;
-    uint8_t *ddiff_1 = d_diff + total/4;
-    uint8_t *ddiff_2 = d_diff + total/2;
-    uint8_t *ddiff_3 = d_diff + 3*total/4;
+    uint8_t *ddiff_1 = d_diff + tot4;
+    uint8_t *ddiff_2 = d_diff + tot4;
+    uint8_t *ddiff_3 = d_diff + 3*tot4;
     // uint8_t *pframe_0 = pframe->data;
     // uint8_t *pframe_1 = pframe->data + total/4;
     // uint8_t *pframe_2 = pframe->data + total/2;
@@ -359,7 +295,8 @@ int main() {
 #endif
 
     Mat previous = ctx.sampleMat->clone();
-    int streamidx = 0;
+
+    auto begin0 = std::chrono::high_resolution_clock::now();
     while (1) {
         auto begin = std::chrono::high_resolution_clock::now();
 
@@ -386,6 +323,10 @@ int main() {
         dcurr4_0 = dprev4_0;
         dprev4_0 = d_prev;
 
+        d_prev = dcurr4_1;
+        dcurr4_1 = dprev4_1;
+        dprev4_1 = d_prev;
+
         // d_prev = d_current;
         // d_current = d_previous;
         // d_previous = d_prev;
@@ -402,20 +343,18 @@ int main() {
         // dcurr4_3 = dprev4_3;
         // dprev4_3 = d_prev;
 
-        cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
-        cudaMemsetAsync(d_xs, 0, tot4 * sizeof *d_xs);
-        cudaMemcpyAsync(dcurr4_0, pready->pframe->data, tot4, cudaMemcpyHostToDevice);
+        cudaMemset(d_pos, 0, sizeof *d_pos);
 
-        // kernel<<<1, prop.maxThreadsPerBlock, 0>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs);
-        // cudaMemcpyAsync(h_diff, ddiff_0, tot4, cudaMemcpyDeviceToHost);//TODO: *h_pos instead of tot4
-        // cudaMemcpyAsync(h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost);
+        cudaMemcpyAsync(dcurr4_0, pready->pframe->data, tot4, cudaMemcpyHostToDevice, streams[0]);
+        kernel<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs);
+        cudaMemcpyAsync(pready->pframe->data, ddiff_0, tot4, cudaMemcpyDeviceToHost, streams[0]);//TODO: *h_pos instead of tot4
+        cudaMemcpyAsync(pready->h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost, streams[0]);
 
-        cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
-        kernel<<<1, prop.maxThreadsPerBlock, 0>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs);
-        cudaMemcpyAsync(pready->pframe->data, ddiff_0, tot4, cudaMemcpyDeviceToHost);//TODO: *h_pos instead of tot4
-        cudaMemcpyAsync(pready->h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost);
+        // cudaMemcpyAsync(dcurr4_1, pready->pframe->data + tot4, tot4, cudaMemcpyHostToDevice, streams[1]);
+        // kernel<<<1, prop.maxThreadsPerBlock, 0, streams[1]>>>(dcurr4_1, dprev4_1, ddiff_1, max4, d_pos, d_xs);
+        // cudaMemcpyAsync(pready->pframe->data + tot4, ddiff_1, tot4, cudaMemcpyDeviceToHost, streams[1]);//TODO: *h_pos instead of tot4
+        // cudaMemcpyAsync(pready->h_xs + tot4, d_xs + tot4, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost, streams[1]);
 
-        cudaMemcpyAsync(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
 
         // cudaMemcpyAsync(dcurr4_1, pframe_1, tot4, cudaMemcpyHostToDevice, streams[1]);
         // kernel<<<1, prop.maxThreadsPerBlock, 0, streams[1]>>>(dcurr4_1, dprev4_1, ddiff_1, max4, d_pos);
@@ -430,62 +369,7 @@ int main() {
         // cudaMemcpyAsync(pframe_3, ddiff_3, tot4, cudaMemcpyDeviceToHost, streams[3]);
 
         cudaDeviceSynchronize();
-
-        // cudaMemcpy(h_current, dprev4_0, tot4, cudaMemcpyDeviceToHost);
-        // for (int i = 0; i < tot4; i++) {
-        //     h_current[h_xs2[i]] += h_diff2[i];
-        // }
-
-        // for (int i = 0; i < tot4; i++) {
-        //     if (h_current[i] != pframe->data[i]) {
-        //         printf("SASJDOIN\n");
-        //     }
-        // }
-
-        // cudaMemcpy(pframe->data, h_diff2, tot4, cudaMemcpyDeviceToDevice);
-
-        // for (int i = 0; i < tot4; i++) {
-        //     if (h_diff[h_xs[i]] != h_diff2[h_xs2[i]]) {
-        //         printf("STICCHIU %d\n", i);
-        //     }
-        // }
-
-        // cudaMemcpyAsync(h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost);
-        // cudaDeviceSynchronize();
-
-        // printf("Creating first file\n");
-        // FILE *fp2 = fopen("diff.log", "w");
-        // for (int i = 0; i < tot4; i++) {
-        //     fprintf(fp2, "%d] %d   ", i, h_diff[i]);
-        //     if (i % 6 == 0) fprintf(fp2, "\n");
-        // }
-
-        // fclose(fp2);
-
-
-        // printf("Creating second file\n");
-        // FILE *fp = fopen("i.log", "w");
-        // for (int i = 0; i < tot4; i++) {
-
-        //     if (h_xs[i] == 0) {
-        //         fprintf(stdout, "xs[%d] = %d, df = %d\n", i, h_xs[i], h_diff[i]);
-        //     }
-
-        //     fprintf(fp, "xs[%d] = %d, df = %d   ", i, h_xs[i], h_diff[i]);
-        //     if (i % 4 == 0) fprintf(fp, "\n");
-        // }
-
-        // fclose(fp);
-
-        // for (int i = 0; i < total; i++) {
-        //     h_xs[i] = i;
-        // }
-
-        // printf("hpos %d\n", *h_pos);
-        // for (int i = 0; i < 10; i++) {
-        //     printf(" - (%p) xs %d] %d b=%d\n", h_xs, i, h_xs[i], pframe->data[i]);
-        // }
-
+        cudaMemcpy(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
 
 #endif
         auto end3 = std::chrono::high_resolution_clock::now();
@@ -493,15 +377,20 @@ int main() {
         write(show_pipe[1], &pready, sizeof pready);
 
         auto end = std::chrono::high_resolution_clock::now();
-        auto elaps = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
-        auto elaps2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end2 - begin2);
-        auto elaps3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end3 - begin3);
 
-        printf("\rFPS: %5.0f\tFOR: %5.2f ms\tREAD: %5.2f\tPOS: %d\n", 1 / ((float)elaps.count() * 1e-9), (float)elaps3.count() * 1e-6, (float)elaps2.count() * 1e-6, *h_pos);
-        fflush(stdout);
+        auto end0 = std::chrono::high_resolution_clock::now();
+        if (std::chrono::duration_cast<std::chrono::nanoseconds>(end0 - begin0).count() > 1e9) {
+            begin0 = end0;
 
-        // char x;
-        // scanf("%c", &x);
+            auto elaps = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+            auto elaps2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end2 - begin2);
+            auto elaps3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end3 - begin3);
+
+            float unit = 1 / ((float)elaps.count() * 1e-9);
+            printf("\rFPS: %5.0f\tFOR: %5.2f ms\tREAD: %9.2f\tPOS: %7d\t BW: %5d kbps", unit, (float)elaps3.count() * 1e-6, (float)elaps2.count() * 1e-6, pready->h_pos, (int)((pready->h_pos<<4)*unit*1e-3));
+            fflush(stdout);
+        }
+
     }
 
     return 0;
