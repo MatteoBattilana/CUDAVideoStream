@@ -17,7 +17,12 @@
 #include "opencv2/opencv.hpp"
 #include <pthread.h>
 #include "v4l.h"
+#include <cmath>
 
+#define K 3
+#define C 3
+#define TILE_SIZE 10
+#define BLOCK_SIZE (TILE_SIZE + K - 1)
 #define NSTREAMS 1
 #define GPU
 
@@ -43,6 +48,47 @@ struct ctxs {
 };
 
 #ifdef GPU
+__constant__ float dev_k[K*K];
+
+__global__ void convolution_kernel(uint8_t *current, uint8_t *filtered, int width, int height)
+{
+    __shared__ uint8_t N_ds[BLOCK_SIZE][BLOCK_SIZE*C];
+
+    int tx = threadIdx.x;   
+    int ty = threadIdx.y;   
+    int row_o = blockIdx.y*TILE_SIZE + ty;
+    int col_o = blockIdx.x*TILE_SIZE + tx;
+    int row_i = row_o - K/2;
+    int col_i = col_o - K/2;
+
+    if(row_i >= 0 && row_i < height && col_i >= 0 && col_i < width){
+        N_ds[ty][tx*C] = current[row_i*width*C + col_i*C];
+        N_ds[ty][tx*C+1] = current[row_i*width*C + col_i*C + 1];
+        N_ds[ty][tx*C+2] = current[row_i*width*C + col_i*C + 2];
+    } else {
+        N_ds[ty][tx*C] = 0;
+        N_ds[ty][tx*C+1] = 0;
+        N_ds[ty][tx*C+2] = 0;
+    }
+
+    __syncthreads();
+
+
+    for (int color = 0; color < C; color++){
+        int output = 0;
+        if(ty < TILE_SIZE && tx < TILE_SIZE){
+            for(int i = 0; i < K; i++)
+                for(int j = 0; j < K; j++){
+                    output += dev_k[i*K+j] * N_ds[i+ty][(j+tx)*C+color];
+                }
+
+            if(row_o < height && col_o < width){
+                filtered[row_o*width*C + col_o*C + color] = output;
+            }
+        }
+    }
+}
+
 __global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     unsigned int npos;
@@ -168,7 +214,30 @@ void *th_show_hdl(void *args) {
     return NULL;
 }
 
+float* computeGaussianKernel(float sigma){
+    double sum = 0;
+    float* k = (float*)malloc(K*K*sizeof(float));
+    for (int i = 0; i < K; i++){
+        for (int j = 0; j < K; j++){
+            double x = i - (K - 1) / 2.0;
+            double y = j - (K - 1) / 2.0;
+            k[i*K+j] = (1.0/(2.0*M_PI*sigma*sigma)) * exp(-((x*x + y*y)/(2.0*sigma*sigma)));
+            sum += k[i*K+j];
+        }
+    }
+
+    for (int i = 0; i < K; i++) {
+        for (int j = 0; j < K; j++) {
+            k[i*K+j] /= sum;
+        }
+    }
+
+    return k;
+}
+
 int main() {
+    // Initialize kernel for filter
+    float * k = computeGaussianKernel(2);
 
     VideoCapture cap;
     if (!cap.open(0, CAP_V4L2)) return 1;
@@ -220,6 +289,9 @@ int main() {
         pready = new struct mat_ready;
 
 #ifdef GPU
+        // Copy filter kernel to memory
+        cudaMemcpyToSymbol(dev_k, k, K*K * sizeof(float) );
+        
         uint8_t *h_frame;
         cudaMallocHost((void **)&h_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *h_frame);
         cudaMallocHost((void **)&pready->h_xs, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *pready->h_xs);
@@ -243,6 +315,7 @@ int main() {
     struct cudaDeviceProp prop;
     uint8_t *d_current, *d_previous;
     uint8_t *d_diff;
+    uint8_t *d_filtered;
     int *d_xs;
     unsigned int *d_pos;
     cudaStream_t streams[4];
@@ -257,6 +330,7 @@ int main() {
     cudaMalloc((void **)&d_xs, total * sizeof *d_xs);
     cudaMalloc((void **)&d_current, total * sizeof *d_current);
     cudaMalloc((void **)&d_previous, total * sizeof *d_previous);
+    cudaMalloc((void **)&d_filtered, total * sizeof *d_filtered);
 
     cudaMalloc((void **)&d_pos, sizeof *d_pos);
     // cudaMemset((void *)d_pos, 0, sizeof *d_pos);
@@ -272,6 +346,7 @@ int main() {
 
     int maxAtTime = total / prop.maxThreadsPerBlock;
     cudaMemcpy(d_current, ctx.sampleMat->data, total * sizeof *ctx.sampleMat->data, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_filtered, ctx.sampleMat->data, total * sizeof *ctx.sampleMat->data, cudaMemcpyHostToDevice);
 
     int tot4 = total / 1;
     int max4 = maxAtTime / 1;
@@ -284,6 +359,7 @@ int main() {
     uint8_t *dprev4_2 = d_previous + tot4;
     uint8_t *dprev4_3 = d_previous + 3*tot4;
     uint8_t *ddiff_0 = d_diff;
+    uint8_t *dfiltered_0 = d_filtered;
     uint8_t *ddiff_1 = d_diff + tot4;
     uint8_t *ddiff_2 = d_diff + tot4;
     uint8_t *ddiff_3 = d_diff + 3*tot4;
@@ -292,6 +368,12 @@ int main() {
     // uint8_t *pframe_2 = pframe->data + total/2;
     // uint8_t *pframe_3 = pframe->data + 3*total/4;
 
+    // Setup filter grid
+    dim3 blockSize, gridSize;
+    blockSize.x = BLOCK_SIZE, blockSize.y = BLOCK_SIZE, blockSize.z = 1;
+    gridSize.x = ceil((float)ctx.sampleMat->cols/TILE_SIZE),
+    gridSize.y = ceil((float)ctx.sampleMat->rows/TILE_SIZE),
+    gridSize.z = 1;
 #endif
 
     Mat previous = ctx.sampleMat->clone();
@@ -319,9 +401,15 @@ int main() {
 
 #elif defined(GPU)
 
+    #ifdef FILTER
+        uint8_t *d_prev = d_filtered;
+        d_filtered = dprev4_0;
+        dprev4_0 = d_prev;
+    #else
         uint8_t *d_prev = dcurr4_0;
         dcurr4_0 = dprev4_0;
         dprev4_0 = d_prev;
+    #endif
 
         d_prev = dcurr4_1;
         dcurr4_1 = dprev4_1;
@@ -343,10 +431,22 @@ int main() {
         // dcurr4_3 = dprev4_3;
         // dprev4_3 = d_prev;
 
-        cudaMemset(d_pos, 0, sizeof *d_pos);
 
+        // Apply filter
         cudaMemcpyAsync(dcurr4_0, pready->pframe->data, tot4, cudaMemcpyHostToDevice, streams[0]);
+    
+    #ifdef FILTER
+        convolution_kernel<<<gridSize, blockSize>>>(dcurr4_0, d_filtered, ctx.sampleMat->cols, ctx.sampleMat->rows);
+        //kern_test<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(dcurr4_0, d_filtered, max4);
+        cudaDeviceSynchronize();
+
+        cudaMemset(d_pos, 0, sizeof *d_pos);
+        kernel<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(d_filtered, dprev4_0, ddiff_0, max4, d_pos, d_xs);
+    #else
+        cudaMemset(d_pos, 0, sizeof *d_pos);
         kernel<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs);
+    #endif
+
         cudaMemcpyAsync(pready->pframe->data, ddiff_0, tot4, cudaMemcpyDeviceToHost, streams[0]);//TODO: *h_pos instead of tot4
         cudaMemcpyAsync(pready->h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost, streams[0]);
 
