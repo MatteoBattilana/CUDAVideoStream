@@ -20,3 +20,6 @@ test:
 
 test2:
 	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) test2.cu -o server
+
+test3:
+	$(CC) $(CFLAGS) $(INCLUDES) test3.cu -o server

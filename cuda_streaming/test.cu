@@ -23,6 +23,12 @@
 
 using namespace cv;
 
+struct mat_ready {
+    Mat *pframe;
+    int *h_xs;
+    unsigned int h_pos;
+};
+
 struct ctxs {
     VideoCapture *cap;
     int cap_w_fd;
@@ -31,6 +37,7 @@ struct ctxs {
     int ptr_w_fd;
     int ptr_r_fd;
     int proc_w_fd;
+    int proc_w_fd_B;
     // unsigned int **phpos;
     // int **pxs;
 };
@@ -38,17 +45,29 @@ struct ctxs {
 #ifdef GPU
 __global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
-    int df, npos;
+    unsigned int npos;
+    int df;
 
     int max = x * maxSect + maxSect;
     for (int i = x * maxSect; i < max; i++) {
 
         df = current[i] - previous[i];
-        if (df > 0) {
+        if (df < -10 || df > 10) {
             npos = atomicInc(pos, 6220801);
             // printf("npos %d\n", npos);
+
+            // if (xs[npos] != 0) {
+            //     printf("OOOOH WTF MAN!\n");
+            // }
+
             diff[npos] = df;
             xs[npos] = i;
+
+            // if (npos < 10) {
+            //     printf("gpu xs %d] %d = %d\n", npos, xs[npos], diff[npos]);
+            // }
+        } else {
+            current[i] -= df;
         }
         // diff[i] = current[i] - previous[i];
 
@@ -61,50 +80,149 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int m
         // }
     }
 }
+
+// __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs) {
+//     int x = threadIdx.x + blockDim.x * blockIdx.x;
+//     int df, npos;
+
+//     int max = x * maxSect + maxSect;
+//     for (int i = x * maxSect; i < max; i++) {
+
+//         df = current[i] - previous[i];
+//         if (true) {
+//             npos = atomicInc(pos, 6220801);
+
+//             diff[i] = df;
+//             xs[i] = i;
+
+//         }
+//     }
+// }
 #endif
 
 void *th_cap_hdl(void *args) {
     int fifosize;
-    Mat *pframe;
+    // Mat *pframe;
+    struct mat_ready *pready;
 
     struct ctxs *pctx = (struct ctxs *)args;
 
     while(1) {
         // Mat *frame = new Mat(pctx->sampleMat->rows, pctx->sampleMat->cols, pctx->sampleMat->type());
-        read(pctx->ptr_r_fd, &pframe, sizeof pframe);
-        *pctx->cap >> *pframe;
+        read(pctx->ptr_r_fd, &pready, sizeof pready);
+        // printf("cap on %p\n", pframe);
+        *pctx->cap >> *(pready->pframe);
 
-        write(pctx->cap_w_fd, &pframe, sizeof pframe);
+        write(pctx->cap_w_fd, &pready, sizeof pready);
     }
 
     return NULL;
 }
 
 void *th_show_hdl(void *args) {
-    Mat *pframe;
+    struct epoll_event ev, events[10];
+    struct addrinfo *result, *rp;
+    int sfd, epollfd, nfds, sfd2;
+    // Mat *pframe;
+    struct mat_ready *pready;
     bool skip = true;
+
+    getaddrinfo("127.0.0.1", "2734", NULL, &result);
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+            continue;
+        }
+
+        if (bind(sfd, rp->ai_addr, rp->ai_addrlen) != -1) {
+            break;
+        }
+
+        close(sfd);
+        perror("MOH!");
+    }
+
+    epollfd = epoll_create1(0);
+    ev.events = EPOLLIN;
+    ev.data.fd = sfd;
+    epoll_ctl(epollfd, 1, sfd, &ev);
+
+    if (listen(sfd, 10) < 0) {
+        perror("OH!");
+        exit(errno);
+    }
+
+    nfds = epoll_wait(epollfd, events, 10, -1);
+    printf("Connected!\n");
+
+    for (int i = 0; i < nfds; i++) {
+        if (events[i].data.fd == sfd) {
+            sfd2 = accept(sfd, NULL, NULL);
+            if (sfd2 < 0) perror("ACCEPT");
+        }
+    }
 
     struct ctxs *pctx = (struct ctxs *)args;
     int tot = 3 * pctx->sampleMat->cols * pctx->sampleMat->rows;
 
+    // uint8_t *mem = new uint8_t[sizeof **pctx->phpos + tot * sizeof **pctx->phpos + tot];
+    printf("Writing base\n");
+    write(sfd2, pctx->sampleMat->data, tot);
+    Mat previous = pctx->sampleMat->clone();
+
     while(1) {
-        read(pctx->show_r_fd, &pframe, sizeof pframe);
+        read(pctx->show_r_fd, &pready, sizeof pready);
+        // printf("show on %p\n", pframe);
 
         if (skip ^= 1) {
             skip = true;
         }
-        
 
-        // write(pctx->proc_w_fd, *pctx->phpos, sizeof **pctx->phpos);
-        // write(pctx->proc_w_fd, *pctx->pxs, **pctx->phpos);
-        // write(pctx->proc_w_fd, pframe->data, **pctx->phpos);
-        // write(pctx->proc_w_fd, pframe->data, tot);
-        // imshow("hi", *pframe);
-        // if (waitKey(10) == 27) {
-        //     break;  // stop capturing by pressing ESC
+        // memcpy(mem, *pctx->phpos, sizeof **pctx->phpos);
+        // memcpy(mem + sizeof **pctx->phpos, pready->h_xs, **pctx->phpos * sizeof *pready->h_xs);
+        // memcpy(mem + sizeof **pctx->phpos + **pctx->phpos * sizeof *pready->h_xs, pready->pframe->data, **pctx->phpos);
+        // printf("Writing all, xs %ld\n", **pctx->phpos * sizeof **pctx->pxs);
+        // for (int i = 0; i < 10; i++) {
+        //     printf(" ## xs %i = %d\n", (*(pctx->pxs))[i], pframe->data[i]);
         // }
 
-        write(pctx->ptr_w_fd, &pframe, sizeof pframe);
+        // for (int i = 0; i < 10; i++) {
+        //     printf(" -- xs %i = %d\n", (mem + sizeof **pctx->phpos)[i], (mem + sizeof **pctx->phpos + **pctx->phpos * sizeof **pctx->pxs)[i]);
+        // }
+
+        int ret = write(sfd2, &pready->h_pos, sizeof pready->h_pos);
+        if (ret != sizeof pready->h_pos) {
+            perror("write1");
+        }
+
+        ret = write(sfd2, pready->h_xs, pready->h_pos * sizeof *pready->h_xs);
+        if (ret != pready->h_pos * sizeof *pready->h_xs) {
+            perror("write2");
+        }
+
+        ret = write(sfd2, pready->pframe->data, pready->h_pos);
+        if (ret != pready->h_pos) {
+            perror("write3");
+        }
+
+
+        // int ret = write(sfd2, mem, sizeof **pctx->phpos + **pctx->phpos * sizeof *pready->h_xs + **pctx->phpos);
+        // if (ret != sizeof **pctx->phpos + **pctx->phpos * sizeof *pready->h_xs + **pctx->phpos) {
+        //     perror("WTF!!!!!");
+        // }
+
+        // for (int i = 0; i < tot; i++) {
+        //     // if (i != (*(pctx->pxs))[i]) {
+        //     //     printf("buttanazza %d\n", (*(pctx->pxs))[i]);
+        //     // }
+
+        //     previous.data[pready->h_xs[i]] += pready->pframe->data[i];
+        // }
+
+        // namedWindow("hi", WINDOW_GUI_NORMAL);
+        // imshow("hi", previous);
+        // if (waitKey(10) == 27) break;
+
+        write(pctx->ptr_w_fd, &pready, sizeof pready);
 
     }
 
@@ -117,68 +235,25 @@ int main() {
     if (!cap.open(0, CAP_V4L2)) return 1;
     auto codec = cv::VideoWriter::fourcc('M','J','P','G');
     cap.set(cv::CAP_PROP_FOURCC, codec);
+    // if (!cap.open("./video.mp4")) return 1;
+
 
     cap.set(3, 1920);
     cap.set(4, 1080);
 
-    printf("A\n");
     Mat base;
     cap >> base;
-    printf("B\n");
 
     int cap_pipe[2];
     int show_pipe[2];
     int ptr_pipe[2];
     int fork_pipe[2];
+    int fork_pipe_B[2];
     pipe(cap_pipe);
     pipe(show_pipe);
     pipe(ptr_pipe);
     pipe(fork_pipe);
-
-    printf("forking\n");
-    if (!fork()) {
-        int tot = 3 * base.cols * base.rows;
-        uint8_t *buffer = new uint8_t[tot];
-        Mat frame(base.rows, base.cols, base.type());
-
-        int btot = 0;
-
-        while (btot < tot) {
-            btot += read(fork_pipe[0], buffer + btot, 1024);
-        }
-
-        memcpy(frame.data, buffer, tot);
-
-        printf("forked\n");
-
-        namedWindow("hi", WINDOW_NORMAL);
-        resizeWindow("hi", Size(653, 373));
-
-        while(1) {
-            // btot = 0;
-            // while (btot < tot) {
-            //     btot += read(fork_pipe[0], buffer + btot, 1024);
-            // }
-            read(fork_pipe[0], buffer, tot);
-
-#if defined(CPU) || defined(GPU)
-            // for (int i = 0; i < tot; i++) {
-            //     frame.data[i] += buffer[i];
-            // }
-            // memcpy(frame.data, buffer, tot);
-#endif
-
-            imshow("hi", frame);
-            if (waitKey(10) == 27) {
-                break;  // stop capturing by pressing ESC
-            }
-        }
-    }
-
-    printf("copying\n");
-    for (int i = 0; i < 3 * base.rows; i++) {
-        write(fork_pipe[1], base.data + base.cols * i, base.cols);
-    }
+    pipe(fork_pipe_B);
 
     pthread_mutex_t fifosize_mtx;
     pthread_mutex_init(&fifosize_mtx, NULL);
@@ -192,7 +267,10 @@ int main() {
         .show_r_fd = show_pipe[0],
         .ptr_w_fd = ptr_pipe[1],
         .ptr_r_fd = ptr_pipe[0],
-        .proc_w_fd = fork_pipe[1]
+        .proc_w_fd = fork_pipe[1],
+        .proc_w_fd_B = fork_pipe_B[1]
+        // .phpos = &h_pos
+        // .pxs = &h_xs
     };
 
     pthread_t th_cap;
@@ -200,24 +278,31 @@ int main() {
     pthread_create(&th_cap, NULL, th_cap_hdl, &ctx);
     pthread_create(&th_show, NULL, th_show_hdl, &ctx);
 
-    Mat *pframe;
-    for (int i = 0; i < 10; i++) {
+    // Mat *pframe;
+    struct mat_ready *pready;
+    for (int i = 0; i < 50; i++) {
+
+        pready = new struct mat_ready;
 
 #ifdef GPU
         uint8_t *h_frame;
         cudaMallocHost((void **)&h_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *h_frame);
-        pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type(), h_frame);
+        pready->pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type());
 #else
-        pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type());
+        pready->pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type());
 #endif
 
-        write(ctx.ptr_w_fd, &pframe, sizeof pframe);
+        pready->h_xs = new int[3 * ctx.sampleMat->rows * ctx.sampleMat->cols];
+        pready->h_pos = 0;
+        write(ctx.ptr_w_fd, &pready, sizeof pready);
     }
 
     int total = 3 * ctx.sampleMat->rows * ctx.sampleMat->cols;
 
 #ifdef CPU
     uint8_t *h_diff = new uint8_t[total];
+    h_xs = new int[total];
+    h_pos = new unsigned int[1];
 #elif defined(GPU)
     struct cudaDeviceProp prop;
     uint8_t *d_current, *d_previous;
@@ -240,16 +325,20 @@ int main() {
     cudaMalloc((void **)&d_pos, sizeof *d_pos);
     // cudaMemset((void *)d_pos, 0, sizeof *d_pos);
 
-    uint8_t *h_diff;
+    uint8_t *h_diff, *h_diff2, *h_current;
+    int *h_xs2;
     cudaMallocHost((void **)&h_diff, total * sizeof *h_diff);
+    cudaMallocHost((void **)&h_diff2, total * sizeof *h_diff2);
+    cudaMallocHost((void **)&h_current, total * sizeof *h_current);
     cudaMallocHost((void **)&h_pos, sizeof *h_pos);
-    cudaMallocHost((void **)&h_xs, sizeof *h_xs);
+    cudaMallocHost((void **)&h_xs, total * sizeof *h_xs);
+    cudaMallocHost((void **)&h_xs2, total * sizeof *h_xs2);
 
     int maxAtTime = total / prop.maxThreadsPerBlock;
     cudaMemcpy(d_current, ctx.sampleMat->data, total * sizeof *ctx.sampleMat->data, cudaMemcpyHostToDevice);
 
-    int tot4 = total / 4;
-    int max4 = maxAtTime / 4;
+    int tot4 = total / 1;
+    int max4 = maxAtTime / 1;
     uint8_t *dcurr4_0 = d_current;
     uint8_t *dcurr4_1 = d_current + total/4;
     uint8_t *dcurr4_2 = d_current + total/2;
@@ -275,18 +364,22 @@ int main() {
         auto begin = std::chrono::high_resolution_clock::now();
 
         auto begin2 = std::chrono::high_resolution_clock::now();
-        read(cap_pipe[0], &pframe, sizeof pframe);
+        read(cap_pipe[0], &pready, sizeof pready);
         auto end2 = std::chrono::high_resolution_clock::now();
 
         auto begin3 = std::chrono::high_resolution_clock::now();
 #ifdef CPU
-        Mat pvs = pframe->clone();
+        Mat pvs = pready->pframe->clone();
 
-        for (int i = 0; i < total; i++) {
-            pframe->data[i] = pframe->data[i] - previous.data[i];
+        *h_pos = 0;
+        for (int i = total-1; i >= 0; i--) {
+            pready->pframe->data[*h_pos] = pready->pframe->data[i] - previous.data[i];
+            pready->h_xs[*h_pos] = i;
+            (*h_pos)++;
         }
 
         previous = pvs;
+
 #elif defined(GPU)
 
         uint8_t *d_prev = dcurr4_0;
@@ -310,11 +403,19 @@ int main() {
         // dprev4_3 = d_prev;
 
         cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
-        cudaMemcpyAsync(dcurr4_0, pframe->data, tot4, cudaMemcpyHostToDevice);
+        cudaMemsetAsync(d_xs, 0, tot4 * sizeof *d_xs);
+        cudaMemcpyAsync(dcurr4_0, pready->pframe->data, tot4, cudaMemcpyHostToDevice);
+
+        // kernel<<<1, prop.maxThreadsPerBlock, 0>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs);
+        // cudaMemcpyAsync(h_diff, ddiff_0, tot4, cudaMemcpyDeviceToHost);//TODO: *h_pos instead of tot4
+        // cudaMemcpyAsync(h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost);
+
+        cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
         kernel<<<1, prop.maxThreadsPerBlock, 0>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs);
-        cudaMemcpyAsync(pframe->data, ddiff_0, tot4, cudaMemcpyDeviceToHost);
-        cudaMemcpyAsync(h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
-        // cudaMemcpyAsync(h_xs, d_xs, *h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost);
+        cudaMemcpyAsync(pready->pframe->data, ddiff_0, tot4, cudaMemcpyDeviceToHost);//TODO: *h_pos instead of tot4
+        cudaMemcpyAsync(pready->h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost);
+
+        cudaMemcpyAsync(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
 
         // cudaMemcpyAsync(dcurr4_1, pframe_1, tot4, cudaMemcpyHostToDevice, streams[1]);
         // kernel<<<1, prop.maxThreadsPerBlock, 0, streams[1]>>>(dcurr4_1, dprev4_1, ddiff_1, max4, d_pos);
@@ -330,10 +431,66 @@ int main() {
 
         cudaDeviceSynchronize();
 
+        // cudaMemcpy(h_current, dprev4_0, tot4, cudaMemcpyDeviceToHost);
+        // for (int i = 0; i < tot4; i++) {
+        //     h_current[h_xs2[i]] += h_diff2[i];
+        // }
+
+        // for (int i = 0; i < tot4; i++) {
+        //     if (h_current[i] != pframe->data[i]) {
+        //         printf("SASJDOIN\n");
+        //     }
+        // }
+
+        // cudaMemcpy(pframe->data, h_diff2, tot4, cudaMemcpyDeviceToDevice);
+
+        // for (int i = 0; i < tot4; i++) {
+        //     if (h_diff[h_xs[i]] != h_diff2[h_xs2[i]]) {
+        //         printf("STICCHIU %d\n", i);
+        //     }
+        // }
+
+        // cudaMemcpyAsync(h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost);
+        // cudaDeviceSynchronize();
+
+        // printf("Creating first file\n");
+        // FILE *fp2 = fopen("diff.log", "w");
+        // for (int i = 0; i < tot4; i++) {
+        //     fprintf(fp2, "%d] %d   ", i, h_diff[i]);
+        //     if (i % 6 == 0) fprintf(fp2, "\n");
+        // }
+
+        // fclose(fp2);
+
+
+        // printf("Creating second file\n");
+        // FILE *fp = fopen("i.log", "w");
+        // for (int i = 0; i < tot4; i++) {
+
+        //     if (h_xs[i] == 0) {
+        //         fprintf(stdout, "xs[%d] = %d, df = %d\n", i, h_xs[i], h_diff[i]);
+        //     }
+
+        //     fprintf(fp, "xs[%d] = %d, df = %d   ", i, h_xs[i], h_diff[i]);
+        //     if (i % 4 == 0) fprintf(fp, "\n");
+        // }
+
+        // fclose(fp);
+
+        // for (int i = 0; i < total; i++) {
+        //     h_xs[i] = i;
+        // }
+
+        // printf("hpos %d\n", *h_pos);
+        // for (int i = 0; i < 10; i++) {
+        //     printf(" - (%p) xs %d] %d b=%d\n", h_xs, i, h_xs[i], pframe->data[i]);
+        // }
+
+
 #endif
         auto end3 = std::chrono::high_resolution_clock::now();
 
-        write(show_pipe[1], &pframe, sizeof pframe);
+        write(show_pipe[1], &pready, sizeof pready);
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elaps = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
@@ -342,8 +499,10 @@ int main() {
 
         printf("\rFPS: %5.0f\tFOR: %5.2f ms\tREAD: %5.2f\tPOS: %d\n", 1 / ((float)elaps.count() * 1e-9), (float)elaps3.count() * 1e-6, (float)elaps2.count() * 1e-6, *h_pos);
         fflush(stdout);
-    }
 
+        // char x;
+        // scanf("%c", &x);
+    }
 
     return 0;
 }

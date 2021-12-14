@@ -8,7 +8,7 @@
         "name": "(gdb) Launch",
         "type": "cppdbg",
         "request": "launch",
-        "program": "${workspaceFolder}/image_reader",
+        "program": "${workspaceFolder}/opencv",
         "args": ["Untitled-1.bmp", "Untitled-2.bmp"],
         "stopAtEntry": false,
         "cwd": "${fileDirname}",
