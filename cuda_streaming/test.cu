@@ -25,7 +25,8 @@
 #define BLOCK_SIZE (TILE_SIZE + K - 1)
 #define NSTREAMS 1
 #define GPU
-#define FILTER
+//#define FILTER
+#define HEATMAP
 
 using namespace cv;
 
@@ -90,7 +91,11 @@ __global__ void convolution_kernel(uint8_t *current, uint8_t *filtered, int widt
     }
 }
 
-__global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs) {
+__device__ float maxF(float a, float b){
+    return a > b? a : b;
+}
+
+__global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs, uint8_t *d_heat_pixels) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     unsigned int npos;
     int df;
@@ -106,6 +111,19 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int m
         } else {
             current[i] -= df;
         }
+
+    #ifdef HEATMAP
+        if(i%3==0){
+            float ddf = fabsf(current[i] - previous[i]) + fabsf(current[i+1] - previous[i+1]) + fabsf(current[i+2] - previous[i+2]);
+            float diff1 = ddf/(255.0*2.0);
+            float r = fminf(fmaxf(sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
+            float g = fminf(fmaxf(sinf(M_PI*diff1)*255.0, 0.0),255.0);
+            float b = fminf(fmaxf(sinf(M_PI*diff1 + M_PI/2.0)*255.0, 0.0),255.0);
+            d_heat_pixels[i] = b;
+            d_heat_pixels[i+1] = g;
+            d_heat_pixels[i+2] = r;
+        }
+    #endif
 
     }
 }
@@ -317,6 +335,7 @@ int main() {
     uint8_t *d_current, *d_previous;
     uint8_t *d_diff;
     uint8_t *d_filtered;
+    uint8_t *d_heat_pixels;
     int *d_xs;
     unsigned int *d_pos;
     cudaStream_t streams[4];
@@ -332,6 +351,7 @@ int main() {
     cudaMalloc((void **)&d_current, total * sizeof *d_current);
     cudaMalloc((void **)&d_previous, total * sizeof *d_previous);
     cudaMalloc((void **)&d_filtered, total * sizeof *d_filtered);
+    cudaMalloc((void **)&d_heat_pixels, total * sizeof *d_heat_pixels);
 
     cudaMalloc((void **)&d_pos, sizeof *d_pos);
     // cudaMemset((void *)d_pos, 0, sizeof *d_pos);
@@ -378,6 +398,7 @@ int main() {
 #endif
 
     Mat previous = ctx.sampleMat->clone();
+    Mat heatMap = ctx.sampleMat->clone();
 
     auto begin0 = std::chrono::high_resolution_clock::now();
     while (1) {
@@ -442,13 +463,16 @@ int main() {
         cudaDeviceSynchronize();
 
         cudaMemset(d_pos, 0, sizeof *d_pos);
-        kernel<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(d_filtered, dprev4_0, ddiff_0, max4, d_pos, d_xs);
+        kernel<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(d_filtered, dprev4_0, ddiff_0, max4, d_pos, d_xs, d_heat_pixels);
     #else
         cudaMemset(d_pos, 0, sizeof *d_pos);
-        kernel<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs);
+        kernel<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs, d_heat_pixels);
     #endif
 
         cudaMemcpyAsync(pready->pframe->data, ddiff_0, tot4, cudaMemcpyDeviceToHost, streams[0]);//TODO: *h_pos instead of tot4
+        #ifdef HEATMAP
+        cudaMemcpyAsync(heatMap.data, d_heat_pixels, tot4, cudaMemcpyDeviceToHost, streams[0]);//TODO: *h_pos instead of tot4
+        #endif
         cudaMemcpyAsync(pready->h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost, streams[0]);
 
         // cudaMemcpyAsync(dcurr4_1, pready->pframe->data + tot4, tot4, cudaMemcpyHostToDevice, streams[1]);
@@ -471,6 +495,12 @@ int main() {
 
         cudaDeviceSynchronize();
         cudaMemcpy(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
+
+        #ifdef HEATMAP
+        namedWindow("ht", WINDOW_GUI_NORMAL);
+        imshow("ht", heatMap);
+        if (waitKey(10) == 27) break;  // stop capturing by pressing ESC
+        #endif
 
 #endif
         auto end3 = std::chrono::high_resolution_clock::now();
