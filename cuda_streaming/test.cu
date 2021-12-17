@@ -27,6 +27,10 @@
 #define GPU
 //#define FILTER
 #define HEATMAP
+#define LR_THRESHOLDS 20
+#define NSTREAMS 1
+#define GPU
+#define KERNEL2_NEGFEED_OPT
 
 using namespace cv;
 
@@ -36,6 +40,12 @@ struct mat_ready {
     unsigned int h_pos;
 };
 
+struct cb_args {
+    unsigned int *d_pos;
+    int show_w_fd;
+    struct mat_ready *pready;
+};
+
 struct ctxs {
     VideoCapture *cap;
     int cap_w_fd;
@@ -43,10 +53,6 @@ struct ctxs {
     int show_r_fd;
     int ptr_w_fd;
     int ptr_r_fd;
-    int proc_w_fd;
-    int proc_w_fd_B;
-    // unsigned int **phpos;
-    // int **pxs;
 };
 
 #ifdef GPU
@@ -91,41 +97,76 @@ __global__ void convolution_kernel(uint8_t *current, uint8_t *filtered, int widt
     }
 }
 
-__device__ float maxF(float a, float b){
-    return a > b? a : b;
-}
+/*
+Optimizations done:
+ - compute difference int by int instead of uint8 by uint8
+ - same stuff on updating current[i]
+*/
 
-__global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs, uint8_t *d_heat_pixels) {
+__global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs, uint8_t *d_heat_pixels) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     unsigned int npos;
     int df;
+    int cc, pc;
+    bool currUpdateRequired = false;
 
-    int max = x * maxSect + maxSect;
-    for (int i = x * maxSect; i < max; i++) {
+    if (x == 0) {
+        // s_pos[0] = 0;
+        atomicAnd(pos, 0x0);
+    }
 
-        df = current[i] - previous[i];
-        if (df < -20 || df > 20) {
-            npos = atomicInc(pos, 6220801);
-            diff[npos] = df;
-            xs[npos] = i;
-        } else {
-            current[i] -= df;
+    __syncthreads();
+
+    int start = x * maxSect;
+    int max = start + maxSect;
+
+    #pragma unroll
+    for (int i = start; i < max; i++) {
+
+        cc = ((int *)current)[i];
+        pc = ((int *)previous)[i];
+
+        #pragma unroll
+        for (int j = 0; j < 4; j++) {
+            df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
+
+            if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+                npos = atomicInc(pos, 6220801);
+                diff[npos] = df;
+                xs[npos] = i*4 + j;
+            } else {
+
+#ifdef KERNEL2_NEGFEED_OPT
+                ((uint8_t *)&cc)[j] -= df;
+                currUpdateRequired = true;
+#else 
+                current[i*4 + j] -= df;
+#endif
+            }
+        #ifdef HEATMAP
+            if((i*4+j)%3==0){
+                float ddf = fabsf(((uint8_t *)&cc)[0] - ((uint8_t *)&pc)[0]) + fabsf(((uint8_t *)&cc)[1] - ((uint8_t *)&pc)[1]) + fabsf(((uint8_t *)&cc)[2] - ((uint8_t *)&pc)[2]);
+                float diff1 = ddf/(255.0*2.0);
+                float r = fminf(fmaxf(sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
+                float g = fminf(fmaxf(sinf(M_PI*diff1)*255.0, 0.0),255.0);
+                float b = fminf(fmaxf(sinf(M_PI*diff1 + M_PI/2.0)*255.0, 0.0),255.0);
+                // int newVal = (b)
+                d_heat_pixels[i*4+j] = b;
+                d_heat_pixels[i*4+j+1] = g;
+                d_heat_pixels[i*4+j+2] = r;
+            }
+        #endif
         }
 
-    #ifdef HEATMAP
-        if(i%3==0){
-            float ddf = fabsf(current[i] - previous[i]) + fabsf(current[i+1] - previous[i+1]) + fabsf(current[i+2] - previous[i+2]);
-            float diff1 = ddf/(255.0*2.0);
-            float r = fminf(fmaxf(sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
-            float g = fminf(fmaxf(sinf(M_PI*diff1)*255.0, 0.0),255.0);
-            float b = fminf(fmaxf(sinf(M_PI*diff1 + M_PI/2.0)*255.0, 0.0),255.0);
-            d_heat_pixels[i] = b;
-            d_heat_pixels[i+1] = g;
-            d_heat_pixels[i+2] = r;
+#ifdef KERNEL2_NEGFEED_OPT
+        if (currUpdateRequired) {
+            ((int *)current)[i] = cc;
+            currUpdateRequired = false;
         }
-    #endif
+#endif
 
     }
+
 }
 #endif
 
@@ -193,7 +234,7 @@ void *th_show_hdl(void *args) {
 
     while(1) {
         read(pctx->show_r_fd, &pready, sizeof pready);
-        // printf("show on %p\n", pframe);
+        // printf("show (%d) on %p\n", pready->h_pos, pready->pframe);
 
         if (skip ^= 1) {
             skip = true;
@@ -212,19 +253,19 @@ void *th_show_hdl(void *args) {
         // }
 
         int ret = write(sfd2, &pready->h_pos, sizeof pready->h_pos);
-        if (ret != sizeof pready->h_pos) {
-            perror("write1");
-        }
+        // if (ret != sizeof pready->h_pos) {
+        //     perror("write1");
+        // }
 
         ret = write(sfd2, pready->h_xs, pready->h_pos * sizeof *pready->h_xs);
-        if (ret != pready->h_pos * sizeof *pready->h_xs) {
-            perror("write2");
-        }
+        // if (ret != pready->h_pos * sizeof *pready->h_xs) {
+        //     perror("write2");
+        // }
 
         ret = write(sfd2, pready->pframe->data, pready->h_pos);
-        if (ret != pready->h_pos) {
-            perror("write3");
-        }
+        // if (ret != pready->h_pos) {
+        //     perror("write3");
+        // }
 
 
         write(pctx->ptr_w_fd, &pready, sizeof pready);
@@ -254,14 +295,27 @@ float* computeGaussianKernel(float sigma){
     return k;
 }
 
+void sigpipe_hdl(int sig) {
+    exit(1);
+}
+
+// void cb(cudaStream_t stream, cudaError_t error, void *uData) {
+
+//     struct cb_args *pargs = (struct cb_args *)uData;
+
+//     // cudaMemcpy(&pargs->pready->h_pos, pargs->d_pos, sizeof *pargs->d_pos, cudaMemcpyDeviceToHost); 
+//     write(pargs->show_w_fd, &pargs->pready, sizeof pargs->pready);
+// }
+
+
 int main() {
     // Initialize kernel for filter
     float * k = computeGaussianKernel(2);
 
     VideoCapture cap;
-    if (!cap.open(0, CAP_V4L2)) return 1;
-    auto codec = cv::VideoWriter::fourcc('M','J','P','G');
-    cap.set(cv::CAP_PROP_FOURCC, codec);
+    if (!cap.open("video.mp4")) return 1;
+    // auto codec = cv::VideoWriter::fourcc('M','J','P','G');
+    // cap.set(cv::CAP_PROP_FOURCC, codec);
 
 
     cap.set(3, 1920);
@@ -273,28 +327,19 @@ int main() {
     int cap_pipe[2];
     int show_pipe[2];
     int ptr_pipe[2];
-    int fork_pipe[2];
-    int fork_pipe_B[2];
     pipe(cap_pipe);
     pipe(show_pipe);
     pipe(ptr_pipe);
-    pipe(fork_pipe);
-    pipe(fork_pipe_B);
 
-    pthread_mutex_t fifosize_mtx;
-    pthread_mutex_init(&fifosize_mtx, NULL);
+    signal(SIGPIPE, sigpipe_hdl);
 
-    int *h_xs;
-    unsigned int *h_pos;
     struct ctxs ctx = { 
         .cap = &cap,
         .cap_w_fd = cap_pipe[1], 
         .sampleMat = &base ,
         .show_r_fd = show_pipe[0],
         .ptr_w_fd = ptr_pipe[1],
-        .ptr_r_fd = ptr_pipe[0],
-        .proc_w_fd = fork_pipe[1],
-        .proc_w_fd_B = fork_pipe_B[1]
+        .ptr_r_fd = ptr_pipe[0]
     };
 
     pthread_t th_cap;
@@ -303,7 +348,7 @@ int main() {
     pthread_create(&th_show, NULL, th_show_hdl, &ctx);
 
     struct mat_ready *pready;
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 6; i++) {
 
         pready = new struct mat_ready;
 
@@ -354,36 +399,29 @@ int main() {
     cudaMalloc((void **)&d_heat_pixels, total * sizeof *d_heat_pixels);
 
     cudaMalloc((void **)&d_pos, sizeof *d_pos);
-    // cudaMemset((void *)d_pos, 0, sizeof *d_pos);
 
-    uint8_t *h_diff, *h_diff2, *h_current;
-    int *h_xs2;
-    cudaMallocHost((void **)&h_diff, total * sizeof *h_diff);
-    cudaMallocHost((void **)&h_diff2, total * sizeof *h_diff2);
+    uint8_t *h_current;
     cudaMallocHost((void **)&h_current, total * sizeof *h_current);
-    cudaMallocHost((void **)&h_pos, sizeof *h_pos);
-    cudaMallocHost((void **)&h_xs, total * sizeof *h_xs);
-    cudaMallocHost((void **)&h_xs2, total * sizeof *h_xs2);
 
     int maxAtTime = total / prop.maxThreadsPerBlock;
     cudaMemcpy(d_current, ctx.sampleMat->data, total * sizeof *ctx.sampleMat->data, cudaMemcpyHostToDevice);
     cudaMemcpy(d_filtered, ctx.sampleMat->data, total * sizeof *ctx.sampleMat->data, cudaMemcpyHostToDevice);
 
     int tot4 = total / 1;
-    int max4 = maxAtTime / 1;
+    int max4 = maxAtTime / 4;
     uint8_t *dcurr4_0 = d_current;
-    uint8_t *dcurr4_1 = d_current + tot4;
-    uint8_t *dcurr4_2 = d_current + tot4;
-    uint8_t *dcurr4_3 = d_current + 3*tot4;
+    // uint8_t *dcurr4_1 = d_current + tot4;
+    // uint8_t *dcurr4_2 = d_current + tot4;
+    // uint8_t *dcurr4_3 = d_current + 3*tot4;
     uint8_t *dprev4_0 = d_previous;
-    uint8_t *dprev4_1 = d_previous + tot4;
-    uint8_t *dprev4_2 = d_previous + tot4;
-    uint8_t *dprev4_3 = d_previous + 3*tot4;
+    // uint8_t *dprev4_1 = d_previous + tot4;
+    // uint8_t *dprev4_2 = d_previous + tot4;
+    // uint8_t *dprev4_3 = d_previous + 3*tot4;
     uint8_t *ddiff_0 = d_diff;
     uint8_t *dfiltered_0 = d_filtered;
-    uint8_t *ddiff_1 = d_diff + tot4;
-    uint8_t *ddiff_2 = d_diff + tot4;
-    uint8_t *ddiff_3 = d_diff + 3*tot4;
+    // uint8_t *ddiff_1 = d_diff + tot4;
+    // uint8_t *ddiff_2 = d_diff + tot4;
+    // uint8_t *ddiff_3 = d_diff + 3*tot4;
     // uint8_t *pframe_0 = pframe->data;
     // uint8_t *pframe_1 = pframe->data + total/4;
     // uint8_t *pframe_2 = pframe->data + total/2;
@@ -396,6 +434,10 @@ int main() {
     gridSize.y = ceil((float)ctx.sampleMat->rows/TILE_SIZE),
     gridSize.z = 1;
 #endif
+
+    struct cb_args *pargs = new struct cb_args;
+    pargs->d_pos = d_pos;
+    pargs->show_w_fd = show_pipe[1];
 
     Mat previous = ctx.sampleMat->clone();
     Mat heatMap = ctx.sampleMat->clone();
@@ -412,11 +454,16 @@ int main() {
 #ifdef CPU
         Mat pvs = pready->pframe->clone();
 
-        *h_pos = 0;
-        for (int i = total-1; i >= 0; i--) {
-            pready->pframe->data[*h_pos] = pready->pframe->data[i] - previous.data[i];
-            pready->h_xs[*h_pos] = i;
-            (*h_pos)++;
+        pready->h_pos = 0;
+        for (int i = 0; i < total; i++) {
+            int df = pready->pframe->data[i] - previous.data[i];
+            if (df < -LR_THRESHOLDS | df > LR_THRESHOLDS) {
+                pready->pframe->data[pready->h_pos] = df;
+                pready->h_xs[pready->h_pos] = i;
+                pready->h_pos++;
+            } else {
+                pready->pframe->data[i] -= df;
+            }
         }
 
         previous = pvs;
@@ -433,9 +480,9 @@ int main() {
         dprev4_0 = d_prev;
     #endif
 
-        d_prev = dcurr4_1;
-        dcurr4_1 = dprev4_1;
-        dprev4_1 = d_prev;
+        // d_prev = dcurr4_1;
+        // dcurr4_1 = dprev4_1;
+        // dprev4_1 = d_prev;
 
         // d_prev = d_current;
         // d_current = d_previous;
@@ -453,7 +500,6 @@ int main() {
         // dcurr4_3 = dprev4_3;
         // dprev4_3 = d_prev;
 
-
         // Apply filter
         cudaMemcpyAsync(dcurr4_0, pready->pframe->data, tot4, cudaMemcpyHostToDevice, streams[0]);
     
@@ -463,10 +509,10 @@ int main() {
         cudaDeviceSynchronize();
 
         cudaMemset(d_pos, 0, sizeof *d_pos);
-        kernel<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(d_filtered, dprev4_0, ddiff_0, max4, d_pos, d_xs, d_heat_pixels);
+        kernel2<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(d_filtered, dprev4_0, ddiff_0, max4, d_pos, d_xs, d_heat_pixels);
     #else
         cudaMemset(d_pos, 0, sizeof *d_pos);
-        kernel<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs, d_heat_pixels);
+        kernel2<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs, d_heat_pixels);
     #endif
 
         cudaMemcpyAsync(pready->pframe->data, ddiff_0, tot4, cudaMemcpyDeviceToHost, streams[0]);//TODO: *h_pos instead of tot4
@@ -474,6 +520,7 @@ int main() {
         cudaMemcpyAsync(heatMap.data, d_heat_pixels, tot4, cudaMemcpyDeviceToHost, streams[0]);//TODO: *h_pos instead of tot4
         #endif
         cudaMemcpyAsync(pready->h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost, streams[0]);
+
 
         // cudaMemcpyAsync(dcurr4_1, pready->pframe->data + tot4, tot4, cudaMemcpyHostToDevice, streams[1]);
         // kernel<<<1, prop.maxThreadsPerBlock, 0, streams[1]>>>(dcurr4_1, dprev4_1, ddiff_1, max4, d_pos, d_xs);
@@ -494,7 +541,7 @@ int main() {
         // cudaMemcpyAsync(pframe_3, ddiff_3, tot4, cudaMemcpyDeviceToHost, streams[3]);
 
         cudaDeviceSynchronize();
-        cudaMemcpy(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
+        // cudaMemcpy(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
 
         #ifdef HEATMAP
         namedWindow("ht", WINDOW_GUI_NORMAL);

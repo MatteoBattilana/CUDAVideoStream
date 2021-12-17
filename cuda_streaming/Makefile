@@ -1,16 +1,17 @@
 CC = /usr/local/cuda/bin/nvcc
+PROFILER = /usr/local/cuda/bin/nvprof
 LFLAGS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio -lpthread -L/usr/local/lib
 LFLAGS += -lv4l2
-CFLAGS += -std=c++11 -g 
+CFLAGS += -std=c++11 -g -lineinfo
 INCLUDES += -I/usr/include/opencv4
 # INCLUDES += 
 # SRCS += server.cu v4l.cpp
-SRCS += server.cu
+SRCS += test.cu
 
 all: build run
 
-build: 
-	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) -o server
+build: test 
+	# $(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) -o server
 
 run:
 	./server
@@ -23,3 +24,6 @@ test2:
 
 test3:
 	$(CC) $(CFLAGS) $(INCLUDES) test3.cu -o server
+
+prof: 
+	sudo $(PROFILER) ./server
