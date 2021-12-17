@@ -103,7 +103,7 @@ Optimizations done:
  - same stuff on updating current[i]
 */
 
-__global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs, uint8_t *d_heat_pixels) {
+__global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs, uint8_t* d_heat_pixels) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     unsigned int npos;
     int df;
@@ -126,9 +126,11 @@ __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int 
         cc = ((int *)current)[i];
         pc = ((int *)previous)[i];
 
+        int pixelDiff = 0;
         #pragma unroll
         for (int j = 0; j < 4; j++) {
             df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
+            pixelDiff += fabsf(df);
 
             if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
                 npos = atomicInc(pos, 6220801);
@@ -143,17 +145,25 @@ __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int 
                 current[i*4 + j] -= df;
 #endif
             }
+            /**
+            Optimization: 
+            - Move inside kernel diff
+            - Access in reading using int
+            - Used df instead ((uint8_t *)&cc)[0] - ((uint8_t *)&pc)[0]) -> ddf = fabsf(((uint8_t *)&cc)[0] - ((uint8_t *)&pc)[0]) + fabsf(((uint8_t *)&cc)[1] - ((uint8_t *)&pc)[1]) + fabsf(((uint8_t *)&cc)[2] - ((uint8_t *)&pc)[2]);
+            - Take pixel and use cumulative df  i*4+j%3==0 ->  i*4+j%3==2
+            - --use_fast_math compiler flag
+            */
         #ifdef HEATMAP
-            if((i*4+j)%3==0){
-                float ddf = fabsf(((uint8_t *)&cc)[0] - ((uint8_t *)&pc)[0]) + fabsf(((uint8_t *)&cc)[1] - ((uint8_t *)&pc)[1]) + fabsf(((uint8_t *)&cc)[2] - ((uint8_t *)&pc)[2]);
-                float diff1 = ddf/(255.0*2.0);
+            int pos = i*4+j;
+            if( pos%3==2){
+                float diff1 = pixelDiff/(255*3.0);
                 float r = fminf(fmaxf(sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
                 float g = fminf(fmaxf(sinf(M_PI*diff1)*255.0, 0.0),255.0);
                 float b = fminf(fmaxf(sinf(M_PI*diff1 + M_PI/2.0)*255.0, 0.0),255.0);
-                // int newVal = (b)
-                d_heat_pixels[i*4+j] = b;
-                d_heat_pixels[i*4+j+1] = g;
-                d_heat_pixels[i*4+j+2] = r;
+                // *((int*)(d_heat_pixels+pos-2)) = (int)(d_heat_pixels[pos] | r << 16 | g << 8 | b );
+                d_heat_pixels[pos-2] = b;
+                d_heat_pixels[pos-1] = g;
+                d_heat_pixels[pos] = r;
             }
         #endif
         }
@@ -307,15 +317,20 @@ void sigpipe_hdl(int sig) {
 //     write(pargs->show_w_fd, &pargs->pready, sizeof pargs->pready);
 // }
 
-
 int main() {
     // Initialize kernel for filter
     float * k = computeGaussianKernel(2);
 
     VideoCapture cap;
-    if (!cap.open("video.mp4")) return 1;
-    // auto codec = cv::VideoWriter::fourcc('M','J','P','G');
-    // cap.set(cv::CAP_PROP_FOURCC, codec);
+    if (!cap.open(0, CAP_V4L2)) return 1;
+    auto codec = cv::VideoWriter::fourcc('M','J','P','G');
+    cap.set(cv::CAP_PROP_FOURCC, codec);
+
+    // VideoCapture cap("v4l2src device=/dev/video0 ! video/x-raw, format=YUY2, width=640, height=480, framerate=30/1 ! nvvidconv ! video/x-raw(memory:NVMM) ! nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink", cv::CAP_GSTREAMER);
+    // VideoCapture cap("v4l2src device=%s ! video/x-raw, width=640, height=480, format=(string)YUY2, \
+    //             framerate=30/1 ! videoconvert ! video/x-raw, format=BGR ! appsink", cv::CAP_GSTREAMER);
+    // VideoCapture cap;
+    // if (!cap.open("v4l2src device=/dev/video0 io-mode=2 ! image/jpeg, width=1920, height=1080 ! nvjpegdec ! video/x-raw ! videoconvert ! video/x-raw, format=BGR ! appsink", CAP_GSTREAMER)) return 1;
 
 
     cap.set(3, 1920);
@@ -500,27 +515,29 @@ int main() {
         // dcurr4_3 = dprev4_3;
         // dprev4_3 = d_prev;
 
-        // Apply filter
-        cudaMemcpyAsync(dcurr4_0, pready->pframe->data, tot4, cudaMemcpyHostToDevice, streams[0]);
-    
-    #ifdef FILTER
+        // cudaMemset(d_pos, 0, sizeof *d_pos);
+
+        cudaMemcpyAsync(dcurr4_0, pready->pframe->data, tot4, cudaMemcpyHostToDevice);
+        #ifdef FILTER
         convolution_kernel<<<gridSize, blockSize>>>(dcurr4_0, d_filtered, ctx.sampleMat->cols, ctx.sampleMat->rows);
-        //kern_test<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(dcurr4_0, d_filtered, max4);
+        kernel2<<<1, prop.maxThreadsPerBlock, 0>>>(d_filtered, dprev4_0, ddiff_0, max4, d_pos, d_xs, d_heat_pixels);       
+        #else
+        kernel2<<<1, prop.maxThreadsPerBlock, 0>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs, d_heat_pixels);
+        #endif
+        
+        cudaMemcpyAsync(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
         cudaDeviceSynchronize();
-
-        cudaMemset(d_pos, 0, sizeof *d_pos);
-        kernel2<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(d_filtered, dprev4_0, ddiff_0, max4, d_pos, d_xs, d_heat_pixels);
-    #else
-        cudaMemset(d_pos, 0, sizeof *d_pos);
-        kernel2<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs, d_heat_pixels);
-    #endif
-
-        cudaMemcpyAsync(pready->pframe->data, ddiff_0, tot4, cudaMemcpyDeviceToHost, streams[0]);//TODO: *h_pos instead of tot4
+        cudaMemcpyAsync(pready->pframe->data, ddiff_0, pready->h_pos, cudaMemcpyDeviceToHost);//TODO: *h_pos instead of tot4
+        cudaMemcpyAsync(pready->h_xs, d_xs, pready->h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost);
         #ifdef HEATMAP
         cudaMemcpyAsync(heatMap.data, d_heat_pixels, tot4, cudaMemcpyDeviceToHost, streams[0]);//TODO: *h_pos instead of tot4
         #endif
-        cudaMemcpyAsync(pready->h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost, streams[0]);
 
+        // pargs->pready = pready;
+        // cudaStreamAddCallback(streams[nstream], cb, (void *)pargs, 0);
+
+        // nstream++;
+        // nstream %= 4;
 
         // cudaMemcpyAsync(dcurr4_1, pready->pframe->data + tot4, tot4, cudaMemcpyHostToDevice, streams[1]);
         // kernel<<<1, prop.maxThreadsPerBlock, 0, streams[1]>>>(dcurr4_1, dprev4_1, ddiff_1, max4, d_pos, d_xs);
@@ -544,11 +561,10 @@ int main() {
         // cudaMemcpy(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
 
         #ifdef HEATMAP
-        namedWindow("ht", WINDOW_GUI_NORMAL);
-        imshow("ht", heatMap);
-        if (waitKey(10) == 27) break;  // stop capturing by pressing ESC
+        // namedWindow("ht", WINDOW_GUI_NORMAL);
+        // imshow("ht", heatMap);
+        // if (waitKey(10) == 27) break;  // stop capturing by pressing ESC
         #endif
-
 #endif
         auto end3 = std::chrono::high_resolution_clock::now();
 
