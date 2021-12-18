@@ -38,6 +38,31 @@ __global__ void kernel(uint8_t *a, uint8_t *b) {
     
 }
 
+__global__ void kernel2(uint8_t *a, uint8_t *b) {
+    int tid = threadIdx.x;
+    int *pa, *pb;
+    int ca, cb;
+
+    for (int i = 2 * tid; i < 2 * tid + 2; i++) {
+
+        ca = ((int *)a)[i];
+        cb = ((int *)b)[i];
+
+        // printf("ca %d\n", ca);
+
+        ((int *)a)[i] = __vsub4(ca, cb);
+
+        // #pragma unroll
+        // for (int j = 0; j < 4; j++) {
+        //     // printf("%d] new ca[%d %d]: %d - %d\n", i, i, j, ((uint8_t *)&ca)[j], ((uint8_t *)&cb)[j]);
+        //     ((uint8_t *)&ca)[j] -= ((uint8_t *)&cb)[j];
+        // }
+
+        // ((int *)a)[i] = ca;
+    }
+    
+}
+
 int main() {
 
     uint8_t *d_a, *d_b;
@@ -51,7 +76,8 @@ int main() {
     cudaMemcpy(d_a, h_a, 16, cudaMemcpyHostToDevice);
     cudaMemcpy(d_b, h_b, 16, cudaMemcpyHostToDevice);
 
-    kernel<<<1, 2>>>(d_a, d_b);
+    for (int i = 0; i < 30000; i++)
+        kernel2<<<1, 2>>>(d_a, d_b);
 
     cudaMemcpy(h_a, d_a, 16, cudaMemcpyDeviceToHost);
 

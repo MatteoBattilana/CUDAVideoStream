@@ -149,6 +149,7 @@ __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int 
     }
 
 }
+
 #endif
 
 void *th_cap_hdl(void *args) {
@@ -273,6 +274,12 @@ int main() {
     if (!cap.open(0, CAP_V4L2)) return 1;
     auto codec = cv::VideoWriter::fourcc('M','J','P','G');
     cap.set(cv::CAP_PROP_FOURCC, codec);
+
+    // VideoCapture cap("v4l2src device=/dev/video0 ! video/x-raw, format=YUY2, width=640, height=480, framerate=30/1 ! nvvidconv ! video/x-raw(memory:NVMM) ! nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink", cv::CAP_GSTREAMER);
+    // VideoCapture cap("v4l2src device=%s ! video/x-raw, width=640, height=480, format=(string)YUY2, \
+    //             framerate=30/1 ! videoconvert ! video/x-raw, format=BGR ! appsink", cv::CAP_GSTREAMER);
+    // VideoCapture cap;
+    // if (!cap.open("v4l2src device=/dev/video0 io-mode=2 ! image/jpeg, width=1920, height=1080 ! nvjpegdec ! video/x-raw ! videoconvert ! video/x-raw, format=BGR ! appsink", CAP_GSTREAMER)) return 1;
 
 
     cap.set(3, 1920);
@@ -439,9 +446,10 @@ int main() {
 
         cudaMemcpyAsync(dcurr4_0, pready->pframe->data, tot4, cudaMemcpyHostToDevice);
         kernel2<<<1, prop.maxThreadsPerBlock, 0>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs);
-        cudaMemcpyAsync(pready->pframe->data, ddiff_0, tot4, cudaMemcpyDeviceToHost);//TODO: *h_pos instead of tot4
-        cudaMemcpyAsync(pready->h_xs, d_xs, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost);
         cudaMemcpyAsync(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
+        cudaDeviceSynchronize();
+        cudaMemcpyAsync(pready->pframe->data, ddiff_0, pready->h_pos, cudaMemcpyDeviceToHost);//TODO: *h_pos instead of tot4
+        cudaMemcpyAsync(pready->h_xs, d_xs, pready->h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost);
 
         // pargs->pready = pready;
         // cudaStreamAddCallback(streams[nstream], cb, (void *)pargs, 0);
