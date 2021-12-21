@@ -1,0 +1,4 @@
+\BOOKMARK [1][-]{section.1}{Introduction}{}% 1
+\BOOKMARK [1][-]{section.2}{HeatMap}{}% 2
+\BOOKMARK [2][-]{subsection.2.1}{Heat map pixel mapping - Naif implementation}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.2}{CUDA heat map implementation}{section.2}% 4
