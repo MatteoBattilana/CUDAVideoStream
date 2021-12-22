@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  22 DEC 2021 20:38
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  22 DEC 2021 21:46
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -939,7 +939,7 @@ Package microtype Info: Character `029' is missing
  [1
 
 {/home/gabriele97/.texlive2021/local/texlive/2021/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-LaTeX Font Info:    Trying to load font information for T1+lmss on input line 156.
+LaTeX Font Info:    Trying to load font information for T1+lmss on input line 155.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/t1lmss.fd
 File: t1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -947,56 +947,57 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-
-Underfull \hbox (badness 10000) in paragraph at lines 158--159
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 160--161
-
- []
-
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 162.
-(/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ot1lmr.fd
+Package tocbasic Info: character protrusion at toc deactivated on input line 155.
+ (./report.toc
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 4.
+ (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OML+lmm on input line 162.
+LaTeX Font Info:    Trying to load font information for OML+lmm on input line 4.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 162.
+LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 4.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 162.
+LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 4.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 162.
+(Font)              <10> on input line 4.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 162.
+(Font)              <7> on input line 4.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 162.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 162.
+(Font)              <5> on input line 4.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 4.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 162.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 4.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
-)
-Underfull \hbox (badness 10000) in paragraph at lines 162--163
+))
+\tf@toc=\write5
+\openout5 = `report.toc'.
+
+ [2]
+Underfull \hbox (badness 10000) in paragraph at lines 164--165
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 164--165
+Underfull \hbox (badness 10000) in paragraph at lines 166--167
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 168--169
 
  []
 
@@ -1005,11 +1006,16 @@ Underfull \hbox (badness 10000) in paragraph at lines 170--171
 
  []
 
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 176.
+
+Underfull \hbox (badness 10000) in paragraph at lines 176--177
+
+ []
+
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 182.
 (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 176.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 182.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -1018,16 +1024,16 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Underfull \hbox (badness 10000) in paragraph at lines 181--182
+Underfull \hbox (badness 10000) in paragraph at lines 187--188
 
  []
 
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.196 	\end{center}
+l.202 	\end{center}
                     [1]
-Underfull \hbox (badness 10000) in paragraph at lines 208--209
+Underfull \hbox (badness 10000) in paragraph at lines 214--215
 
  []
 
@@ -1036,133 +1042,164 @@ File: lstlang1.sty 2020/03/24 1.8d listings language file
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2020/03/24 1.8d (Carsten Heinz)
 )
-Underfull \hbox (badness 10000) in paragraph at lines 230--231
+Underfull \hbox (badness 10000) in paragraph at lines 236--237
 
  []
 
-<images/streaming_ok2.png, id=29, 504.38437pt x 286.82156pt>
+<images/streaming_ok2.png, id=48, 504.38437pt x 286.82156pt>
 File: images/streaming_ok2.png Graphic file (type png)
 <use images/streaming_ok2.png>
-Package pdftex.def Info: images/streaming_ok2.png  used on input line 234.
+Package pdftex.def Info: images/streaming_ok2.png  used on input line 240.
 (pdftex.def)             Requested size: 292.77632pt x 166.4879pt.
-[2 <./images/streaming_ok2.png>]
-<images/streaming_differror.png, id=61, 433.62pt x 246.1697pt>
+pdfTeX warning (ext4): destination with the same identifier (name{page.2}) has been already used, duplicate ignored
+<to be read again> 
+                   \relax 
+l.246 	
+        [2 <./images/streaming_ok2.png>]
+<images/streaming_differror.png, id=78, 433.62pt x 246.1697pt>
 File: images/streaming_differror.png Graphic file (type png)
 <use images/streaming_differror.png>
-Package pdftex.def Info: images/streaming_differror.png  used on input line 243.
+Package pdftex.def Info: images/streaming_differror.png  used on input line 249.
 (pdftex.def)             Requested size: 292.77632pt x 166.21747pt.
-<images/chart1.png, id=62, 607.26875pt x 341.275pt>
+<images/chart1.png, id=79, 607.26875pt x 341.275pt>
 File: images/chart1.png Graphic file (type png)
 <use images/chart1.png>
-Package pdftex.def Info: images/chart1.png  used on input line 252.
+Package pdftex.def Info: images/chart1.png  used on input line 258.
 (pdftex.def)             Requested size: 334.60425pt x 188.0455pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 257--258
+Underfull \hbox (badness 10000) in paragraph at lines 263--264
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 259--260
+Underfull \hbox (badness 10000) in paragraph at lines 265--266
 
  []
 
 [3 <./images/streaming_differror.png> <./images/chart1.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 313--314
+Underfull \hbox (badness 10000) in paragraph at lines 319--320
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 326--327
+Underfull \hbox (badness 10000) in paragraph at lines 332--333
 
  []
 
 [4]
-Underfull \hbox (badness 10000) in paragraph at lines 354--355
+Underfull \hbox (badness 10000) in paragraph at lines 360--361
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 375--376
+Underfull \hbox (badness 10000) in paragraph at lines 381--382
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 385--386
+Underfull \hbox (badness 10000) in paragraph at lines 391--392
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 387--388
+Underfull \hbox (badness 10000) in paragraph at lines 393--394
 
  []
 
 [5]
-Underfull \hbox (badness 10000) in paragraph at lines 420--421
+Underfull \hbox (badness 10000) in paragraph at lines 426--427
 
  []
 
-<images/chart2.png, id=134, 607.26875pt x 341.275pt>
+<images/chart2.png, id=151, 607.26875pt x 341.275pt>
 File: images/chart2.png Graphic file (type png)
 <use images/chart2.png>
-Package pdftex.def Info: images/chart2.png  used on input line 426.
+Package pdftex.def Info: images/chart2.png  used on input line 432.
 (pdftex.def)             Requested size: 334.60425pt x 188.0455pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 454--455
+Underfull \hbox (badness 10000) in paragraph at lines 460--461
 
  []
 
 [6 <./images/chart2.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 456--457
+Underfull \hbox (badness 10000) in paragraph at lines 462--463
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 476--477
+Underfull \hbox (badness 10000) in paragraph at lines 482--483
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 499--500
+Underfull \hbox (badness 10000) in paragraph at lines 505--506
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 501--502
+Underfull \hbox (badness 10000) in paragraph at lines 507--508
 
  []
 
 [7]
-Underfull \hbox (badness 10000) in paragraph at lines 527--528
+Underfull \hbox (badness 10000) in paragraph at lines 533--534
 
  []
 
-<images/chart3.png, id=202, 607.26875pt x 341.275pt>
+<images/chart3.png, id=216, 607.26875pt x 341.275pt>
 File: images/chart3.png Graphic file (type png)
 <use images/chart3.png>
-Package pdftex.def Info: images/chart3.png  used on input line 568.
+Package pdftex.def Info: images/chart3.png  used on input line 574.
 (pdftex.def)             Requested size: 334.60425pt x 188.0455pt.
 [8]
-Underfull \hbox (badness 10000) in paragraph at lines 592--593
+Underfull \hbox (badness 10000) in paragraph at lines 600--601
 
  []
 
-[9 <./images/chart3.png>] (./report.aux)
+
+Underfull \hbox (badness 10000) in paragraph at lines 602--603
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 604--605
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 606--607
+
+ []
+
+[9 <./images/chart3.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 608--609
+
+ []
+
+<images/chart4.png, id=284, 607.26875pt x 427.5975pt>
+File: images/chart4.png Graphic file (type png)
+<use images/chart4.png>
+Package pdftex.def Info: images/chart4.png  used on input line 624.
+(pdftex.def)             Requested size: 334.60425pt x 235.60997pt.
+LaTeX Font Info:    Font shape `T1/lmss/bx/it' in size <10> not available
+(Font)              Font shape `T1/lmss/bx/sl' tried instead on input line 648.
+[10 <./images/chart4.png>] [11] (./report.aux)
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 32151 strings out of 480539
- 599805 string characters out of 5900304
- 1291103 words of memory out of 5000000
- 48860 multiletter control sequences out of 15000+600000
- 472036 words of font info for 144 fonts, out of 8000000 for 9000
+ 32219 strings out of 480539
+ 600964 string characters out of 5900304
+ 1291301 words of memory out of 5000000
+ 48901 multiletter control sequences out of 15000+600000
+ 475191 words of font info for 148 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  125i,13n,131p,10693b,1971s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}</home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr5.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr7.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr8.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmri10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on report.pdf (10 pages, 1409259 bytes).
+{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}</home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr5.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr7.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr8.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmri10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmssbo10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
+Output written on report.pdf (13 pages, 1464183 bytes).
 PDF statistics:
- 392 PDF objects out of 1000 (max. 8388607)
- 339 compressed objects within 4 object streams
- 196 named destinations out of 1000 (max. 500000)
- 41558 words of extra memory for PDF output out of 42996 (max. 10000000)
+ 444 PDF objects out of 1000 (max. 8388607)
+ 384 compressed objects within 4 object streams
+ 212 named destinations out of 1000 (max. 500000)
+ 43627 words of extra memory for PDF output out of 51595 (max. 10000000)
 

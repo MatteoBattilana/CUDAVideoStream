@@ -1,0 +1,10 @@
+\babel@toc {english}{}\relax 
+\contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
+\contentsline {section}{\numberline {2}Video Streaming}{1}{section.2}%
+\contentsline {subsection}{\numberline {2.1}CPU Implementation}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}GPU Implementation}{3}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Naif version}{4}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Asynchronous APIs and removal of usefull operations}{7}{subsubsection.2.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.3}Pinned or page-locked memory}{9}{subsubsection.2.2.3}%
+\contentsline {subsubsection}{\numberline {2.2.4}Kernel \textit {uint8\_t} access vs \textit {uint32\_t} access}{10}{subsubsection.2.2.4}%
+\providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

@@ -1282,6 +1282,9 @@ INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/t
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/tfm/public/lm/ec-lmss10.tfm
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/tfm/public/lm/ec-lmssbx10.tfm
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/tfm/public/lm/ec-lmssbx10.tfm
+INPUT ./report.toc
+INPUT report.toc
+INPUT report.toc
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ot1lmr.fd
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ot1lmr.fd
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ot1lmr.fd
@@ -1331,6 +1334,7 @@ INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/micr
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm7.tfm
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm5.tfm
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/tfm/public/lm/ec-lmri10.tfm
+OUTPUT report.toc
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ts1lmr.fd
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ts1lmr.fd
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ts1lmr.fd
@@ -1381,11 +1385,17 @@ INPUT ./images/chart3.png
 INPUT images/chart3.png
 INPUT ./images/chart3.png
 INPUT ./images/chart3.png
+INPUT ./images/chart4.png
+INPUT ./images/chart4.png
+INPUT images/chart4.png
+INPUT ./images/chart4.png
+INPUT ./images/chart4.png
+INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/tfm/public/lm/ec-lmssbo10.tfm
 INPUT report.aux
 INPUT ./report.out
 INPUT ./report.out
-INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc
+INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc
@@ -1398,6 +1408,7 @@ INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/pu
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr7.pfb
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr8.pfb
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmri10.pfb
+INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmssbo10.pfb
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmsy10.pfb
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmtt10.pfb

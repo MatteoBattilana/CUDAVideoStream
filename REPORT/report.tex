@@ -149,6 +149,12 @@
 	\vfill
 	\printauthor				% Print the author data as defined above
 	\newpage
+
+
+	\thispagestyle{empty}		% Remove page numbering on this page
+	\tableofcontents
+	\newpage
+
 	% ------------------------------------------------------------------------------
 	% Begin document
 	% ------------------------------------------------------------------------------
@@ -449,7 +455,7 @@ int maxSect, unsigned int *pos, int *xs) {
 		\label{tab:nvprof_naif}
 	\end{table}
 
-	\subsubsection{GPU - async and removal of usefull operations}
+	\subsubsection{Asynchronous APIs and removal of usefull operations}
 
 	In the previous implementation, a big portion of the execution time is covered by the kernel execution but the two data transfers are not negligible. The total average time is about 46 ms means that the \textit{for} time is for the 60\% due to the GPU computation and the remaining part is related to host taks.\\
 
@@ -589,8 +595,57 @@ int maxSect, unsigned int *pos, int *xs) {
 		\label{tab:nvprof_naif2}
 	\end{table}
 
-	TODO: show a DMA image, explain why it's better the page locked bla bla\\
+	\subsubsection{Pinned or page-locked memory}
 
+	Untill now a good bottleneck has been removed and it is the transfer from the Device to the Host. What about the Host to Device transfer? In order to solve this issue an understanding on how memory is managed by the CPU and how the GPU transfers data from the CPU's managed memory and the GPU.\\
+
+	What a modern operating system does is to manage the physical memory through the concept of pages and thus the virtual memory. The address space of the virtual memory is different from the physical one, thus a translation is needed. In order to let the hardware translate from a space to another, a special hardware called translation lookaside buffer (TLB) is used. It's a memory cache that is used to reduce the time taken to access a user memory location and it's part of the chip's memory-management unit (MMU) needed in fact by all the modern operating systems. The TLB stores the recent translations of virtual memory to physical memory and can be called an address-translation cache.\\
+
+	When a CUDA's memcpy is invoked, the DMA starts transfering data but as soon as the translation is not anymore stored in the cache, the operating system has to solve this situation by loading a new page. Thus this is not really a asynchronous operation and it's highly cpu-dependent. Thus the velocity of the copy is based on the speed of the CPU and in edge devices where the CPU is not so performant as a desktop CPU the overhead of this mechanism can't be neglected.\\
+	
+	The solution is to allocate a piece of memory that is pinned or \textit{page locked}. Executing an allocation like this is like telling the operating system virtual memory manager that the memory pages must stay in physical ram so that they can be directly accessed by the GPU across the PCI-express bus. And it's a lot faster thanks to the DMA: when the memory is page locked, the GPU DMA engine can directly run the transfer without requiring the host CPU, which reduces overall latency and decreases transfer times.\\
+
+	CUDA offers an API to do this, called \texttt{cudaMallocHost()} that works similar to \texttt{cudaMalloc()} but allocates a page-locked memory on the host side. It's required for arrays like \texttt{h\_xs} and \texttt{pready->pframe->data}. If it's pretty easy to be done for \texttt{h\_xs} that is an array directly managed by the code, how is possible to do that for the pframe's data that is something managed by OpenCV? As said at the beginning, the \textit{Mat} object offers a good option, the one to select an external pointer as data array.\\
+
+	\begin{lstlisting}[style=CStyle]
+uint8_t *h_frame;
+cudaMallocHost((void **)&h_frame, total * sizeof *h_frame);
+cudaMallocHost((void **)&pready->h_xs, total * sizeof *pready->h_xs);
+
+// init of Mat object with page-locked h_frame ptr
+pready->pframe = new Mat(ctx.sampleMat->rows,ctx.sampleMat->cols,
+		ctx.sampleMat->type(), h_frame); 
+	\end{lstlisting}
+
+	Without touching anything else, this optimization is able to achieve a good result. The video streaming is elaborated at around 22 fps with an average \texttt{for} time of 43.0 ms and an average \texttt{read} time of 0.0 ms, and the comparison with the previous case can be seen in Figure \ref{fig:chart4}. 
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\linewidth]{images/chart4.png}
+		\caption{\textit{Pixel Difference Comparison}}
+		\label{fig:chart4}
+	\end{figure}
+
+	The results of the \textit{nvprof} profiler are shown in Table \ref{tab:nvprof_naif3} and is noticeable the big improvement in terms of performances for what concerns the HtoD transfer. In fact, it's about 1/4 the original one.
+
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{||c | c c c||} 
+			\hline
+			Operation & Avg (ms) & Min (ms) & Max (ms) \\ [0.5ex] 
+			\hline\hline
+			Kernel & 43.386 & 38.093 & 49.607 \\ 
+			\hdashline
+			DtoH & 0.0102 & 0.0008 & 1.0466 \\
+			\hdashline
+			HtoD & 0.6740 & 0.6096 & 2.2818 \\
+			\hline
+		\end{tabular}
+		\caption{Profiling results}
+		\label{tab:nvprof_naif3}
+	\end{table}
+
+	\subsubsection{Kernel \textit{uint8\_t} access vs \textit{uint32\_t} access}
 
 
 	TODO:
