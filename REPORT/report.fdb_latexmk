@@ -1,5 +1,5 @@
 # Fdb version 3
-["pdflatex"] 1640179474 "/home/gabriele97/Repos/CUDAVideoStream/REPORT/report.tex" "report.pdf" "report" 1640179475
+["pdflatex"] 1640201898 "/home/gabriele97/Repos/CUDAVideoStream/REPORT/report.tex" "report.pdf" "report" 1640201900
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc" 1254269338 2375 baa924870cfb487815765f9094cf3728 ""
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc" 1202520719 2405 5dcf2c1b967ee25cc46c58cd52244aed ""
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc" 1202520719 2840 216e6e45ad352e2456e1149f28885bee ""
@@ -234,15 +234,17 @@
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1636389416 76115 ec242285d43ff56cca29f65afed9ca99 ""
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf-var/web2c/pdftex/pdflatex.fmt" 1636389421 1411214 005e4e47d645b65de149249c236e9f12 ""
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf.cnf" 1636389415 488 741ec02f1ec7fa15d8c3219e74fb1427 ""
-  "/home/gabriele97/Repos/CUDAVideoStream/REPORT/report.tex" 1640179473 18903 619f65b9f4fa93a45ec680d9ffcafd92 ""
+  "/home/gabriele97/Repos/CUDAVideoStream/REPORT/report.tex" 1640201895 29505 b49076aa0272ac4cfa636e4898497009 ""
   "images/chart1.png" 1640175425 15819 65bc41bbb5fc47676c7fbb23109d8654 ""
+  "images/chart2.png" 1640196515 16617 46ad57a9a030c8a642b914f26818309e ""
+  "images/chart3.png" 1640201310 17454 8397b87b59cd16e678cfb598925be6aa ""
   "images/streaming_differror.png" 1640132171 510958 68533f4d3940f5a21088a3e3af23fdfd ""
   "images/streaming_ok2.png" 1640168030 459393 cd8668f628d577cbcdd760bb34c4a1ed ""
-  "report.aux" 1640179475 4063 555f17f1e9493fc3b3258136e4539dd5 "pdflatex"
-  "report.out" 1640179475 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "report.tex" 1640179473 18903 619f65b9f4fa93a45ec680d9ffcafd92 ""
+  "report.aux" 1640201900 5776 99bf5b5c82678d0bf94cfbe530185de2 "pdflatex"
+  "report.out" 1640201900 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
+  "report.tex" 1640201895 29505 b49076aa0272ac4cfa636e4898497009 ""
   (generated)
-  "report.aux"
   "report.out"
-  "report.pdf"
+  "report.aux"
   "report.log"
+  "report.pdf"

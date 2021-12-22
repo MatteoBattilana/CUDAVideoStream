@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  22 DEC 2021 14:24
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  22 DEC 2021 20:38
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1005,11 +1005,11 @@ Underfull \hbox (badness 10000) in paragraph at lines 170--171
 
  []
 
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 175.
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 176.
 (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 175.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 176.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -1018,16 +1018,16 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Underfull \hbox (badness 10000) in paragraph at lines 180--181
+Underfull \hbox (badness 10000) in paragraph at lines 181--182
 
  []
 
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.195 	\end{center}
+l.196 	\end{center}
                     [1]
-Underfull \hbox (badness 10000) in paragraph at lines 206--207
+Underfull \hbox (badness 10000) in paragraph at lines 208--209
 
  []
 
@@ -1036,68 +1036,133 @@ File: lstlang1.sty 2020/03/24 1.8d listings language file
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2020/03/24 1.8d (Carsten Heinz)
 )
-Underfull \hbox (badness 10000) in paragraph at lines 228--229
+Underfull \hbox (badness 10000) in paragraph at lines 230--231
 
  []
 
 <images/streaming_ok2.png, id=29, 504.38437pt x 286.82156pt>
 File: images/streaming_ok2.png Graphic file (type png)
 <use images/streaming_ok2.png>
-Package pdftex.def Info: images/streaming_ok2.png  used on input line 232.
+Package pdftex.def Info: images/streaming_ok2.png  used on input line 234.
 (pdftex.def)             Requested size: 292.77632pt x 166.4879pt.
 [2 <./images/streaming_ok2.png>]
 <images/streaming_differror.png, id=61, 433.62pt x 246.1697pt>
 File: images/streaming_differror.png Graphic file (type png)
 <use images/streaming_differror.png>
-Package pdftex.def Info: images/streaming_differror.png  used on input line 241.
+Package pdftex.def Info: images/streaming_differror.png  used on input line 243.
 (pdftex.def)             Requested size: 292.77632pt x 166.21747pt.
 <images/chart1.png, id=62, 607.26875pt x 341.275pt>
 File: images/chart1.png Graphic file (type png)
 <use images/chart1.png>
-Package pdftex.def Info: images/chart1.png  used on input line 250.
+Package pdftex.def Info: images/chart1.png  used on input line 252.
 (pdftex.def)             Requested size: 334.60425pt x 188.0455pt.
-
-Underfull \hbox (badness 10000) in paragraph at lines 255--256
-
- []
-
 
 Underfull \hbox (badness 10000) in paragraph at lines 257--258
 
  []
 
+
+Underfull \hbox (badness 10000) in paragraph at lines 259--260
+
+ []
+
 [3 <./images/streaming_differror.png> <./images/chart1.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 311--312
+Underfull \hbox (badness 10000) in paragraph at lines 313--314
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 324--325
+Underfull \hbox (badness 10000) in paragraph at lines 326--327
+
+ []
+
+[4]
+Underfull \hbox (badness 10000) in paragraph at lines 354--355
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 351--352
+Underfull \hbox (badness 10000) in paragraph at lines 375--376
 
  []
 
-[4] [5] (./report.aux)
+
+Underfull \hbox (badness 10000) in paragraph at lines 385--386
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 387--388
+
+ []
+
+[5]
+Underfull \hbox (badness 10000) in paragraph at lines 420--421
+
+ []
+
+<images/chart2.png, id=134, 607.26875pt x 341.275pt>
+File: images/chart2.png Graphic file (type png)
+<use images/chart2.png>
+Package pdftex.def Info: images/chart2.png  used on input line 426.
+(pdftex.def)             Requested size: 334.60425pt x 188.0455pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 454--455
+
+ []
+
+[6 <./images/chart2.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 456--457
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 476--477
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 499--500
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 501--502
+
+ []
+
+[7]
+Underfull \hbox (badness 10000) in paragraph at lines 527--528
+
+ []
+
+<images/chart3.png, id=202, 607.26875pt x 341.275pt>
+File: images/chart3.png Graphic file (type png)
+<use images/chart3.png>
+Package pdftex.def Info: images/chart3.png  used on input line 568.
+(pdftex.def)             Requested size: 334.60425pt x 188.0455pt.
+[8]
+Underfull \hbox (badness 10000) in paragraph at lines 592--593
+
+ []
+
+[9 <./images/chart3.png>] (./report.aux)
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 31984 strings out of 480539
- 597327 string characters out of 5900304
- 1285844 words of memory out of 5000000
- 48823 multiletter control sequences out of 15000+600000
- 470592 words of font info for 130 fonts, out of 8000000 for 9000
+ 32151 strings out of 480539
+ 599805 string characters out of 5900304
+ 1291103 words of memory out of 5000000
+ 48860 multiletter control sequences out of 15000+600000
+ 472036 words of font info for 144 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 125i,13n,131p,10693b,1344s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 125i,13n,131p,10693b,1971s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}</home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr5.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr7.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr8.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmri10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on report.pdf (6 pages, 1352853 bytes).
+Output written on report.pdf (10 pages, 1409259 bytes).
 PDF statistics:
- 246 PDF objects out of 1000 (max. 8388607)
- 202 compressed objects within 3 object streams
- 96 named destinations out of 1000 (max. 500000)
- 41540 words of extra memory for PDF output out of 42996 (max. 10000000)
+ 392 PDF objects out of 1000 (max. 8388607)
+ 339 compressed objects within 4 object streams
+ 196 named destinations out of 1000 (max. 500000)
+ 41558 words of extra memory for PDF output out of 42996 (max. 10000000)
 

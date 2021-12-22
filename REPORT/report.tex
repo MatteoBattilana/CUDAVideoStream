@@ -172,6 +172,7 @@
 	All the different variants of implementation that will be analyzed produces three outputs:
 
 	\begin{itemize}
+		\itemsep0sp
 		\item \texttt{h\_pos}: the number of pixels that are different and greather than a certain threshold.
 		\item \texttt{h\_diff}: in code it is actually the array of the current frame that after the application of the algorithm contains the difference of each byte.
 		\item \texttt{h\_xs}: it's a mapping vector for the \texttt{h\_diff}. This means that the \texttt{h\_diff[0]} is the difference of byte elemnt at position \texttt{h\_xs[0]}.
@@ -197,9 +198,10 @@
 	In the following pages, for metric considerations these terms will be used:
 
 	\begin{itemize}
+		\itemsep0sp
 		\item \texttt{fps}: number of frames per second.
-		\item \texttt{for}: time of execution of the elaboration thread.
 		\item \texttt{read}: time of execution of the capture thread.
+		\item \texttt{for}: time of execution of the elaboration thread. This is what is under discussion in this project.
 	\end{itemize}
 
 	\subsection{CPU Implementation}
@@ -248,7 +250,7 @@
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.8\linewidth]{images/chart1.png}
-		\caption{\textit{Pixel Difference COmparison}}
+		\caption{\textit{Pixel Difference Comparison}}
 	\end{figure}
 
 	\subsection{GPU Implementation}
@@ -321,7 +323,7 @@
 	int maxAtTime = total / nMaxThreads;
 	\end{lstlisting}
 
-	According to this, each thread will work on $N = \textit{maxAtTime}$ consecutive bytes, dividing the memory into \textit{nMaxThreads} chunks, and overlapping is totally avoided.\\
+	According to this, each thread will work on $N = \textit{maxAtTime}$ consecutive bytes, dividing the memory into \textit{nMaxThreads} chunks, and overlapping is totally avoided. The GPU used for the experiments allows a maximum of 1024 threads to be executed concurrently.\\
 
 	For what concerns the memory allocation, obviously the CPU address space and the GPU one are two separated things, so a specific allocation on the device side must be done. This can be accomplished thanks to some CUDA's API as follows:
 
@@ -343,6 +345,7 @@
 	The naif version of the implementation is to port as it is the CPU code into a kernel. From the host side (the CPU) that asks to the device (the GPU) to execute the kernel, there are three kind of operations to be done:
 
 	\begin{enumerate}
+		\itemsep0sp
 		\item copy the frame into the GPU's memory
 		\item launch the kernel
 		\item copy back the results from the GPU's memory to the HOST memory
@@ -353,51 +356,240 @@
 	The host will therefore execute the following operations:
 
 	\begin{lstlisting}[style=CStyle]
-	Mat pvs = pready->pframe->clone();
-	cudaMemset(d_pos, 0, sizeof *d_pos);
+cudaMemset(d_pos, 0, sizeof *d_pos);
 
-	cudaMemcpy(d_previous, previous.data, total, cudaMemcpyHostToDevice);
-	cudaMemcpy(d_current,pready->pframe->data,total,cudaMemcpyHostToDevice);
-	kernel<<1,nMaxThreads>>(d_current,d_previous,d_diff,maxAtTime,d_pos,d_xs);
-	cudaMemcpy(pready->pframe->data, d_diff, total, cudaMemcpyDeviceToHost);
-	cudaMemcpy(pready->h_xs,d_xs,total* sizeof*d_xs,cudaMemcpyDeviceToHost);
-	cudaMemcpy(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
+// launch
+cudaMemcpy(d_previous, previous.data, total, cudaMemcpyHostToDevice);
+cudaMemcpy(d_current,pready->pframe->data,total,cudaMemcpyHostToDevice);
+kernel<<<1,nMaxThreads>>>(d_current,d_previous,d_diff,maxAtTime,d_pos,d_xs);
 
-	previous = pvs;
+// copy back
+cudaMemcpy(pready->pframe->data, d_diff, total, cudaMemcpyDeviceToHost);
+cudaMemcpy(pready->h_xs, d_xs, total*sizeof *d_xs, cudaMemcpyDeviceToHost);
+cudaMemcpy(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
+
+// copy previous
+cudaMemcpy(previous.data, d_current, total, cudaMemcpyDeviceToHost);
 	\end{lstlisting}
 
-	It's possible to notice a pretty similar structure of the CPU implementation, where the \textit{for loop} is replaced by the kernel.
+	It's possible to notice a pretty similar structure of the CPU implementation, where the \textit{for loop} is replaced by the kernel. The kernel is launched with a grid dimension of (1, 0, 0) and a block dimension of (\textit{nMaxThreads}, 0, 0), thus only the x dimension is used because the kernel is coded in such a way that the chunk assigned to it is analyzed in a linear way. \\
 	
-	// TODO exaplain how start index is computed
-	// TODO: explain how to implement the thing about the arrays, the atomicInc, npos and so on
+	In order to define the code of the kernel, there are two main problems to be analyzed first:
+
+	\begin{enumerate}
+		\itemsep0sp
+		\item How does the kernel knows at which address it must work?
+		\item How is possible to fill a variable size array in a concurrent environment in CUDA?
+	\end{enumerate}
+
+	The first problem is easily solved, it's only a matter of indexes. Each kernel needs to know which chunk of the memory is assigned to it so first of all it computes it's own unique index that will space from 0 to $nMaxThreads - 1$. Once this is defined, the kernel knows that it must work on the i-th chunk but this needs to be translated into the real index to be used to address the memory. Because each size is \textit{maxAtTime} large, means that the the real index that identifies the start of the chunk is $ threadIndex \cdot maxAtTime$.\\
+
+	The second problem is a bit more complicated to solve. In the CPU implementation a variable h\_pos is used in order to indicize the resulting vectors an incremental way and at the end this variable is used to know the length of the result. The problem when this concept is trasposed to the GPU world is that there is a global variable d\_pos that is used by \textit{nMaxThreads} concurrently so there is the need to read and increment this variable in a safe way, so only a kernel at a time can ready and modify it. Luckly, the CUDA framework offers a series of functions that ensures atomic operations between kernels, and in this case the needed one is \texttt{atomicInc(unsigned int *address, unsigned int val)} where \textit{address} is the pointer to the value that needs to be atomic incremented, \textit{val} is the wraparound value, so the max value that the variable can reach before going again to 0, and it returns as result the value atomically incremented.\\
+
+	After solved those problems, a look at the real implementation of the kernel can be given:
 	
 	\begin{lstlisting}[style=CStyle]
-	__global__ void kernel(
-	uint8_t *current, uint8_t *previous, uint8_t *diff, 
-	int maxSect, unsigned int *pos, int *xs) {
-    int x = threadIdx.x + blockDim.x * blockIdx.x;
-    unsigned int npos;
-    int df;
+__global__ void kernel(
+uint8_t *current, uint8_t *previous, uint8_t *diff, 
+int maxSect, unsigned int *pos, int *xs) {
+	int x = threadIdx.x + blockDim.x * blockIdx.x;
+	unsigned int npos;
+	int df;
 
-    int start = x * maxSect;
-    int max = start + maxSect;
 
-    #pragma unroll
-    for (int i = start; i < max; i++) {
+	int start = x * maxSect;
+	int max = start + maxSect;
 
-        df = current[i] - previous[i];
-        if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
-            npos = atomicInc(pos, 6220801);
-            diff[npos] = df;
-            xs[npos] = i;
-        } else {
-            current[i] -= df;
-        }
+	#pragma unroll
+	for (int i = start; i < max; i++) {
 
-    }
+		df = current[i] - previous[i];
+		if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+			npos = atomicInc(pos, 6220801);
+			diff[npos] = df;
+			xs[npos] = i;
+		} else {
+			current[i] -= df;
+		}
+
+	}
 
 }
 	\end{lstlisting}
+
+	As can be seen, apart the computation of the start and end index of the computation, the for loop is pretty much the same as the CPU implementation. The only difference is the one concerting the use of the \texttt{atomicInc} function as explained before.\\
+
+	The performances here are slightly better than the CPU implementation. The video streaming is elaborated at around 13 fps with an average \texttt{for} time of 70.0 ms and an average \texttt{read} time of 0.0 ms, and the comparison with the previous case can be seen in Figure \ref{fig:chart2}. 
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\linewidth]{images/chart2.png}
+		\caption{\textit{Pixel Difference Comparison}}
+		\label{fig:chart2}
+	\end{figure}
+
+	This means that the big bottleneck is still due to the elaboration part of the software. Using the profiler offered by Nvidia \textit{nvprof} executed for 30 seconds, it's possible to get a lot more details about the time required by each GPU operation, and in particular what concerns this project is the transfer time and the kernel execution time. The results are shows in table \ref{tab:nvprof_naif}.
+
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{||c | c c c||} 
+			\hline
+			Operation & Avg (ms) & Min (ms) & Max (ms) \\ [0.5ex] 
+			\hline\hline
+			Kernel & 40.295 & 35.912 & 47.033 \\ 
+			\hdashline
+			DtoH & 4.2975 & 1.5100 & 52.878 \\
+			\hdashline
+			HtoD & 3.3280 & 2.4544 & 25.808 \\
+			\hdashline
+			Memset & 0.0008 & 0.0007 & 0.0017 \\
+			\hline
+		\end{tabular}
+		\caption{Profiling results}
+		\label{tab:nvprof_naif}
+	\end{table}
+
+	\subsubsection{GPU - async and removal of usefull operations}
+
+	In the previous implementation, a big portion of the execution time is covered by the kernel execution but the two data transfers are not negligible. The total average time is about 46 ms means that the \textit{for} time is for the 60\% due to the GPU computation and the remaining part is related to host taks.\\
+
+	CUDA offsers a variant of the APIs that are asynchronous with respect to the device execution. This means that when one of these APIs is called, the operation starts on the device side but the control returns immediately to the host despite the end of the operation on the GPU.\\
+
+	This means that is possible to give to the device a series of operations to execute and meanwhile the host can work on its own operations. In this specific case the host doesn't have any task to complete so a function \texttt{cudaDeviceSynchronize()} is used to wait for the device to complete its operations. Howewer this solution is slightly more efficient because is possible to assign to the GPU all the jobs in a consecutive way then waiting instead of assign a job at a time.
+
+	\begin{lstlisting}[style=CStyle]
+cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
+
+cudaMemcpyAsync(d_previous, previous.data, total, cudaMemcpyHostToDevice);
+cudaMemcpyAsync(d_current,pready->pframe->data,total,cudaMemcpyHostToDev);
+kernel<<<1,nMaxThreads>>>(d_current,d_previous,d_diff,maxAtTime,d_pos,d_xs);
+
+cudaMemcpyAsync(pready->pframe->data, d_diff, total,cudaMemcpyDeviceToHost);
+cudaMemcpyAsync(pready->h_xs,d_xs,total*sizeof *d_xs,cudaMemcpyDevToHost);
+cudaMemcpyAsync(&pready->h_pos,d_pos,sizeof *d_pos, cudaMemcpyDeviceToHost);
+
+cudaMemcpyAsync(previous.data, d_current, total, cudaMemcpyDeviceToHost);
+cudaDeviceSynchronize();
+	\end{lstlisting}
+
+
+	Another optimization that can be done is to remove a particular useless copy both HtoD and DtoH, and that is the one regarding the previous frame. In fact, after the first launch of the kernel, the previous frame is already stored in the GPU's memory so it's avoidable the back copy to the host and gain to the device. What can be done is to implement a simple pointer swap, in fact after the first execution the current frame will become the previous frame at the next round. So there is a pool of two pointers that alternatively works one as the current and the other one as the previous.\\
+
+	The host code becomes like this:
+
+	\begin{lstlisting}[style=CStyle]
+// current-previous swap
+uint8_t *d_prev = d_current;
+d_current = d_previous;
+d_previous = d_current;
+
+cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
+
+// Copy in the current pointer and run 
+cudaMemcpyAsync(d_current,pready->pframe->data,total,cudaMemcpyHostToDeve);
+kernel<<<1,nMaxThreads>>>(d_current,d_previous,d_diff,maxAtTime,d_pos,d_xs);
+
+cudaMemcpyAsync(pready->pframe->data,d_diff,total,cudaMemcpyDeviceToHost);
+cudaMemcpyAsync(pready->h_xs,d_xs,total*sizeof *d_xs,cudaMemcpyDevToHost);
+cudaMemcpyAsync(&pready->h_pos,d_pos,sizeof *d_pos,cudaMemcpyDeviceToHost);
+
+cudaDeviceSynchronize();
+	\end{lstlisting}
+
+	Another optimization in terms of copies regards the download of the two arrays forming the result. In fact, instead of copying all the \textit{total} bytes is smarter to cpy only \textit{d\_pos} bytes, the ones that are really useful.\\
+
+	So the first download copy regards \textit{d\_pos}, then a \texttt{cudaDeviceSynchronize()} is executed in order to wait for the complete of all the previous operation and getting a valid \textit{d\_pos}, then the remaining data are copied. \\
+	
+	The host code becomes:
+
+	\begin{lstlisting}[style=CStyle]
+// current-previous swap
+uint8_t *d_prev = d_current;
+d_current = d_previous;
+d_previous = d_current;
+
+cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
+
+// Copy in the current pointer and run 
+cudaMemcpyAsync(d_current,pready->pframe->data,total,cudaMemcpyHostToDeve);
+kernel<<<1,nMaxThreads>>>(d_current,d_previous,d_diff,maxAtTime,d_pos,d_xs);
+
+cudaMemcpyAsync(&pready->h_pos,d_pos,sizeof *d_pos,cudaMemcpyDeviceToHost);
+cudaDeviceSynchronize();
+
+cudaMemcpyAsync(pready->pframe->data,pready->h_pos,total,cudaMemcpyDToHt);
+cudaMemcpyAsync(pready->h_xs,d_xs,pready->h_pos*sizeof *d_xs,cdMemcpyDToH);
+
+
+cudaDeviceSynchronize();
+	\end{lstlisting}
+
+	Last but not least, the \textit{cudaMemsetAsync} at line 6 can be removed completely. In fact, it's possible to move the initial reset of the \textit{d\_pos} counter can be done at the beginning of the kernel and it's easily done even in a concurrent environment by letting doing the reset only at one kernel only. This can be achieved thanks to the kernel index. In this case it will be done by the first kernel. In order to have all the kernel executing more or less in parallel the same instructions, after the reset of the counter, a \texttt{\_\_syncthreads()} is executed that assures that all threads are synchred untill that point. \\
+
+	Thus, the kernel code becomes:
+
+	\begin{lstlisting}[style=CStyle]
+__global__ void kernel(
+uint8_t *current, uint8_t *previous, uint8_t *diff, 
+int maxSect, unsigned int *pos, int *xs) {
+	int x = threadIdx.x + blockDim.x * blockIdx.x;
+	unsigned int npos;
+	int df;
+
+	// counter reset done by thread with index = 0
+	if (!x) *pos = 0;
+	__syncthreads();
+
+
+	int start = x * maxSect;
+	int max = start + maxSect;
+
+	#pragma unroll
+	for (int i = start; i < max; i++) {
+
+		df = current[i] - previous[i];
+		if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+			npos = atomicInc(pos, 6220801);
+			diff[npos] = df;
+			xs[npos] = i;
+		} else {
+			current[i] -= df;
+		}
+
+	}
+
+}
+	\end{lstlisting}
+
+	All these optimizations let achieving a big result in performance terms. The video streaming is elaborated at around 20 fps with an average \texttt{for} time of 55.0 ms and an average \texttt{read} time of 0.0 ms, and the comparison with the previous case can be seen in Figure \ref{fig:chart3}. 
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\linewidth]{images/chart3.png}
+		\caption{\textit{Pixel Difference Comparison}}
+		\label{fig:chart3}
+	\end{figure}
+
+	The results of the \textit{nvprof} profiler are shown in Table \ref{tab:nvprof_naif2} and is noticeable the big improvement in terms of performances for what concerns the DtoH transfer. The HtoD transfer remains more or less the same but it's executed only one time instead of two as the naif implementation.
+
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{||c | c c c||} 
+			\hline
+			Operation & Avg (ms) & Min (ms) & Max (ms) \\ [0.5ex] 
+			\hline\hline
+			Kernel & 41.426 & 37.278 & 46.423 \\ 
+			\hdashline
+			DtoH & 0.0227 & 0.0009 & 9.2925 \\
+			\hdashline
+			HtoD & 3.7813 & 2.1733 & 14.188 \\
+			\hline
+		\end{tabular}
+		\caption{Profiling results}
+		\label{tab:nvprof_naif2}
+	\end{table}
+
+	TODO: show a DMA image, explain why it's better the page locked bla bla\\
 
 
 

@@ -1371,6 +1371,16 @@ INPUT ./images/chart1.png
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/tfm/public/lm/ec-lmr7.tfm
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/tfm/public/lm/ec-lmri7.tfm
 INPUT /home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/tfm/public/lm/ec-lmri7.tfm
+INPUT ./images/chart2.png
+INPUT ./images/chart2.png
+INPUT images/chart2.png
+INPUT ./images/chart2.png
+INPUT ./images/chart2.png
+INPUT ./images/chart3.png
+INPUT ./images/chart3.png
+INPUT images/chart3.png
+INPUT ./images/chart3.png
+INPUT ./images/chart3.png
 INPUT report.aux
 INPUT ./report.out
 INPUT ./report.out
