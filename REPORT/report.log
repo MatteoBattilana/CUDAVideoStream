@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  22 DEC 2021 01:44
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  22 DEC 2021 14:24
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -747,6 +747,50 @@ Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \float@box=\box73
 \@float@everytoks=\toks49
 \@floatcapt=\box74
+) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/arydshln/arydshln.sty
+Package: arydshln 2019/02/21 v1.76 
+\dashlinedash=\dimen304
+\dashlinegap=\dimen305
+\adl@box=\box75
+\adl@height=\dimen306
+\adl@heightsave=\dimen307
+\adl@depth=\dimen308
+\adl@depthsave=\dimen309
+\adl@finaldepth=\dimen310
+\adl@columns=\count328
+\adl@ncol=\count329
+\adl@currentcolumn=\count330
+\adl@currentcolumnsave=\count331
+\adl@totalheight=\count332
+\adl@totalheightsave=\count333
+\adl@dash=\count334
+\adl@gap=\count335
+\adl@cla=\count336
+\adl@clb=\count337
+\adl@everyvbox=\toks50
+\adl@LTpagetotal=\dimen311
+) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/bytefield/bytefield.sty
+Package: bytefield 2021/08/17 v2.7 Network protocol diagrams
+\bytefield@height=\skip83
+\bytefield@height@increment=\skip84
+\entire@bytefield@picture=\box76
+\bf@bitwidth=\skip85
+\bf@bitheight=\skip86
+\units@wide=\skip87
+\units@tall=\skip88
+\units@high=\skip89
+\header@xpos=\skip90
+\c@header@val=\count338
+\c@max@header@val=\count339
+\curly@box=\box77
+\wordlabelr@start=\skip91
+\wordlabelr@end=\skip92
+\wordlabell@start=\skip93
+\wordlabell@end=\skip94
+\total@lbox@width=\skip95
+\label@box@width=\skip96
+\label@box@height=\skip97
+\word@label@box=\box78
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/base/fontenc.sty
 Package: fontenc 2021/04/29 v2.0v Standard LaTeX package
 LaTeX Font Info:    Trying to load font information for T1+lmr on input line 112.
@@ -755,27 +799,27 @@ File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )) (./report.aux)
 \openout1 = `report.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 139.
-LaTeX Font Info:    ... okay on input line 139.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 139.
-LaTeX Font Info:    ... okay on input line 139.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 139.
-LaTeX Font Info:    ... okay on input line 139.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 139.
-LaTeX Font Info:    ... okay on input line 139.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 139.
-LaTeX Font Info:    ... okay on input line 139.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 139.
-LaTeX Font Info:    ... okay on input line 139.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 139.
-LaTeX Font Info:    ... okay on input line 139.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 139.
-LaTeX Font Info:    ... okay on input line 139.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 139.
-LaTeX Font Info:    ... okay on input line 139.
-Package scrbase Info: activating english \contentsname on input line 139.
-Package scrbase Info: activating english \listfigurename on input line 139.
-Package scrbase Info: activating english \listtablename on input line 139.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 142.
+LaTeX Font Info:    ... okay on input line 142.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 142.
+LaTeX Font Info:    ... okay on input line 142.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 142.
+LaTeX Font Info:    ... okay on input line 142.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 142.
+LaTeX Font Info:    ... okay on input line 142.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 142.
+LaTeX Font Info:    ... okay on input line 142.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 142.
+LaTeX Font Info:    ... okay on input line 142.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 142.
+LaTeX Font Info:    ... okay on input line 142.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 142.
+LaTeX Font Info:    ... okay on input line 142.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 142.
+LaTeX Font Info:    ... okay on input line 142.
+Package scrbase Info: activating english \contentsname on input line 142.
+Package scrbase Info: activating english \listfigurename on input line 142.
+Package scrbase Info: activating english \listtablename on input line 142.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -813,17 +857,17 @@ Package scrbase Info: activating english \listtablename on input line 139.
 
 (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count328
-\scratchdimen=\dimen304
-\scratchbox=\box75
-\nofMPsegments=\count329
-\nofMParguments=\count330
-\everyMPshowfont=\toks50
-\MPscratchCnt=\count331
-\MPscratchDim=\dimen305
-\MPnumerator=\count332
-\makeMPintoPDFobject=\count333
-\everyMPtoPDFconversion=\toks51
+\scratchcounter=\count340
+\scratchdimen=\dimen312
+\scratchbox=\box79
+\nofMPsegments=\count341
+\nofMParguments=\count342
+\everyMPshowfont=\toks51
+\MPscratchCnt=\count343
+\MPscratchDim=\dimen313
+\MPnumerator=\count344
+\makeMPintoPDFobject=\count345
+\everyMPtoPDFconversion=\toks52
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/grfext/grfext.sty
@@ -836,8 +880,8 @@ Package grfext Info: Graphics extension search list:
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 ))
-\c@lstlisting=\count334
-Package hyperref Info: Link coloring OFF on input line 139.
+\c@lstlisting=\count346
+Package hyperref Info: Link coloring OFF on input line 142.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2021-04-02 v2.47 Cross-referencing by name of section
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/refcount/refcount.sty
@@ -845,11 +889,11 @@ Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
 Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
-\c@section@level=\count335
+\c@section@level=\count347
 )
-LaTeX Info: Redefining \ref on input line 139.
-LaTeX Info: Redefining \pageref on input line 139.
-LaTeX Info: Redefining \nameref on input line 139.
+LaTeX Info: Redefining \ref on input line 142.
+LaTeX Info: Redefining \pageref on input line 142.
+LaTeX Info: Redefining \nameref on input line 142.
  (./report.out) (./report.out)
 \@outlinefile=\write4
 \openout4 = `report.out'.
@@ -861,28 +905,28 @@ Class scrartcl Info: loading recommended package `bookmark'.
 (scrartcl)           `bookmarkpackage=false' before \begin{document} and
 (scrartcl)           you can avoid this message adding:
 (scrartcl)             \usepackage{bookmark}
-(scrartcl)           before \begin{document} on input line 139.
+(scrartcl)           before \begin{document} on input line 142.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/bookmark/bookmark.sty
 Package: bookmark 2020-11-06 v1.29 PDF bookmarks (HO)
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/bookmark/bkm-pdftex.def
 File: bkm-pdftex.def 2020-11-06 v1.29 bookmark driver for pdfTeX (HO)
-\BKM@id=\count336
+\BKM@id=\count348
 ))
 Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: float package is loaded.
 Package caption Info: End \AtBeginDocument code.
-LaTeX Info: Redefining \microtypecontext on input line 139.
-Package microtype Info: Applying patch `item' on input line 139.
-Package microtype Info: Applying patch `toc' on input line 139.
-Package microtype Info: Applying patch `eqnum' on input line 139.
-Package microtype Info: Applying patch `footnote' on input line 139.
+LaTeX Info: Redefining \microtypecontext on input line 142.
+Package microtype Info: Applying patch `item' on input line 142.
+Package microtype Info: Applying patch `toc' on input line 142.
+Package microtype Info: Applying patch `eqnum' on input line 142.
+Package microtype Info: Applying patch `footnote' on input line 142.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
 Package microtype Info: Automatic font expansion enabled (level 2),
 (microtype)             stretch: 20, shrink: 20, step: 1, non-selected.
 Package microtype Info: Using default expansion set `alltext-nott'.
-LaTeX Info: Redefining \showhyphens on input line 139.
+LaTeX Info: Redefining \showhyphens on input line 142.
 Package microtype Info: No adjustment of tracking.
 Package microtype Info: No adjustment of interword spacing.
 Package microtype Info: No adjustment of character kerning.
@@ -895,7 +939,7 @@ Package microtype Info: Character `029' is missing
  [1
 
 {/home/gabriele97/.texlive2021/local/texlive/2021/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-LaTeX Font Info:    Trying to load font information for T1+lmss on input line 153.
+LaTeX Font Info:    Trying to load font information for T1+lmss on input line 156.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/t1lmss.fd
 File: t1lmss.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -904,68 +948,68 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Underfull \hbox (badness 10000) in paragraph at lines 155--156
+Underfull \hbox (badness 10000) in paragraph at lines 158--159
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 157--158
+Underfull \hbox (badness 10000) in paragraph at lines 160--161
 
  []
 
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 159.
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 162.
 (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OML+lmm on input line 159.
+LaTeX Font Info:    Trying to load font information for OML+lmm on input line 162.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 159.
+LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 162.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 159.
+LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 162.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 159.
+(Font)              <10> on input line 162.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 159.
+(Font)              <7> on input line 162.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 159.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 159.
+(Font)              <5> on input line 162.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 162.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 159.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 162.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-Underfull \hbox (badness 10000) in paragraph at lines 159--160
+Underfull \hbox (badness 10000) in paragraph at lines 162--163
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 161--162
+Underfull \hbox (badness 10000) in paragraph at lines 164--165
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 167--168
+Underfull \hbox (badness 10000) in paragraph at lines 170--171
 
  []
 
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 172.
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 175.
 (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 172.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 175.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -974,16 +1018,16 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Underfull \hbox (badness 10000) in paragraph at lines 177--178
+Underfull \hbox (badness 10000) in paragraph at lines 180--181
 
  []
 
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.192 	\end{center}
+l.195 	\end{center}
                     [1]
-Underfull \hbox (badness 10000) in paragraph at lines 203--204
+Underfull \hbox (badness 10000) in paragraph at lines 206--207
 
  []
 
@@ -992,58 +1036,68 @@ File: lstlang1.sty 2020/03/24 1.8d listings language file
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2020/03/24 1.8d (Carsten Heinz)
 )
-Underfull \hbox (badness 10000) in paragraph at lines 225--226
+Underfull \hbox (badness 10000) in paragraph at lines 228--229
 
  []
 
-<images/streaming_ok.png, id=29, 505.13719pt x 286.06876pt>
-File: images/streaming_ok.png Graphic file (type png)
-<use images/streaming_ok.png>
-Package pdftex.def Info: images/streaming_ok.png  used on input line 229.
-(pdftex.def)             Requested size: 292.77632pt x 165.8065pt.
-[2 <./images/streaming_ok.png>]
+<images/streaming_ok2.png, id=29, 504.38437pt x 286.82156pt>
+File: images/streaming_ok2.png Graphic file (type png)
+<use images/streaming_ok2.png>
+Package pdftex.def Info: images/streaming_ok2.png  used on input line 232.
+(pdftex.def)             Requested size: 292.77632pt x 166.4879pt.
+[2 <./images/streaming_ok2.png>]
 <images/streaming_differror.png, id=61, 433.62pt x 246.1697pt>
 File: images/streaming_differror.png Graphic file (type png)
 <use images/streaming_differror.png>
-Package pdftex.def Info: images/streaming_differror.png  used on input line 238.
+Package pdftex.def Info: images/streaming_differror.png  used on input line 241.
 (pdftex.def)             Requested size: 292.77632pt x 166.21747pt.
+<images/chart1.png, id=62, 607.26875pt x 341.275pt>
+File: images/chart1.png Graphic file (type png)
+<use images/chart1.png>
+Package pdftex.def Info: images/chart1.png  used on input line 250.
+(pdftex.def)             Requested size: 334.60425pt x 188.0455pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 246--247
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 248--249
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 250--251
+Underfull \hbox (badness 10000) in paragraph at lines 255--256
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 252--253
+Underfull \hbox (badness 10000) in paragraph at lines 257--258
 
  []
 
-[3 <./images/streaming_differror.png>] (./report.aux)
+[3 <./images/streaming_differror.png> <./images/chart1.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 311--312
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 324--325
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 351--352
+
+ []
+
+[4] [5] (./report.aux)
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 31360 strings out of 480539
- 587735 string characters out of 5900304
- 1352008 words of memory out of 5000000
- 48300 multiletter control sequences out of 15000+600000
- 457943 words of font info for 116 fonts, out of 8000000 for 9000
+ 31984 strings out of 480539
+ 597327 string characters out of 5900304
+ 1285844 words of memory out of 5000000
+ 48823 multiletter control sequences out of 15000+600000
+ 470592 words of font info for 130 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 125i,7n,131p,10693b,1360s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 125i,13n,131p,10693b,1344s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}</home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr5.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr7.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr8.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmri10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on report.pdf (4 pages, 1359638 bytes).
+Output written on report.pdf (6 pages, 1352853 bytes).
 PDF statistics:
- 151 PDF objects out of 1000 (max. 8388607)
- 112 compressed objects within 2 object streams
- 28 named destinations out of 1000 (max. 500000)
- 35383 words of extra memory for PDF output out of 35830 (max. 10000000)
+ 246 PDF objects out of 1000 (max. 8388607)
+ 202 compressed objects within 3 object streams
+ 96 named destinations out of 1000 (max. 500000)
+ 41540 words of extra memory for PDF output out of 42996 (max. 10000000)
 

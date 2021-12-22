@@ -53,6 +53,9 @@
 \usepackage{tikz} 
 \usepackage{xcolor}
 \usepackage{listings}
+\usepackage{arydshln}
+\usepackage{bytefield}
+
 
 \definecolor{mGreen}{rgb}{0,0.6,0}
 \definecolor{mGray}{rgb}{0.5,0.5,0.5}
@@ -81,7 +84,7 @@
     stringstyle=\color{mPurple},
     basicstyle=\footnotesize,
     breakatwhitespace=false,         
-    breaklines=true,                 
+    breaklines=false,                 
     captionpos=b,                    
     keepspaces=true,                 
     numbers=left,                    
@@ -191,7 +194,7 @@
 		\end{tikzpicture} 
 	\end{center}
 
-	In the following, for metric considerations the following terms will be used:
+	In the following pages, for metric considerations these terms will be used:
 
 	\begin{itemize}
 		\item \texttt{fps}: number of frames per second.
@@ -206,8 +209,8 @@
 	\begin{lstlisting}[style=CStyle]
 	int total = 3 * ctx.sampleMat->rows * ctx.sampleMat->cols; // no. bytes
 	Mat pvs = pready->pframe->clone();
-
 	pready->h_pos = 0;
+
 	for (int i = 0; i < total; i++) {
 		int df = pready->pframe->data[i] - previous.data[i];
 		if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
@@ -226,8 +229,8 @@
 
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.7\linewidth]{images/streaming_ok.png}
-		\caption{\textit{What happens after a certain time if the error is not take under consideration}}
+		\includegraphics[width=0.7\linewidth]{images/streaming_ok2.png}
+		\caption{\textit{The result of the reconstructed frame}}
 		\label{fig:stream_ok}
 	\end{figure}
 	
@@ -240,16 +243,161 @@
 		\label{fig:stream_error}
 	\end{figure}
 
-	The performance here are pretty low. By means of in-code time measurements, the video streaming is stable at 7 fps with an average \texttt{for} time of 140.0 ms and an average \texttt{read} time of 0.0 ms. This means that here the big bottleneck is due to the elaboration part of the software.
+	The performances here are pretty bad. By means of in-code time measurements, the video streaming is stable at 7 fps with an average \texttt{for} time of 140.0 ms and an average \texttt{read} time of 0.0 ms. This means that here the big bottleneck is due to the elaboration part of the software.
 
-	\subsection{GPU Implementation - Naif version}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.8\linewidth]{images/chart1.png}
+		\caption{\textit{Pixel Difference COmparison}}
+	\end{figure}
+
+	\subsection{GPU Implementation}
 	The idea is now to port this in the GPU. The GPU can be seen as an accelerator for the CPU, an accelerator that is capable of a high degree of parallelism by executing a lot of simple threads all in parallel in a SIMD way.\\
 
 	In order to port this in CUDA and execute the computation on the GPU, a series of considerations needs to be done. First of all, it's not said that by executing this in GPU there is a direct improvement in performance. This is due to the fact that there is a big bottleneck between the CPU and the GPU and this is the bus that connects them. A GPU in order to do some work on some data needs to have them in its memory (so the GPU can't access directly the CPU's RAM).\\
 
-	Now, the first thing to do, before defining the kernel (the piece of code that is offloaded to the GPU), is to understand how split the 6220800 bytes among the concurrent threads of the GPU.\\
+	The first thing to do, before defining the kernel (the piece of code that is offloaded to the GPU), is to understand how split the 6220800 bytes among the concurrent threads of the GPU. In the Mat object, the frame is rapresented row-major, means that rows are at consecutive address, as shown in Table \ref{tab:row_major}.
 
-	TODO: exaplain how max number of threads is get (prop). Explain how data are splitted among the threads.\\
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{ |c:c:c| } 
+			\hline
+			0 & 1 & 2 \\
+			\hdashline
+			3 & 4 & 5 \\ 
+			\hdashline
+			6 & 7 & 8 \\ 
+			\hline
+		\end{tabular}
+		\begin{tabular}{ |c|c|c|c|c|c|c|c|c| } 
+			\hline
+			0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
+			\hdashline
+			0x0 & 0x1 & 0x2 & 0x3 & 0x4 & 0x5 & 0x6 & 0x7 & 0x8 \\
+			\hline
+		\end{tabular}
+	\caption{\textit{Row major rapresentation in memory}}
+	\label{tab:row_major}
+	\end{table}
+
+	Threads can be organized differently according how they access the memory, and in this case there can be two possible cases of memory access per thread:
+
+	\begin{table}[H]
+		\parbox{.45\linewidth}{
+			\centering
+			\begin{tabular}{l|ccc}
+				Thread 0 & 0 & 3 & 6\\
+				\hline
+				Thread 1 & 1 & 4 & 7\\
+				\hline
+				Thread 2 & 2 & 5 & 8\\
+			\end{tabular}
+			\caption{Non consecutive access}
+		}
+		\hfill
+		\parbox{.45\linewidth}{
+			\centering
+			\begin{tabular}{l|ccc}
+				Thread 0 & 0 & 1 & 2\\
+				\hline
+				Thread 1 & 3 & 4 & 5\\
+				\hline
+				Thread 2 & 6 & 7 & 8\\
+			\end{tabular}
+			\caption{Consecutive access}
+		}
+	\end{table}
+	
+	So the entire array can be divided into <N> chunks where <N> is the number of threads to launch on the GPU. By organizing the kernels in a way they can access the memory in a consecutive access, the kernel will achieve the so called \textit{memory coalesced access}.\\
+
+	How many threads? For a first implementation, and in order to have a modular implementation of the code (so it can be executed on different GPUs with different capabilities), the following code is adopted:
+
+	\begin{lstlisting}[style=CStyle]
+	struct cudaDeviceProp prop;
+	cudaGetDeviceProperties(&prop, 0); // retrieves device infos
+
+	int total = 3 * ctx.sampleMat->rows * ctx.sampleMat->cols; // no. bytes
+	int nMaxThreads = prop.maxThreadsPerBlock;
+	int maxAtTime = total / nMaxThreads;
+	\end{lstlisting}
+
+	According to this, each thread will work on $N = \textit{maxAtTime}$ consecutive bytes, dividing the memory into \textit{nMaxThreads} chunks, and overlapping is totally avoided.\\
+
+	For what concerns the memory allocation, obviously the CPU address space and the GPU one are two separated things, so a specific allocation on the device side must be done. This can be accomplished thanks to some CUDA's API as follows:
+
+	\begin{lstlisting}[style=CStyle]
+	uint8_t *d_current, *d_previous, *d_diff;
+	int *d_xs;
+	unsigned int *d_pos;
+
+	cudaMalloc((void **)&d_diff, total * sizeof *d_diff);
+	cudaMalloc((void **)&d_xs, total * sizeof *d_xs);
+	cudaMalloc((void **)&d_current, total * sizeof *d_current);
+	cudaMalloc((void **)&d_previous, total * sizeof *d_previous);
+	cudaMalloc((void **)&d_pos, sizeof *d_pos);
+	\end{lstlisting}
+
+
+	\subsubsection{Naif version}
+
+	The naif version of the implementation is to port as it is the CPU code into a kernel. From the host side (the CPU) that asks to the device (the GPU) to execute the kernel, there are three kind of operations to be done:
+
+	\begin{enumerate}
+		\item copy the frame into the GPU's memory
+		\item launch the kernel
+		\item copy back the results from the GPU's memory to the HOST memory
+	\end{enumerate}
+
+	In the naif implementation, both the previous and current frames are copied into the GPU's memory. At the end of the execution, the results are copied back. This implies 2 transfers HostToDevice (HtoD) for current and previous and 3 transfers DeviceToHost (DtoH) for h\_xs, h\_diff and h\_pos. A memset on the device side is required too to set the initial value of d\_pos to 0.\\
+
+	The host will therefore execute the following operations:
+
+	\begin{lstlisting}[style=CStyle]
+	Mat pvs = pready->pframe->clone();
+	cudaMemset(d_pos, 0, sizeof *d_pos);
+
+	cudaMemcpy(d_previous, previous.data, total, cudaMemcpyHostToDevice);
+	cudaMemcpy(d_current,pready->pframe->data,total,cudaMemcpyHostToDevice);
+	kernel<<1,nMaxThreads>>(d_current,d_previous,d_diff,maxAtTime,d_pos,d_xs);
+	cudaMemcpy(pready->pframe->data, d_diff, total, cudaMemcpyDeviceToHost);
+	cudaMemcpy(pready->h_xs,d_xs,total* sizeof*d_xs,cudaMemcpyDeviceToHost);
+	cudaMemcpy(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
+
+	previous = pvs;
+	\end{lstlisting}
+
+	It's possible to notice a pretty similar structure of the CPU implementation, where the \textit{for loop} is replaced by the kernel.
+	
+	// TODO exaplain how start index is computed
+	// TODO: explain how to implement the thing about the arrays, the atomicInc, npos and so on
+	
+	\begin{lstlisting}[style=CStyle]
+	__global__ void kernel(
+	uint8_t *current, uint8_t *previous, uint8_t *diff, 
+	int maxSect, unsigned int *pos, int *xs) {
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    unsigned int npos;
+    int df;
+
+    int start = x * maxSect;
+    int max = start + maxSect;
+
+    #pragma unroll
+    for (int i = start; i < max; i++) {
+
+        df = current[i] - previous[i];
+        if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+            npos = atomicInc(pos, 6220801);
+            diff[npos] = df;
+            xs[npos] = i;
+        } else {
+            current[i] -= df;
+        }
+
+    }
+
+}
+	\end{lstlisting}
 
 
 
@@ -262,6 +410,7 @@
 		\item Copy first d\_pos then a portion of d\_diff and d\_xs according to d\_pos
 		\item Access int-by-int
 		\item AtomicInc in global memory and in shared memory, there are differences?
+		\item Why 512 kernels is best instead of 1024?
 	\end{itemize}
 
 \end{document}
