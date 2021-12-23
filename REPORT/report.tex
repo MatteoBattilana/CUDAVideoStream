@@ -817,7 +817,7 @@ struct __device_builtin__ __builtin_align__(16) int4 {
 
 typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 
-	Thanks to the fuct they they are \texttt{\_\_device\_builtin\_\_}, they are identified by the CUDA compiler that will optimize the generated instructions by reducing them and using special \textit{vectorized instructions} capable of a larger transaction in the memory. So thanks to these instructions is possible to load big chunks of data at a time with less instructions. Please note that a struct with 16 int as members will not perform well as expected because int4 is a builtin type so recognized by the compiler and vectorized instructions will be used.\\
+	Thanks to the fuct they they are \texttt{\_\_device\_builtin\_\_}, they are identified by the CUDA compiler that will optimize the generated instructions by reducing them and using special \textit{vectorized instructions} capable of a larger transaction in the memory. So thanks to these instructions is possible to load big chunks of data at a time with less instructions. Please note that a struct with 16 int as members will not perform well as expected because int4 is a builtin type so recognized by the compiler and vectorized instructions will be used by activating some internal magic in the compiler itself.\\
 
 	The usage of these vectorized instructions is easily seen at the assembly level. The kernel seen before with a classical \texttt{int} data type is translated into these instructions:
 
@@ -838,7 +838,7 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 
 	Here, the two LD.E.128 are vectorized instructions. By using the vectorized load and store instructions LD.E.{64,128} and ST.E.{64,128} operations like load and store data can be done in 64- or 128-bit widths. Using vectorized loads reduces the total number of instructions, reduces latency, and improves bandwidth utilization.\\
 
-	At this point, the \textit{nvprof} profiler is run and the results are shown in Table \ref{tab:nvprof_naif6} and is noticeable a really big improvement, reducing the kernel time by another 60\%. The average fps are 26, with a \textit{for} time of 4.7 ms and a \textit{read} time of 37 ms. The overall comparison is shown in Figure \ref{fig:chart6}.
+	At this point, the \textit{nvprof} profiler is run and the results are shown in Table \ref{tab:nvprof_naif6} and is noticeable a really big improvement in the computation, reducing the kernel time by another about 60\%. The average fps are 26, with a \textit{for} time of 4.7 ms and a \textit{read} time of 37 ms. The overall comparison is shown in Figure \ref{fig:chart6}.
 
 	\begin{table}[H]
 		\centering
