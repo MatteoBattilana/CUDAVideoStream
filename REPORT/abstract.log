@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2021.3.29)  23 DEC 2021 11:36
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2021.3.29)  23 DEC 2021 21:32
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1200,7 +1200,7 @@ Package microtype Info: Character `029' is missing
  [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-LaTeX Font Info:    Try loading font information for T1+lmss on input line 209.
+LaTeX Font Info:    Try loading font information for T1+lmss on input line 210.
 
  (/usr/share/texmf/tex/latex/lm/t1lmss.fd
 File: t1lmss.fd 2009/10/30 v1.6 Font defs for Latin Modern
@@ -1209,7 +1209,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-LaTeX Font Info:    Try loading font information for T1+lmtt on input line 215.
+LaTeX Font Info:    Try loading font information for T1+lmtt on input line 212.
 
  (/usr/share/texmf/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
@@ -1218,46 +1218,54 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-<images/heatmap/v0.png, id=53, 1144.275pt x 321.45094pt>
-File: images/heatmap/v0.png Graphic file (type png)
-<use images/heatmap/v0.png>
-Package pdftex.def Info: images/heatmap/v0.png  used on input line 220.
-(pdftex.def)             Requested size: 376.4258pt x 105.74559pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 224--226
+Underfull \hbox (badness 10000) in paragraph at lines 211--213
 
  []
 
-LaTeX Font Info:    Try loading font information for OT1+lmr on input line 229.
+<images/heatmap/v0.png, id=57, 1144.275pt x 321.45094pt>
+File: images/heatmap/v0.png Graphic file (type png)
+<use images/heatmap/v0.png>
+Package pdftex.def Info: images/heatmap/v0.png  used on input line 216.
+(pdftex.def)             Requested size: 376.4258pt x 105.74559pt.
+LaTeX Font Info:    Try loading font information for OMS+lmr on input line 223.
 
-(/usr/share/texmf/tex/latex/lm/ot1lmr.fd
-File: ot1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
+(/usr/share/texmf/tex/latex/lm/omslmr.fd
+File: omslmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OML+lmm on input line 229.
-
-
-(/usr/share/texmf/tex/latex/lm/omllmm.fd
-File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
-)
-LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 229
+LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 223
 .
 
 (/usr/share/texmf/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMX+lmex on input line 229
+LaTeX Font Info:    Font shape `OMS/lmr/m/n' in size <10> not available
+(Font)              Font shape `OMS/lmsy/m/n' tried instead on input line 223.
+LaTeX Font Info:    Try loading font information for OT1+lmr on input line 234.
+
+
+(/usr/share/texmf/tex/latex/lm/ot1lmr.fd
+File: ot1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
+)
+LaTeX Font Info:    Try loading font information for OML+lmm on input line 234.
+
+
+(/usr/share/texmf/tex/latex/lm/omllmm.fd
+File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
+)
+LaTeX Font Info:    Try loading font information for OMX+lmex on input line 234
 .
 
 (/usr/share/texmf/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 229.
+(Font)              <10> on input line 234.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 229.
+(Font)              <7> on input line 234.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 229.
-LaTeX Font Info:    Try loading font information for U+msa on input line 229.
+(Font)              <5> on input line 234.
+LaTeX Font Info:    Try loading font information for U+msa on input line 234.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
@@ -1265,7 +1273,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 229.
+LaTeX Font Info:    Try loading font information for U+msb on input line 234.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
@@ -1273,7 +1281,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-Overfull \hbox (38.00563pt too wide) detected at line 231
+Overfull \hbox (38.00563pt too wide) detected at line 236
 \OML/lmm/m/it/10 diff \OT1/lmr/m/n/10 = \OML/lmm/m/it/10 abs\OT1/lmr/m/n/10 (\O
 ML/lmm/m/it/10 Previous\OT1/lmr/m/n/10 [\OML/lmm/m/it/10 i; R\OT1/lmr/m/n/10 ] 
 \OMS/lmsy/m/n/10 ^^@ \OML/lmm/m/it/10 Curr\OT1/lmr/m/n/10 [\OML/lmm/m/it/10 i; 
@@ -1289,7 +1297,7 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.265 	T
+l.270 	T
         he CPU implementation is the following: [1 <./images/heatmap/v0.png>]
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2015/06/04 1.6 listings language file
@@ -1297,93 +1305,118 @@ File: lstlang1.sty 2015/06/04 1.6 listings language file
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2015/06/04 1.6 (Carsten Heinz)
 )
-LaTeX Font Info:    Try loading font information for OMS+lmr on input line 275.
-
-
-(/usr/share/texmf/tex/latex/lm/omslmr.fd
-File: omslmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
-)
 LaTeX Font Info:    Font shape `OMS/lmr/m/n' in size <8> not available
-(Font)              Font shape `OMS/lmsy/m/n' tried instead on input line 275.
+(Font)              Font shape `OMS/lmsy/m/n' tried instead on input line 280.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 278.
+(Font)              <8> on input line 283.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 278.
-
-Underfull \hbox (badness 10000) in paragraph at lines 315--317
+(Font)              <6> on input line 283.
+ [2]
+Underfull \hbox (badness 10000) in paragraph at lines 325--328
 
  []
 
-[2]
-Underfull \hbox (badness 10000) in paragraph at lines 333--335
+
+Underfull \hbox (badness 10000) in paragraph at lines 372--374
 
  []
 
 [3]
-Overfull \hbox (9.55032pt too wide) in paragraph at lines 400--401
+Underfull \hbox (badness 10000) in paragraph at lines 378--382
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 378--382
+
+ []
+
+<images/heatmap/gpu_naif.png, id=149, 455.45157pt x 255.95625pt>
+File: images/heatmap/gpu_naif.png Graphic file (type png)
+<use images/heatmap/gpu_naif.png>
+Package pdftex.def Info: images/heatmap/gpu_naif.png  used on input line 437.
+(pdftex.def)             Requested size: 146.39134pt x 82.27087pt.
+[4]
+Overfull \hbox (9.55032pt too wide) in paragraph at lines 457--458
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
  []
 
 
-Overfull \hbox (9.55032pt too wide) in paragraph at lines 402--404
+Overfull \hbox (9.55032pt too wide) in paragraph at lines 459--461
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
  []
 
-[4]
-Underfull \hbox (badness 10000) in paragraph at lines 501--503
+
+Underfull \hbox (badness 10000) in paragraph at lines 486--490
 
  []
 
-[5] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+[5 <./images/heatmap/gpu_naif.png>] [6]
+Underfull \hbox (badness 10000) in paragraph at lines 560--562
+
+ []
+
+(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2015/06/04 1.6 listings language file
 )
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2015/06/04 1.6 listings language file
 )
-<images/heatmap/plot_kernel_times.png, id=229, 462.528pt x 346.896pt>
+<images/heatmap/plot_kernel_times.png, id=256, 462.528pt x 346.896pt>
 File: images/heatmap/plot_kernel_times.png Graphic file (type png)
 <use images/heatmap/plot_kernel_times.png>
 Package pdftex.def Info: images/heatmap/plot_kernel_times.png  used on input li
-ne 529.
+ne 588.
 (pdftex.def)             Requested size: 150.57088pt x 112.9304pt.
-<images/heatmap/hd.png, id=230, 462.528pt x 346.896pt>
+<images/heatmap/hd.png, id=257, 462.528pt x 346.896pt>
 File: images/heatmap/hd.png Graphic file (type png)
 <use images/heatmap/hd.png>
-Package pdftex.def Info: images/heatmap/hd.png  used on input line 536.
+Package pdftex.def Info: images/heatmap/hd.png  used on input line 595.
 (pdftex.def)             Requested size: 150.57088pt x 112.9304pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 543--546
+Underfull \hbox (badness 10000) in paragraph at lines 602--605
 
  []
 
-[6 <./images/heatmap/plot_kernel_times.png> <./images/heatmap/hd.png>]
-<images/heatmap/histo_results.png, id=260, 455.45157pt x 255.95625pt>
+[7 <./images/heatmap/plot_kernel_times.png> <./images/heatmap/hd.png>]
+<images/heatmap/histo_results.png, id=285, 455.45157pt x 255.95625pt>
 File: images/heatmap/histo_results.png Graphic file (type png)
 <use images/heatmap/histo_results.png>
-Package pdftex.def Info: images/heatmap/histo_results.png  used on input line 5
-70.
+Package pdftex.def Info: images/heatmap/histo_results.png  used on input line 6
+31.
 (pdftex.def)             Requested size: 271.86237pt x 152.786pt.
-<images/heatmap/v0-red.png, id=261, 722.7pt x 408.02437pt>
+<images/heatmap/v0-red.png, id=286, 722.7pt x 408.02437pt>
 File: images/heatmap/v0-red.png Graphic file (type png)
 <use images/heatmap/v0-red.png>
-Package pdftex.def Info: images/heatmap/v0-red.png  used on input line 580.
+Package pdftex.def Info: images/heatmap/v0-red.png  used on input line 641.
 (pdftex.def)             Requested size: 167.29893pt x 94.45377pt.
- [7 <./images/heatmap/histo_results.png> <./images/heatmap/v0-red.png>]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 587.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 587.
- (./abstract.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 587.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 587.
+ [8 <./images/heatmap/histo_results.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 647--649
+
+ []
+
+<images/heatmap/gpu_red_2.png, id=293, 723.45282pt x 407.27156pt>
+File: images/heatmap/gpu_red_2.png Graphic file (type png)
+<use images/heatmap/gpu_red_2.png>
+Package pdftex.def Info: images/heatmap/gpu_red_2.png  used on input line 652.
+(pdftex.def)             Requested size: 167.29893pt x 94.18007pt.
+[9 <./images/heatmap/v0-red.png> <./images/heatmap/gpu_red_2.png>]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 655.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 655.
+
+(./abstract.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 655.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 655.
 Package rerunfilecheck Info: File `abstract.out' has not changed.
-(rerunfilecheck)             Checksum: 0A0B49A621FD79F105193A0C2370313F;668.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 587.
+(rerunfilecheck)             Checksum: 7858624F3F122611439CFD81A2B917C3;734.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 655.
  ) 
 Here is how much of TeX's memory you used:
- 36139 strings out of 494847
- 811481 string characters out of 6179080
- 1309238 words of memory out of 5000000
- 38554 multiletter control sequences out of 15000+600000
- 74131 words of font info for 100 fonts, out of 8000000 for 9000
+ 36199 strings out of 494847
+ 812391 string characters out of 6179080
+ 1313681 words of memory out of 5000000
+ 38577 multiletter control sequences out of 15000+600000
+ 75066 words of font info for 109 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  73i,12n,106p,8865b,2049s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dv
@@ -1399,10 +1432,10 @@ public/lm/lmr8.pfb></usr/share/texmf/fonts/type1/public/lm/lmr9.pfb></usr/share
 /lmssbx10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/te
 xmf/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf/fonts/type1/public/lm/lmt
 t10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt9.pfb>
-Output written on abstract.pdf (8 pages, 1517598 bytes).
+Output written on abstract.pdf (10 pages, 2784852 bytes).
 PDF statistics:
- 365 PDF objects out of 1000 (max. 8388607)
- 325 compressed objects within 4 object streams
- 178 named destinations out of 1000 (max. 500000)
- 25198 words of extra memory for PDF output out of 29859 (max. 10000000)
+ 400 PDF objects out of 1000 (max. 8388607)
+ 354 compressed objects within 4 object streams
+ 195 named destinations out of 1000 (max. 500000)
+ 25216 words of extra memory for PDF output out of 29859 (max. 10000000)
 
