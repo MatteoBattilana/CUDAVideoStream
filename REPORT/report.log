@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  23 DEC 2021 02:07
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  23 DEC 2021 02:19
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -796,14 +796,7 @@ Package: fontenc 2021/04/29 v2.0v Standard LaTeX package
 LaTeX Font Info:    Trying to load font information for T1+lmr on input line 112.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)) (./report.aux
-
-LaTeX Warning: Label `tab:nvprof_naif5' multiply defined.
-
-
-LaTeX Warning: Label `fig:chart5' multiply defined.
-
-)
+)) (./report.aux)
 \openout1 = `report.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 142.
@@ -1229,30 +1222,28 @@ Underfull \hbox (badness 10000) in paragraph at lines 839--840
 
  []
 
-File: images/chart5.png Graphic file (type png)
-<use images/chart5.png>
-Package pdftex.def Info: images/chart5.png  used on input line 869.
+<images/chart6.png, id=429, 607.26875pt x 427.5975pt>
+File: images/chart6.png Graphic file (type png)
+<use images/chart6.png>
+Package pdftex.def Info: images/chart6.png  used on input line 862.
 (pdftex.def)             Requested size: 376.4258pt x 265.05551pt.
-[14] [15] (./report.aux)
-
-LaTeX Warning: There were multiply-defined labels.
-
+[14 <./images/chart6.png>] [15] (./report.aux)
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 32421 strings out of 480539
- 603628 string characters out of 5900304
- 1303500 words of memory out of 5000000
- 48973 multiletter control sequences out of 15000+600000
- 472675 words of font info for 150 fonts, out of 8000000 for 9000
+ 32428 strings out of 480539
+ 603777 string characters out of 5900304
+ 1303573 words of memory out of 5000000
+ 48981 multiletter control sequences out of 15000+600000
+ 472545 words of font info for 149 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  125i,13n,131p,10693b,1971s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}</home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmmi7.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr5.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr7.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr8.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmri10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on report.pdf (17 pages, 1489056 bytes).
+Output written on report.pdf (17 pages, 1509932 bytes).
 PDF statistics:
- 615 PDF objects out of 1000 (max. 8388607)
+ 617 PDF objects out of 1000 (max. 8388607)
  547 compressed objects within 6 object streams
  336 named destinations out of 1000 (max. 500000)
- 41584 words of extra memory for PDF output out of 42996 (max. 10000000)
+ 41589 words of extra memory for PDF output out of 42996 (max. 10000000)
 

@@ -838,14 +838,7 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 
 	Here, the two LD.E.128 are vectorized instructions. By using the vectorized load and store instructions LD.E.{64,128} and ST.E.{64,128} operations like load and store data can be done in 64- or 128-bit widths. Using vectorized loads reduces the total number of instructions, reduces latency, and improves bandwidth utilization.\\
 
-	In other words, the performance improvement comes from efficiency gains, in two ways
-
-	\begin{enumerate}
-		\item At the instruction level, a multi-word vector load or store only requires a single instruction to be issued, so the bytes per instruction ratio is higher and total instruction latency for a particular memory transaction is lower.
-		\item At the memory controller level, a vector sized transaction request from a warp results in a larger net memory throughput per transaction, so the bytes per transaction ratio is higher. Fewer transaction requests reduces memory controller contention and can produce higher overall memory bandwidth utilization.
-	\end{enumerate}
-
-	At this point, the results of the \textit{nvprof} profiler are shown in Table \ref{tab:nvprof_naif5} and is noticeable another big improvement, reducing the kernel time by another 50\%. The average fps are 24, with a \textit{for} time of 11.5 ms and a \textit{read} time of 40 ms. The overall comparison is shown in Figure \ref{fig:chart5}.
+	At this point, the \textit{nvprof} profiler is run and the results are shown in Table \ref{tab:nvprof_naif6} and is noticeable a really big improvement, reducing the kernel time by another 60\%. The average fps are 26, with a \textit{for} time of 4.7 ms and a \textit{read} time of 37 ms. The overall comparison is shown in Figure \ref{fig:chart6}.
 
 	\begin{table}[H]
 		\centering
@@ -853,25 +846,30 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 			\hline
 			Operation & Avg (ms) & Min (ms) & Max (ms) \\ [0.5ex] 
 			\hline\hline
-			Kernel & 9.7944 & 8.7887 & 17.906 \\ 
+			Kernel & 3.4197 & 2.9266 & 9.0223 \\ 
 			\hdashline
-			DtoH & 0.0080 & 0.0008 & 1.2807 \\
+			DtoH & 0.0061 & 0.0008 & 1.1601 \\
 			\hdashline
-			HtoD & 0.6443 & 0.5969 & 2.9633 \\
+			HtoD & 0.6387 & 0.5957 & 2.5595 \\
 			\hline
 		\end{tabular}
 		\caption{Profiling results}
-		\label{tab:nvprof_naif5}
+		\label{tab:nvprof_naif6}
 	\end{table}
 
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.9\linewidth]{images/chart5.png}
+		\includegraphics[width=0.9\linewidth]{images/chart6.png}
 		\caption{\textit{Pixel Difference Comparison}}
-		\label{fig:chart5}
+		\label{fig:chart6}
 	\end{figure}
 
+	In other words, the performance improvement comes from efficiency gains, in two ways:
 
+	\begin{enumerate}
+		\item At the instruction level, a multi-word vector load or store only requires a single instruction to be issued, so the bytes per instruction ratio is higher and total instruction latency for a particular memory transaction is lower.
+		\item At the memory controller level, a vector sized transaction request from a warp results in a larger net memory throughput per transaction, so the bytes per transaction ratio is higher. Fewer transaction requests reduces memory controller contention and can produce higher overall memory bandwidth utilization.
+	\end{enumerate}
 
 	% At this point a question could rise: if \texttt{sizeof(int) = 4}, how the correctness of the algorithm is assured even if $ 6075 / 4 $ is not an integer number? 
 	

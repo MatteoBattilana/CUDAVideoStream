@@ -1395,10 +1395,11 @@ INPUT ./images/chart5.png
 INPUT images/chart5.png
 INPUT ./images/chart5.png
 INPUT ./images/chart5.png
-INPUT ./images/chart5.png
-INPUT ./images/chart5.png
-INPUT images/chart5.png
-INPUT ./images/chart5.png
+INPUT ./images/chart6.png
+INPUT ./images/chart6.png
+INPUT images/chart6.png
+INPUT ./images/chart6.png
+INPUT ./images/chart6.png
 INPUT report.aux
 INPUT ./report.out
 INPUT ./report.out
