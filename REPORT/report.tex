@@ -729,7 +729,7 @@ kernel2<<<1,nMaxThreads>>>(d_current,d_previous, d_diff, max4, d_pos, d_xs);
 
 	A further optimization can be done by looking at the new kernel implementation and noticing that only 2/3 of the memory accesses are optimized. The feedback write in fact is still done at each byte, and it can be easily optimized by modifying the \texttt{cc} register variable in the inner loop (byte wise) and save back the result in the global memory at the end of the inner loop only if needed (so if the \texttt{cc} variable has been modified).\\
 	
-	The implementation is the follow:
+	The implementation is the following:
 
 	\begin{lstlisting}[style=CStyle]
 typedef int chunk_t;
