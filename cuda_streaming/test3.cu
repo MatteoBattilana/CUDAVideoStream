@@ -69,6 +69,8 @@ int main() {
     cudaMalloc((void **)&d_b, 20);
     cudaMalloc((void **)&d_a, 20);
 
+    printf("sz %d\n", sizeof(int2));
+
 
     uint8_t h_a[] = { 3, 4, 8, 7, 9, 4, 4, 6, 3, 4, 8, 7, 9, 4, 4, 6 };
     uint8_t h_b[] = { 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3 };

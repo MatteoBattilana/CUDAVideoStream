@@ -25,6 +25,8 @@
 
 using namespace cv;
 
+typedef long4 chunk_t;
+
 struct mat_ready {
     Mat *pframe;
     int *h_xs;
@@ -57,13 +59,8 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int m
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     unsigned int npos;
     int df;
-    // __shared__ unsigned int s_pos[1];
-
-    if (x == 0) {
-        // s_pos[0] = 0;
-        atomicAnd(pos, 0x0);
-    }
-
+    
+    if (!x) *pos = 0;
     __syncthreads();
 
     int start = x * maxSect;
@@ -94,20 +91,17 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int m
 Optimizations done:
  - compute difference int by int instead of uint8 by uint8
  - same stuff on updating current[i]
+ - vectorized instructions (int2 or greater)
 */
 
 __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     unsigned int npos;
     int df;
-    int cc, pc;
+    chunk_t cc, pc;
     bool currUpdateRequired = false;
 
-    if (x == 0) {
-        // s_pos[0] = 0;
-        atomicAnd(pos, 0x0);
-    }
-
+    if (!x) *pos = 0;
     __syncthreads();
 
     int start = x * maxSect;
@@ -116,24 +110,24 @@ __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int 
     #pragma unroll
     for (int i = start; i < max; i++) {
 
-        cc = ((int *)current)[i];
-        pc = ((int *)previous)[i];
+        cc = ((chunk_t *)current)[i];
+        pc = ((chunk_t *)previous)[i];
 
         #pragma unroll
-        for (int j = 0; j < 4; j++) {
+        for (int j = 0; j < sizeof cc; j++) {
             df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
 
             if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
                 npos = atomicInc(pos, 6220801);
                 diff[npos] = df;
-                xs[npos] = i*4 + j;
+                xs[npos] = (i*sizeof cc) + j;
             } else {
 
 #ifdef KERNEL2_NEGFEED_OPT
                 ((uint8_t *)&cc)[j] -= df;
                 currUpdateRequired = true;
 #else 
-                current[i*4 + j] -= df;
+                current[(i*sizeof cc) + j] -= df;
 #endif
             }
 
@@ -141,7 +135,7 @@ __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int 
 
 #ifdef KERNEL2_NEGFEED_OPT
         if (currUpdateRequired) {
-            ((int *)current)[i] = cc;
+            ((chunk_t *)current)[i] = cc;
             currUpdateRequired = false;
         }
 #endif
@@ -172,7 +166,6 @@ void *th_show_hdl(void *args) {
     struct addrinfo *result, *rp;
     int sfd, epollfd, nfds, sfd2;
     struct mat_ready *pready;
-    bool skip = true;
 
     getaddrinfo("127.0.0.1", "2734", NULL, &result);
     for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -210,45 +203,15 @@ void *th_show_hdl(void *args) {
     struct ctxs *pctx = (struct ctxs *)args;
     int tot = 3 * pctx->sampleMat->cols * pctx->sampleMat->rows;
 
-    // uint8_t *mem = new uint8_t[sizeof **pctx->phpos + tot * sizeof **pctx->phpos + tot];
+    // sending the base frame at the beginning
     write(sfd2, pctx->sampleMat->data, tot);
-    // Mat previous = pctx->sampleMat->clone();
 
     while(1) {
         read(pctx->show_r_fd, &pready, sizeof pready);
-        // printf("show (%d) on %p\n", pready->h_pos, pready->pframe);
 
-        if (skip ^= 1) {
-            skip = true;
-        }
-
-        // memcpy(mem, *pctx->phpos, sizeof **pctx->phpos);
-        // memcpy(mem + sizeof **pctx->phpos, pready->h_xs, **pctx->phpos * sizeof *pready->h_xs);
-        // memcpy(mem + sizeof **pctx->phpos + **pctx->phpos * sizeof *pready->h_xs, pready->pframe->data, **pctx->phpos);
-        // printf("Writing all, xs %ld\n", **pctx->phpos * sizeof **pctx->pxs);
-        // for (int i = 0; i < 10; i++) {
-        //     printf(" ## xs %i = %d\n", (*(pctx->pxs))[i], pframe->data[i]);
-        // }
-
-        // for (int i = 0; i < 10; i++) {
-        //     printf(" -- xs %i = %d\n", (mem + sizeof **pctx->phpos)[i], (mem + sizeof **pctx->phpos + **pctx->phpos * sizeof **pctx->pxs)[i]);
-        // }
-
-        int ret = write(sfd2, &pready->h_pos, sizeof pready->h_pos);
-        // if (ret != sizeof pready->h_pos) {
-        //     perror("write1");
-        // }
-
-        ret = write(sfd2, pready->h_xs, pready->h_pos * sizeof *pready->h_xs);
-        // if (ret != pready->h_pos * sizeof *pready->h_xs) {
-        //     perror("write2");
-        // }
-
-        ret = write(sfd2, pready->pframe->data, pready->h_pos);
-        // if (ret != pready->h_pos) {
-        //     perror("write3");
-        // }
-
+        write(sfd2, &pready->h_pos, sizeof pready->h_pos);
+        write(sfd2, pready->h_xs, pready->h_pos * sizeof *pready->h_xs);
+        write(sfd2, pready->pframe->data, pready->h_pos);
 
         write(pctx->ptr_w_fd, &pready, sizeof pready);
     }
@@ -260,13 +223,13 @@ void sigpipe_hdl(int sig) {
     exit(1);
 }
 
-// void cb(cudaStream_t stream, cudaError_t error, void *uData) {
+/*void cb(cudaStream_t stream, cudaError_t error, void *uData) {
 
-//     struct cb_args *pargs = (struct cb_args *)uData;
+    struct cb_args *pargs = (struct cb_args *)uData;
 
-//     // cudaMemcpy(&pargs->pready->h_pos, pargs->d_pos, sizeof *pargs->d_pos, cudaMemcpyDeviceToHost); 
-//     write(pargs->show_w_fd, &pargs->pready, sizeof pargs->pready);
-// }
+    // cudaMemcpy(&pargs->pready->h_pos, pargs->d_pos, sizeof *pargs->d_pos, cudaMemcpyDeviceToHost); 
+    write(pargs->show_w_fd, &pargs->pready, sizeof pargs->pready);
+}*/
 
 int main() {
 
@@ -332,11 +295,7 @@ int main() {
 
     int total = 3 * ctx.sampleMat->rows * ctx.sampleMat->cols;
 
-#ifdef CPU
-    uint8_t *h_diff = new uint8_t[total];
-    h_xs = new int[total];
-    h_pos = new unsigned int[1];
-#elif defined(GPU)
+#ifdef GPU
     struct cudaDeviceProp prop;
     uint8_t *d_current, *d_previous;
     uint8_t *d_diff;
@@ -357,36 +316,17 @@ int main() {
 
     cudaMalloc((void **)&d_pos, sizeof *d_pos);
 
-    uint8_t *h_current;
-    cudaMallocHost((void **)&h_current, total * sizeof *h_current);
-
-    int maxAtTime = total / prop.maxThreadsPerBlock;
+	int nMaxThreads = prop.maxThreadsPerBlock;
+    int maxAtTime = total / nMaxThreads;
     cudaMemcpy(d_current, ctx.sampleMat->data, total * sizeof *ctx.sampleMat->data, cudaMemcpyHostToDevice);
 
-    int tot4 = total / 1;
-    int max4 = maxAtTime / 4;
-    uint8_t *dcurr4_0 = d_current;
-    // uint8_t *dcurr4_1 = d_current + tot4;
-    // uint8_t *dcurr4_2 = d_current + tot4;
-    // uint8_t *dcurr4_3 = d_current + 3*tot4;
-    uint8_t *dprev4_0 = d_previous;
-    // uint8_t *dprev4_1 = d_previous + tot4;
-    // uint8_t *dprev4_2 = d_previous + tot4;
-    // uint8_t *dprev4_3 = d_previous + 3*tot4;
-    uint8_t *ddiff_0 = d_diff;
-    // uint8_t *ddiff_1 = d_diff + tot4;
-    // uint8_t *ddiff_2 = d_diff + tot4;
-    // uint8_t *ddiff_3 = d_diff + 3*tot4;
-    // uint8_t *pframe_0 = pframe->data;
-    // uint8_t *pframe_1 = pframe->data + total/4;
-    // uint8_t *pframe_2 = pframe->data + total/2;
-    // uint8_t *pframe_3 = pframe->data + 3*total/4;
+    int max4 = maxAtTime / sizeof(chunk_t);
+
+    // struct cb_args *pargs = new struct cb_args;
+    // pargs->d_pos = d_pos;
+    // pargs->show_w_fd = show_pipe[1];
 
 #endif
-
-    struct cb_args *pargs = new struct cb_args;
-    pargs->d_pos = d_pos;
-    pargs->show_w_fd = show_pipe[1];
 
     Mat previous = ctx.sampleMat->clone();
 
@@ -405,12 +345,12 @@ int main() {
         pready->h_pos = 0;
         for (int i = 0; i < total; i++) {
             int df = pready->pframe->data[i] - previous.data[i];
-            if (df < -LR_THRESHOLDS | df > LR_THRESHOLDS) {
+            if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
                 pready->pframe->data[pready->h_pos] = df;
                 pready->h_xs[pready->h_pos] = i;
                 pready->h_pos++;
             } else {
-                pready->pframe->data[i] -= df;
+                pvs.data[i] -= df;
             }
         }
 
@@ -418,65 +358,46 @@ int main() {
 
 #elif defined(GPU)
 
-        uint8_t *d_prev = dcurr4_0;
-        dcurr4_0 = dprev4_0;
-        dprev4_0 = d_prev;
-
-        // d_prev = dcurr4_1;
-        // dcurr4_1 = dprev4_1;
-        // dprev4_1 = d_prev;
-
-        // d_prev = d_current;
-        // d_current = d_previous;
-        // d_previous = d_prev;
-
-        // d_prev = dcurr4_1;
-        // dcurr4_1 = dprev4_1;
-        // dprev4_1 = d_prev;
-
-        // d_prev = dcurr4_2;
-        // dcurr4_2 = dprev4_2;
-        // dprev4_2 = d_prev;
-
-        // d_prev = dcurr4_3;
-        // dcurr4_3 = dprev4_3;
-        // dprev4_3 = d_prev;
-
+        /******************** ********************/
+        /* GPU NAIF
+        /******************** ********************/
         // cudaMemset(d_pos, 0, sizeof *d_pos);
 
-        cudaMemcpyAsync(dcurr4_0, pready->pframe->data, tot4, cudaMemcpyHostToDevice);
-        kernel2<<<1, prop.maxThreadsPerBlock, 0>>>(dcurr4_0, dprev4_0, ddiff_0, max4, d_pos, d_xs);
-        cudaMemcpyAsync(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
+        // cudaMemcpy(d_previous, previous.data, total, cudaMemcpyHostToDevice);
+        // cudaMemcpy(d_current, pready->pframe->data, total, cudaMemcpyHostToDevice);
+        // kernel<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, maxAtTime, d_pos, d_xs);
+        // cudaMemcpy(pready->pframe->data, d_diff, total, cudaMemcpyDeviceToHost);
+        // cudaMemcpy(pready->h_xs, d_xs, total * sizeof *d_xs, cudaMemcpyDeviceToHost);
+        // cudaMemcpy(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
+
+        // cudaMemcpy(previous.data, d_current, total, cudaMemcpyDeviceToHost);
+
+
+
+
+        /******************** ********************/
+        /* GPU NAIF - async version and no previous copy
+        /******************** ********************/
+
+        // current-previous swap
+        uint8_t *d_prev = d_current;
+        d_current = d_previous;
+        d_previous = d_prev;
+
+        // cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
+
+        // Copy in the current pointer and run 
+        cudaMemcpyAsync(d_current, pready->pframe->data, total, cudaMemcpyHostToDevice);
+
+        // kernel<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, maxAtTime, d_pos, d_xs);
+        kernel2<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, max4, d_pos, d_xs);
+
+        cudaMemcpyAsync(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
-        cudaMemcpyAsync(pready->pframe->data, ddiff_0, pready->h_pos, cudaMemcpyDeviceToHost);//TODO: *h_pos instead of tot4
+
+        cudaMemcpyAsync(pready->pframe->data, d_diff, pready->h_pos, cudaMemcpyDeviceToHost);
         cudaMemcpyAsync(pready->h_xs, d_xs, pready->h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost);
-
-        // pargs->pready = pready;
-        // cudaStreamAddCallback(streams[nstream], cb, (void *)pargs, 0);
-
-        // nstream++;
-        // nstream %= 4;
-
-        // cudaMemcpyAsync(dcurr4_1, pready->pframe->data + tot4, tot4, cudaMemcpyHostToDevice, streams[1]);
-        // kernel<<<1, prop.maxThreadsPerBlock, 0, streams[1]>>>(dcurr4_1, dprev4_1, ddiff_1, max4, d_pos, d_xs);
-        // cudaMemcpyAsync(pready->pframe->data + tot4, ddiff_1, tot4, cudaMemcpyDeviceToHost, streams[1]);//TODO: *h_pos instead of tot4
-        // cudaMemcpyAsync(pready->h_xs + tot4, d_xs + tot4, tot4 * sizeof *d_xs, cudaMemcpyDeviceToHost, streams[1]);
-
-
-        // cudaMemcpyAsync(dcurr4_1, pframe_1, tot4, cudaMemcpyHostToDevice, streams[1]);
-        // kernel<<<1, prop.maxThreadsPerBlock, 0, streams[1]>>>(dcurr4_1, dprev4_1, ddiff_1, max4, d_pos);
-        // cudaMemcpyAsync(pframe_1, ddiff_1, tot4, cudaMemcpyDeviceToHost, streams[1]);
-
-        // cudaMemcpyAsync(dcurr4_2, pframe_2, tot4, cudaMemcpyHostToDevice, streams[2]);
-        // kernel<<<1, prop.maxThreadsPerBlock, 0, streams[2]>>>(dcurr4_2, dprev4_2, ddiff_2, max4, d_pos);
-        // cudaMemcpyAsync(pframe_2, ddiff_2, tot4, cudaMemcpyDeviceToHost, streams[2]);
-
-        // cudaMemcpyAsync(dcurr4_3, pframe_3, tot4, cudaMemcpyHostToDevice, streams[3]);
-        // kernel<<<1, prop.maxThreadsPerBlock, 0, streams[3]>>>(dcurr4_3, dprev4_3, ddiff_3, max4, d_pos);
-        // cudaMemcpyAsync(pframe_3, ddiff_3, tot4, cudaMemcpyDeviceToHost, streams[3]);
-
         cudaDeviceSynchronize();
-        // cudaMemcpy(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost); 
 
 #endif
         auto end3 = std::chrono::high_resolution_clock::now();
