@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <fcntl.h>    /* For O_RDWR */
+#include <sys/ioctl.h>
+#include <unistd.h>   /* For open(), creat() */
 #include <netdb.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -11,13 +14,39 @@
 #include <time.h>
 #include <stdint.h>
 #include "opencv2/opencv.hpp"
+#include <pthread.h>
+#include "v4l.h"
+#include <chrono>
+
+#define NSTREAMS 1
 
 using namespace cv;
 
+struct args_s {
+    int fd;
+    VideoCapture *cap;
+    Mat *frame;
+    int total;
+};
+
+struct px_df {
+    int x;
+    uint8_t diff;
+};
+
+struct ctx {
+    uint8_t *current;
+    uint8_t *previous;
+    uint8_t *diff;
+    int maxSect;
+    unsigned int *pos;
+};
+
 static bool do_cont = true;
 
-__global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect) {
+__global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
+    // int df, npos;
 
     // printf("%d .. %d\n", x * maxSect, x * maxSect + maxSect);
     // printf("%d\n", x);
@@ -25,6 +54,13 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, uint8_t *diff, int m
     int max = x * maxSect + maxSect;
     for (int i = x * maxSect; i < max; i++) {
         diff[i] = current[i] - previous[i];
+        // xs[i] = 0;
+        // if (true) {
+        //     npos = atomicInc(pos, 6220801);
+        //     diff[npos].x = i;
+        //     diff[npos].diff = df;
+        //     printf("%u] %d %d\n", npos, i, df);
+        // }
     }
 }
 
@@ -32,15 +68,37 @@ void sighdl(int sig) {
 	do_cont = false;
 }
 
+// void *th_hdl(void *args_ptr) {
+
+//     struct args_s *args = (struct args_s *)args_ptr;
+
+//     do {
+//         *args->cap >> *args->frame;
+//         write(args->fd, args->frame->data, args->total * sizeof *args->frame->data);
+//     } while(!args->frame->empty());
+
+// }
+
 int main() {
     struct cudaDeviceProp prop;
     struct epoll_event ev, events[10];
     struct addrinfo *result, *rp;
-    int i, j, max;
+    int i;
     int sfd, epollfd, nfds, sfd2;
-    uint8_t *d_diff, *d_current, *d_previous;
+    uint8_t *d_current, *d_previous;
+    uint8_t *d_diff;
+    int *d_xs;
+    unsigned int *d_pos, h_pos;
+    cudaStream_t streams[NSTREAMS];
+    int startx;
+    int starty;
+    int maxn;
 
     cudaGetDeviceProperties(&prop, 0);
+
+    for (i = 0; i < NSTREAMS; i++) {
+        cudaStreamCreate(&streams[i]);
+    }
 
     getaddrinfo("127.0.0.1", "2734", NULL, &result);
     for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -69,17 +127,54 @@ int main() {
 	signal(SIGINT, sighdl);
 
     VideoCapture cap;
-    if (!cap.open("video.mp4")) return 1;
+    if (!cap.open(0, CAP_V4L)) return 1;
 
-    Mat previous, frame;
-    cap >> frame;
+    auto codec = cv::VideoWriter::fourcc('M','J','P','G');
+    cap.set(cv::CAP_PROP_FOURCC, codec);
 
-    const int total = 3 * frame.cols * frame.rows;
+    cap.set(3, 1920);
+    cap.set(4, 1080);
+
+    Mat base;
+    cap >> base;
+
+    printf("suck it- c %d, r %d\n", base.cols, base.rows);
+
+
+    const int total = 3 * base.cols * base.rows;
+    // const int total = 3 * 1920 * 1080;
+    // const int total = sz;
     cudaMalloc((void **)&d_diff, total * sizeof *d_diff);
+    cudaMalloc((void **)&d_xs, total * sizeof *d_xs);
     cudaMalloc((void **)&d_current, total * sizeof *d_current);
     cudaMalloc((void **)&d_previous, total * sizeof *d_previous);
-    uint8_t *h_buffer = new uint8_t[total];
+
+    cudaMalloc((void **)&d_pos, sizeof *d_pos);
+    cudaMemset((void *)d_pos, 0, sizeof *d_pos);
+   
+    // uint8_t *h_buffer = new uint8_t[total];
+    uint8_t *h_buffer;
+    cudaMallocHost((void **)&h_buffer, total * sizeof *h_buffer);
+
+    int *h_xs;
+    cudaMallocHost((void **)&h_xs, total * sizeof *h_xs);
+
+    // uint8_t *h_frame;
+    // cudaMallocHost((void **)&h_frame, total);
+    Mat frame(base.rows, base.cols, base.type(), h_buffer);
+
     int maxAtTime = total / prop.maxThreadsPerBlock;
+
+    startx = 400;
+    starty = 400;
+    maxn = 400;
+
+
+    // int pipe_fd[2];
+    // pipe(pipe_fd);
+    // pthread_t thid;
+    // struct args_s args = {.fd = pipe_fd[1], .cap = &cap, .frame = &frame, .total = total};
+    // pthread_create(&thid, NULL, th_hdl, (void *)&args);
 
     while (do_cont) {
         printf("wait..\n");
@@ -94,10 +189,14 @@ int main() {
                 ev.data.fd = sfd2;
                 epoll_ctl(epollfd, 1, sfd2, &ev);
 
-                max = 0;
                 int fps = 0;
-                clock_t start = clock();
+                bool started = false;
+                bool skip = false;
+                int part = 0;
+                int offset;
                 while (1) {
+
+                    auto begin = std::chrono::high_resolution_clock::now();
 
 					if (!do_cont) {
 						printf("\n closing!\n");
@@ -106,37 +205,67 @@ int main() {
 						exit(0);
 					}
 
-					cap >> frame;
-					if (frame.empty()) {
+                    auto begin2 = std::chrono::high_resolution_clock::now();
+                    // read(pipe_fd[0], frame.data, total * sizeof *frame.data);
+
+                    cap >> frame;
+                    // cvtColor(frame.data, frame.data, YUY)
+                    if (frame.empty()) {
                         break;  // end of video stream
                     }
+                    // grab_frame(fd, sz, h_frame);
+                    
+                    auto end2 = std::chrono::high_resolution_clock::now();
 
-					imshow("this is you, smile! :)", frame);
-					if (waitKey(10) == 27) {
-						break;  // stop capturing by pressing ESC
-                    }
+                    auto begin3 = std::chrono::high_resolution_clock::now();
+                    if (started) {
 
-					clock_t start2 = clock();
-                    if (!previous.empty()) {
-                        // cudaMemset((void *)d_diff, 0, total * sizeof *d_diff); // optional
-                        cudaMemcpy(d_current, frame.data, total * sizeof *frame.data, cudaMemcpyHostToDevice);
-                        cudaMemcpy(d_previous, previous.data, total * sizeof *frame.data, cudaMemcpyHostToDevice);
-                        kernel<<<3, prop.maxThreadsPerBlock>>>(d_current, d_previous, d_diff, maxAtTime / 3);
-                        cudaMemcpy(h_buffer, d_diff, total * sizeof *h_buffer, cudaMemcpyDeviceToHost);
+                        uint8_t *d_prev = d_current;
+                        d_current = d_previous;
+                        d_previous = d_prev;
+
+                        for (int i = 0; i < maxn; i++) {
+                            cudaMemcpyAsync(d_current, &frame.data[(i + starty) * 1920 + startx], maxn, cudaMemcpyHostToDevice, streams[0]);
+                        }
+
+                        int todo = maxn/prop.maxThreadsPerBlock;
+
+                        kernel<<<1, prop.maxThreadsPerBlock, 0, streams[0]>>>(d_current, d_previous, d_diff, maxAtTime, d_pos);
+                        cudaMemcpyAsync(h_buffer, d_diff, total * sizeof *d_diff, cudaMemcpyDeviceToHost, streams[0]);
+                        // cudaMemcpyAsync(h_xs, d_xs, total * sizeof *d_xs, cudaMemcpyDeviceToHost, streams[0]);
+
                     } else {
+                        cudaMemcpy(d_current, frame.data, total * sizeof *frame.data, cudaMemcpyHostToDevice);
+
+                        // for (int k = 0; k < total; k++) {
+                        //     h_buffer[k] = frame.data[k];
+                        // }
+
                         memcpy(h_buffer, frame.data, total * sizeof *frame.data);
                     }
 
                     cudaDeviceSynchronize();
-                    clock_t end2 = clock();
+                    auto end3 = std::chrono::high_resolution_clock::now();
 
-					clock_t start3 = clock();
+                    auto begin4 = std::chrono::high_resolution_clock::now();
+                    // cudaMemcpy((void *)h_pos, (void *)d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
+                    // printf("pos: %u\n", h_pos);
                     write(sfd2, h_buffer, total * sizeof *h_buffer);
-                    clock_t end3 = clock();
+                    // write(sfd2, h_xs, total * sizeof *h_xs);
+                    auto end4 = std::chrono::high_resolution_clock::now();
 
-					previous = frame.clone();
+                    auto begin5 = std::chrono::high_resolution_clock::now();
+                    started = true;
+                    auto end5 = std::chrono::high_resolution_clock::now();
 
-					printf("\rFPS: %5.2f\tFOR: %6.2f ms\tWR: %6.2f ms", ++fps / (float(clock() - start) / CLOCKS_PER_SEC), (float(end2) - start2) / CLOCKS_PER_SEC * 1e3,  (float(end3) - start3) / CLOCKS_PER_SEC * 1e3);
+                    auto end = std::chrono::high_resolution_clock::now();
+                    auto elaps = std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin);
+                    auto elaps2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end2 - begin2);
+                    auto elaps3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end3 - begin3);
+                    auto elaps4 = std::chrono::duration_cast<std::chrono::nanoseconds>(end4 - begin4);
+                    auto elaps5 = std::chrono::duration_cast<std::chrono::nanoseconds>(end5 - begin5);
+
+					printf("\rFPS: %5.0f\tFOR: %6.2f ms\tWR: %6.2f ms\tCAP: %6.2f ms\tCL: %6.2f", 1 / ((float)elaps.count() * 1e-9), elaps3.count() * 1e-6, elaps4.count() * 1e-6, elaps2.count() * 1e-6, elaps5.count() * 1e-6);
 					fflush(stdout);
                 }
             } else {

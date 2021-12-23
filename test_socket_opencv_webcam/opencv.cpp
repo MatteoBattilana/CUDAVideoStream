@@ -10,15 +10,20 @@
 using namespace std;
 using namespace cv;
 
+#define cols 1920
+#define rows 1080
+
+struct px_df {
+    int x;
+    uint8_t diff;
+};
+
 int main() {
     struct addrinfo *result, *rp;
     int sfd;
-    uint8_t* buffer = new uint8_t[3 * 1080 * 1920];
-
-    // struct addrinfo hints = {
-    //     .ai_family = AF_INET,
-    //     .ai_socktype = SOCK_DGRAM
-    // };
+    uint8_t* buffer = new uint8_t[3 * rows * cols];
+    int* xs = new int[3 * rows * cols];
+    unsigned int pos;
 
     getaddrinfo("192.168.55.1", "2734", NULL, &result);
     for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -33,32 +38,50 @@ int main() {
         close(sfd);
     }
 
-    int iteration = 0;
+    int iteration = -1;
     Mat frame2 = imread("image.bmp", IMREAD_ANYCOLOR);
+
+    printf("reading base\n");
+    int btot = 0;
+    while (btot < (3 * rows * cols * sizeof *buffer)) {
+        btot += read(sfd, buffer + btot, ((3 * rows * cols * sizeof *buffer)) - btot);
+    }
+
+    frame2 = Mat(rows, cols, frame2.type());
+    for (int k = 0; k < 3 * rows * cols; k++) {
+        frame2.data[k] = buffer[k];
+    }
+
+
     while (1) {
-        int btot = 0;
-        while (btot < 3 * 1080 * 1920 * sizeof *buffer) {
-            btot += read(sfd, buffer + btot, 3 * 1080 * 1920 * sizeof *buffer - btot);
+
+        // printf("recving.\n");
+        read(sfd, &pos, sizeof pos);
+
+        btot = 0;
+        while (btot < pos * sizeof *xs) {
+            btot += read(sfd, (uint8_t *)xs + btot, pos * sizeof *xs - btot);
         }
 
-        int buffer_id = 0;
-        if (iteration == 0) {
-            vector<uint8_t> v(buffer, buffer + 3 * 1080 * 1920 * sizeof *buffer);
-            frame2 = Mat(1080, 1920, frame2.type(), &v[0]).clone();
-        } else {
-            for (int i = 0; i < frame2.rows; i++) {
-                for (int j = 0; j < frame2.cols; j++) {
-                    unsigned char* p = frame2.ptr(i, j);  // Y first, X after
-                    p[0] += buffer[buffer_id++];
-                    p[1] += buffer[buffer_id++];
-                    p[2] += buffer[buffer_id++];
-                }
-            }
+        btot = 0;
+        while (btot < pos * sizeof *buffer) {
+            btot += read(sfd, (uint8_t *)buffer + btot, pos * sizeof *buffer - btot);
         }
 
+        int total = 3 * rows * cols;
+        for (int i = 0; i < pos; i++) {
+            // if (xs[i] != 0) {
+            //     printf("RECV xs[%d]=%d, b[%d]=%d\n", i, xs[i], i, buffer[i]);
+            // }
+            frame2.data[xs[i]] += buffer[i];
+        }
+        
+
+        namedWindow("hi", WINDOW_GUI_NORMAL);
         imshow("hi", frame2);
         if (waitKey(10) == 27) break;  // stop capturing by pressing ESC
-        iteration++;
+        // iteration++;
+        // iteration %= 2;
     }
     freeaddrinfo(result);
     return 0;
