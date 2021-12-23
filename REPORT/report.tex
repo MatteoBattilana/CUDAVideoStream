@@ -645,7 +645,239 @@ pready->pframe = new Mat(ctx.sampleMat->rows,ctx.sampleMat->cols,
 		\label{tab:nvprof_naif3}
 	\end{table}
 
-	\subsubsection{Kernel \textit{uint8\_t} access vs \textit{uint32\_t} access}
+	\subsubsection{Kernel global memory access: the cherry on the cake}
+
+	What remains now to further optimize is the kernel execution time. Doing a bunch of analysis, with a maximum number of threads of 1024 each kernel execute a \textit{for loop} that lasts 6075 iterations. Each iteration access in memory three times in the most of the cases (supposing $ N_{pixelChanged} \ll N_{pixelNotChanged} $) and accesses in global memory are a real bit bottleneck for CUDA's kernel because usually the Global memory access time is $400 \sim 600$ cycles. Obviously, each byte needs to be esaminated so it's not possible to randomly cut accesses in memory. How this can be optimized?\\
+
+	The answer to this question is very simple but at the same time it's brilliant: by increase the size of each read or write in memory. By applying this concept, both the memory accesses and the loop iterations are reduced, so it's an optimization in both ways.\\
+
+	The first think to do is to rewrite the kernel in order to support this. The idea is to load into some GPU's registers some bytes regarding a portion of the current and previous frame under consideration by the for loop of a kernel. Then there is always need of a byte-wise substraction and comparison so a inner for loop will access byte-wise the word loaded into the register(s) and will do its computations.\\
+
+	The multi-byte memory access is done using the dynamic pointer cast feature, casting the vector pointers to the data type aimed, Therefore the new kernel implementation, using the most common data type that is the \texttt{int} one, is:
+
+	\begin{lstlisting}[style=CStyle]
+typedef int chunk_t;
+
+__global__ void kernel2(
+uint8_t *current, uint8_t *previous, uint8_t *diff, 
+int maxSect, unsigned int *pos, int *xs) {
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    unsigned int npos;
+    int df;
+    chunk_t cc, pc; // registers storing current copy, previous copy
+
+    if (!x) *pos = 0;
+    __syncthreads();
+
+    int start = x * maxSect;
+    int max = start + maxSect;
+
+    #pragma unroll
+    for (int i = start; i < max; i++) {
+
+        cc = ((chunk_t *)current)[i];
+        pc = ((chunk_t *)previous)[i];
+
+        #pragma unroll
+        for (int j = 0; j < sizeof cc; j++) {
+            df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
+
+            if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+                npos = atomicInc(pos, 6220801);
+                diff[npos] = df;
+                xs[npos] = (i*sizeof cc) + j;
+            } else {
+                current[(i*sizeof cc) + j] -= df;
+            }
+
+        }
+
+    }
+
+}
+	\end{lstlisting}
+
+	The host code changes a little bit because maxAtTime now will be divided by the size of the \texttt{chunk\_t} type:
+
+	\begin{lstlisting}[style=CStyle]
+int max4 = maxAtTime / sizeof(chunk_t);
+
+// CUDA APIs call
+// ...
+kernel2<<<1,nMaxThreads>>>(d_current,d_previous, d_diff, max4, d_pos, d_xs);
+// ...\
+\end{lstlisting}
+
+	The results of the \textit{nvprof} profiler are shown in Table \ref{tab:nvprof_naif4} and is noticeable the big improvement in terms of performances for what concerns the Kernel execution time. In fact, it's almost the 50\% of the previous implementation. The average fps are 21, with a \textit{for} time of 26.0 ms and a \textit{read} time of 30 ms.
+
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{||c | c c c||} 
+			\hline
+			Operation & Avg (ms) & Min (ms) & Max (ms) \\ [0.5ex] 
+			\hline\hline
+			Kernel & 23.700 & 21.590 & 24.671 \\ 
+			\hdashline
+			DtoH & 0.0079 & 0.0008 & 1.0009 \\
+			\hdashline
+			HtoD & 0.6483 & 0.6074 & 2.5641 \\
+			\hline
+		\end{tabular}
+		\caption{Profiling results}
+		\label{tab:nvprof_naif4}
+	\end{table}
+
+	A further optimization can be done by looking at the new kernel implementation and noticing that only 2/3 of the memory accesses are optimized. The feedback write in fact is still done at each byte, and it can be easily optimized by modifying the \texttt{cc} register variable in the inner loop (byte wise) and save back the result in the global memory at the end of the inner loop only if needed (so if the \texttt{cc} variable has been modified).\\
+	
+	The implementation is the follow:
+
+	\begin{lstlisting}[style=CStyle]
+typedef int chunk_t;
+
+__global__ void kernel2(
+uint8_t *current, uint8_t *previous, uint8_t *diff, 
+int maxSect, unsigned int *pos, int *xs) {
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    unsigned int npos;
+    int df;
+    chunk_t cc, pc; // registers storing current copy, previous copy
+    bool currUpdateRequired = false;
+
+    if (!x) *pos = 0;
+    __syncthreads();
+
+    int start = x * maxSect;
+    int max = start + maxSect;
+
+    #pragma unroll
+    for (int i = start; i < max; i++) {
+
+        cc = ((chunk_t *)current)[i];
+        pc = ((chunk_t *)previous)[i];
+
+        #pragma unroll
+        for (int j = 0; j < sizeof cc; j++) {
+            df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
+
+            if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+                npos = atomicInc(pos, 6220801);
+                diff[npos] = df;
+                xs[npos] = (i*sizeof cc) + j;
+            } else {
+                ((uint8_t *)&cc)[j] -= df;
+                currUpdateRequired = true;
+            }
+
+        }
+
+        // storing in global memory only if needed
+        if (currUpdateRequired) {
+        	((chunk_t *)current)[i] = cc;
+        	currUpdateRequired = false;
+        }
+    }
+
+}
+	\end{lstlisting}
+
+	The results of the \textit{nvprof} profiler are shown in Table \ref{tab:nvprof_naif5} and is noticeable another big improvement, reducing the kernel time by another 50\%. The average fps are 24, with a \textit{for} time of 11.5 ms and a \textit{read} time of 40 ms. The overall comparison is shown in Figure \ref{fig:chart5}.
+
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{||c | c c c||} 
+			\hline
+			Operation & Avg (ms) & Min (ms) & Max (ms) \\ [0.5ex] 
+			\hline\hline
+			Kernel & 9.7944 & 8.7887 & 17.906 \\ 
+			\hdashline
+			DtoH & 0.0080 & 0.0008 & 1.2807 \\
+			\hdashline
+			HtoD & 0.6443 & 0.5969 & 2.9633 \\
+			\hline
+		\end{tabular}
+		\caption{Profiling results}
+		\label{tab:nvprof_naif5}
+	\end{table}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.9\linewidth]{images/chart5.png}
+		\caption{\textit{Pixel Difference Comparison}}
+		\label{fig:chart5}
+	\end{figure}
+
+	The overall situation can be optimized even more. CUDA offers the possibility to perform vectorized memory accesses by using vectorized data types. What are them and why they are so important?\\
+
+	First of all, these special data types are of different types depending on their reference type. For example there is \texttt{int2}, \texttt{float3}, \texttt{ulong2} and so on. Looking at the public header files they are defined as follow (taking \texttt{int4} as an example):
+
+	\begin{lstlisting}[style=CStyle]
+struct __device_builtin__ __builtin_align__(16) int4 {
+    int x, y, z, w;
+};
+
+typedef __device_builtin__ struct int4 int4;\end{lstlisting}
+
+	Thanks to the fuct they they are \texttt{\_\_device\_builtin\_\_}, they are identified by the CUDA compiler that will optimize the generated instructions by reducing them and using special \textit{vectorized instructions} capable of a larger transaction in the memory. So thanks to these instructions is possible to load big chunks of data at a time with less instructions. Please note that a struct with 16 int as members will not perform well as expected because int4 is a builtin type so recognized by the compiler and vectorized instructions will be used.\\
+
+	The usage of these vectorized instructions is easily seen at the assembly level. The kernel seen before with a classical \texttt{int} data type is translated into these instructions:
+
+	\begin{lstlisting}[style=CStyle]
+/*00c8*/ MOV R3, R5;
+/*00d0*/ LD.E R18, [R10];
+/*00d8*/ LD.E R14, [R2]; 
+/*00e0*/ SSY 0x240;      \end{lstlisting}
+
+	The two LD.E instructions are the one corresponding to the two reads from the global memory into the \texttt{cc} and \texttt{pc}. The LD.E is a scalar instruction that will load a word from memory. Using instead \texttt{int4} builtin type, the disassembly code will be:
+
+	\begin{lstlisting}[style=CStyle]
+/*00c8*/ MOV R3, R17;        
+/*00d0*/ MOV R12, R0;        
+/*00d8*/ LD.E.128 R4, [R2];  
+/*00e0*/ SSY 0x360;          
+/*00e8*/ LD.E.128 R8, [R12]; \end{lstlisting}
+
+	Here, the two LD.E.128 are vectorized instructions. By using the vectorized load and store instructions LD.E.{64,128} and ST.E.{64,128} operations like load and store data can be done in 64- or 128-bit widths. Using vectorized loads reduces the total number of instructions, reduces latency, and improves bandwidth utilization.\\
+
+	In other words, the performance improvement comes from efficiency gains, in two ways
+
+	\begin{enumerate}
+		\item At the instruction level, a multi-word vector load or store only requires a single instruction to be issued, so the bytes per instruction ratio is higher and total instruction latency for a particular memory transaction is lower.
+		\item At the memory controller level, a vector sized transaction request from a warp results in a larger net memory throughput per transaction, so the bytes per transaction ratio is higher. Fewer transaction requests reduces memory controller contention and can produce higher overall memory bandwidth utilization.
+	\end{enumerate}
+
+	At this point, the results of the \textit{nvprof} profiler are shown in Table \ref{tab:nvprof_naif5} and is noticeable another big improvement, reducing the kernel time by another 50\%. The average fps are 24, with a \textit{for} time of 11.5 ms and a \textit{read} time of 40 ms. The overall comparison is shown in Figure \ref{fig:chart5}.
+
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{||c | c c c||} 
+			\hline
+			Operation & Avg (ms) & Min (ms) & Max (ms) \\ [0.5ex] 
+			\hline\hline
+			Kernel & 9.7944 & 8.7887 & 17.906 \\ 
+			\hdashline
+			DtoH & 0.0080 & 0.0008 & 1.2807 \\
+			\hdashline
+			HtoD & 0.6443 & 0.5969 & 2.9633 \\
+			\hline
+		\end{tabular}
+		\caption{Profiling results}
+		\label{tab:nvprof_naif5}
+	\end{table}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.9\linewidth]{images/chart5.png}
+		\caption{\textit{Pixel Difference Comparison}}
+		\label{fig:chart5}
+	\end{figure}
+
+
+
+	% At this point a question could rise: if \texttt{sizeof(int) = 4}, how the correctness of the algorithm is assured even if $ 6075 / 4 $ is not an integer number? 
+	
+	% TODO: 6075 / 4 is not an int value, what happens?
+
+
 
 
 	TODO:

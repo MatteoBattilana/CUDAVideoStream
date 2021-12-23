@@ -6,5 +6,5 @@
 \contentsline {subsubsection}{\numberline {2.2.1}Naif version}{4}{subsubsection.2.2.1}%
 \contentsline {subsubsection}{\numberline {2.2.2}Asynchronous APIs and removal of usefull operations}{7}{subsubsection.2.2.2}%
 \contentsline {subsubsection}{\numberline {2.2.3}Pinned or page-locked memory}{9}{subsubsection.2.2.3}%
-\contentsline {subsubsection}{\numberline {2.2.4}Kernel \textit {uint8\_t} access vs \textit {uint32\_t} access}{10}{subsubsection.2.2.4}%
+\contentsline {subsubsection}{\numberline {2.2.4}Kernel global memory access: the cherry on the cake}{10}{subsubsection.2.2.4}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 
