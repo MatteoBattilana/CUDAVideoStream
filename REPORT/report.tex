@@ -233,7 +233,7 @@
 	previous = pvs;
 	\end{lstlisting}
 
-	The code here is pretty simple. For each byte, the difference \texttt{df} is computed. If this difference is greater than a fixed threshold \texttt{LR\_THRESHOLDS} it's a good difference so it can be sent. The result of the reconstructed frame at the client side can be seen at Figure \ref{fig:stream_ok}.\\
+	The code here is pretty simple. For each byte, the difference \texttt{df} is computed. If this difference is greater than a fixed threshold \texttt{LR\_THRESHOLDS} means that it is a valid difference so it can be sent. For all the benchmarks proposed in the following, the value of \texttt{LR\_THRESHOLDS} is fixed to $ 20 $. The result of the reconstructed frame at the client side can be seen at Figure \ref{fig:stream_ok}.\\
 
 	\begin{figure}[H]
 		\centering
@@ -455,7 +455,7 @@ int maxSect, unsigned int *pos, int *xs) {
 		\label{tab:nvprof_naif}
 	\end{table}
 
-	\subsubsection{Asynchronous APIs and removal of usefull operations}
+	\subsubsection{Asynchronous APIs and removal of useless operations}
 
 	In the previous implementation, a big portion of the execution time is covered by the kernel execution but the two data transfers are not negligible. The total average time is about 46 ms means that the \textit{for} time is for the 60\% due to the GPU computation and the remaining part is related to host taks.\\
 
@@ -806,7 +806,7 @@ int maxSect, unsigned int *pos, int *xs) {
 		\label{fig:chart5}
 	\end{figure}
 
-	The overall situation can be optimized even more. CUDA offers the possibility to perform vectorized memory accesses by using vectorized data types. What are them and why they are so important?\\
+	The overall situation can be optimized even more. CUDA offers the possibility to perform vectorized memory accesses by using \textit{vectorized data types}. What are them and why they are so important?\\
 
 	First of all, these special data types are of different types depending on their reference type. For example there is \texttt{int2}, \texttt{float3}, \texttt{ulong2} and so on. Looking at the public header files they are defined as follow (taking \texttt{int4} as an example):
 
@@ -817,7 +817,7 @@ struct __device_builtin__ __builtin_align__(16) int4 {
 
 typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 
-	Thanks to the fuct they they are \texttt{\_\_device\_builtin\_\_}, they are identified by the CUDA compiler that will optimize the generated instructions by reducing them and using special \textit{vectorized instructions} capable of a larger transaction in the memory. So thanks to these instructions is possible to load big chunks of data at a time with less instructions. Please note that a struct with 16 int as members will not perform well as expected because int4 is a builtin type so recognized by the compiler and vectorized instructions will be used by activating some internal magic in the compiler itself.\\
+	Thanks to the fact they they are \texttt{\_\_device\_builtin\_\_}, they are identified by the CUDA compiler that will optimize the generated instructions by reducing them and using special \textit{vectorized instructions} capable of a larger transaction in the memory. So thanks to these instructions is possible to load big chunks of data at a time with less instructions. Please note that a common struct with 16 int variables as members will not perform well as expected because int4 is a builtin type so recognized by the compiler and vectorized instructions will be used by activating some internal magic in the compiler itself.\\
 
 	The usage of these vectorized instructions is easily seen at the assembly level. The kernel seen before with a classical \texttt{int} data type is translated into these instructions:
 
@@ -836,9 +836,11 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 /*00e0*/ SSY 0x360;          
 /*00e8*/ LD.E.128 R8, [R12]; \end{lstlisting}
 
-	Here, the two LD.E.128 are vectorized instructions. By using the vectorized load and store instructions LD.E.{64,128} and ST.E.{64,128} operations like load and store data can be done in 64- or 128-bit widths. Using vectorized loads reduces the total number of instructions, reduces latency, and improves bandwidth utilization.\\
+	Here, the two LD.E.128 are vectorized instructions. By using the vectorized load and store instructions LD.E.\{64,128\} (and the counter part ST.E.\{64,128\}) operations like load and store data can be done in 64- or 128-bit widths. Using vectorized loads reduces the total number of instructions, reduces latency, and improves bandwidth utilization.\\
 
-	At this point, the \textit{nvprof} profiler is run and the results are shown in Table \ref{tab:nvprof_naif6} and is noticeable a really big improvement in the computation, reducing the kernel time by another about 60\%. The average fps are 26, with a \textit{for} time of 4.7 ms and a \textit{read} time of 37 ms. The overall comparison is shown in Figure \ref{fig:chart6}.
+	% A small tip. As said these kind of instructions are \textit{vectorized}. They are called in this way because works on a kind of vector and this can be seen in two ways. The first one is looking at the definition of the vectorized type: the \texttt{int4} for example is a struct made of four \texttt{int} so it's a vector of in this sense. Looking at the assembly code instead is possible to see how the two 
+
+	At this point, the \textit{nvprof} profiler is run and the results are shown in Table \ref{tab:nvprof_naif6} and is noticeable a really big improvement in the computation, reducing the kernel time by another 60\%. The average fps are 26, with a \textit{for} time of 4.7 ms and a \textit{read} time of 37 ms. 
 
 	\begin{table}[H]
 		\centering
@@ -857,6 +859,20 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 		\label{tab:nvprof_naif6}
 	\end{table}
 
+	Even if the 128 bit width is the maximum width support, it's possible to optimize the resulting code even more at the instruction level by using a larger builtin types like \texttt{long4}. As can be intuitable, it will be translated into 2 instructions. This helps introducing a slightly optimization by reducing the memory access frequency, achieving an average reduction of 0.4 ms in the kernel execution time.\\
+
+	The resulting assembly code is the following one, where is possible to notice two loads at a time with the first one loading at offset \texttt{0x0} as the normal one and the second one loads at offset \texttt{0x10} that is 128 bit far from the first load, thus with two instructions a total of 256 bit or 32 byte are loaded, that is the size of a \texttt{long4} data type.
+	
+	\begin{lstlisting}[style=CStyle]
+/*00c8*/ MOV R3, R13;
+/*00d0*/ LD.E.128 R8, [R20];
+/*00d8*/ LD.E.128 R4, [R20+0x10];
+/*00e0*/ SSY 0x1e0;
+/*00e8*/ LD.E.128 R12, [R2];
+/*00f0*/ LD.E.128 R16, [R2+0x10]; \end{lstlisting}
+	
+	The overall comparison is shown in Figure \ref{fig:chart6}.
+
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.9\linewidth]{images/chart6.png}
@@ -864,7 +880,7 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 		\label{fig:chart6}
 	\end{figure}
 
-	In other words, the performance improvement comes from efficiency gains, in two ways:
+	In other words, by using \textit{vectorized instructions} the performance improvement comes from efficiency gains, in two ways:
 
 	\begin{enumerate}
 		\item At the instruction level, a multi-word vector load or store only requires a single instruction to be issued, so the bytes per instruction ratio is higher and total instruction latency for a particular memory transaction is lower.
@@ -878,16 +894,16 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 
 
 
-	TODO:
-	\begin{itemize}
-		\item Copying both previous and current everytime and no fixed page host allocation
-		\item Copying only the current and the previous is a swap pointer, still no fixed page host allocation
-		\item Page host allocation
-		\item Copy of all d\_diff and d\_xs
-		\item Copy first d\_pos then a portion of d\_diff and d\_xs according to d\_pos
-		\item Access int-by-int
-		\item AtomicInc in global memory and in shared memory, there are differences?
-		\item Why 512 kernels is best instead of 1024?
-	\end{itemize}
+	% TODO:
+	% \begin{itemize}
+	% 	\item Copying both previous and current everytime and no fixed page host allocation
+	% 	\item Copying only the current and the previous is a swap pointer, still no fixed page host allocation
+	% 	\item Page host allocation
+	% 	\item Copy of all d\_diff and d\_xs
+	% 	\item Copy first d\_pos then a portion of d\_diff and d\_xs according to d\_pos
+	% 	\item Access int-by-int
+	% 	\item AtomicInc in global memory and in shared memory, there are differences?
+	% 	\item Why 512 kernels is best instead of 1024?
+	% \end{itemize}
 
 \end{document}

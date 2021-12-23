@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  23 DEC 2021 02:30
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  23 DEC 2021 13:16
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1111,7 +1111,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 426--427
 
  []
 
-<images/chart2.png, id=151, 607.26875pt x 341.275pt>
+<images/chart2.png, id=150, 607.26875pt x 341.275pt>
 File: images/chart2.png Graphic file (type png)
 <use images/chart2.png>
 Package pdftex.def Info: images/chart2.png  used on input line 432.
@@ -1222,28 +1222,33 @@ Underfull \hbox (badness 10000) in paragraph at lines 839--840
 
  []
 
-<images/chart6.png, id=429, 607.26875pt x 427.5975pt>
+
+Underfull \hbox (badness 10000) in paragraph at lines 862--863
+
+ []
+
+<images/chart6.png, id=429, 607.26875pt x 475.7775pt>
 File: images/chart6.png Graphic file (type png)
 <use images/chart6.png>
-Package pdftex.def Info: images/chart6.png  used on input line 862.
-(pdftex.def)             Requested size: 376.4258pt x 265.05551pt.
-[14 <./images/chart6.png>] [15] (./report.aux)
+Package pdftex.def Info: images/chart6.png  used on input line 878.
+(pdftex.def)             Requested size: 376.4258pt x 294.92091pt.
+[14] [15 <./images/chart6.png>] (./report.aux)
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 32428 strings out of 480539
- 603777 string characters out of 5900304
- 1303573 words of memory out of 5000000
- 48981 multiletter control sequences out of 15000+600000
+ 32445 strings out of 480539
+ 603963 string characters out of 5900304
+ 1303574 words of memory out of 5000000
+ 48991 multiletter control sequences out of 15000+600000
  472545 words of font info for 149 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  125i,13n,131p,10693b,1971s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}</home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmmi7.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr5.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr7.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr8.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmri10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on report.pdf (17 pages, 1510027 bytes).
+Output written on report.pdf (17 pages, 1512679 bytes).
 PDF statistics:
- 617 PDF objects out of 1000 (max. 8388607)
- 547 compressed objects within 6 object streams
- 336 named destinations out of 1000 (max. 500000)
+ 626 PDF objects out of 1000 (max. 8388607)
+ 556 compressed objects within 6 object streams
+ 343 named destinations out of 1000 (max. 500000)
  41589 words of extra memory for PDF output out of 42996 (max. 10000000)
 
