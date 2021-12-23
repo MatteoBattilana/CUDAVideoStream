@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2021.3.29)  21 DEC 2021 20:18
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2021.3.29)  23 DEC 2021 11:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1004,6 +1004,59 @@ Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \@float@everytoks=\toks51
 \@floatcapt=\box48
 )
+(/usr/share/texlive/texmf-dist/tex/latex/arydshln/arydshln.sty
+Package: arydshln 2016/04/28 v1.73 
+\dashlinedash=\dimen274
+\dashlinegap=\dimen275
+\adl@box=\box49
+\adl@height=\dimen276
+\adl@heightsave=\dimen277
+\adl@depth=\dimen278
+\adl@depthsave=\dimen279
+\adl@finaldepth=\dimen280
+\adl@columns=\count183
+\adl@ncol=\count184
+\adl@currentcolumn=\count185
+\adl@currentcolumnsave=\count186
+\adl@totalheight=\count187
+\adl@totalheightsave=\count188
+\adl@dash=\count189
+\adl@gap=\count190
+\adl@cla=\count191
+\adl@clb=\count192
+\adl@everyvbox=\toks52
+\adl@LTpagetotal=\dimen281
+)
+(/usr/share/texlive/texmf-dist/tex/latex/bytefield/bytefield.sty
+Package: bytefield 2017/09/15 v2.4 Network protocol diagrams
+\bytefield@height=\skip75
+\bytefield@height@increment=\skip76
+\entire@bytefield@picture=\box50
+\bf@bitwidth=\skip77
+\bf@bitheight=\skip78
+\units@wide=\skip79
+\units@tall=\skip80
+\units@high=\skip81
+\header@xpos=\skip82
+\c@header@val=\count193
+\c@max@header@val=\count194
+\curly@box=\box51
+\wordlabelr@start=\skip83
+\wordlabelr@end=\skip84
+\wordlabell@start=\skip85
+\wordlabell@end=\skip86
+\total@lbox@width=\skip87
+\label@box@width=\skip88
+\label@box@height=\skip89
+\word@label@box=\box52
+)
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
+Package: fontenc 2017/04/05 v2.0i Standard LaTeX package
+
+(/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.def
+File: t1enc.def 2017/04/05 v2.0i Standard LaTeX file
+LaTeX Font Info:    Redeclaring font encoding T1 on input line 48.
+))
 (/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
 Package: fontenc 2017/04/05 v2.0i Standard LaTeX package
 
@@ -1013,21 +1066,21 @@ LaTeX Font Info:    Redeclaring font encoding T1 on input line 48.
 )) (./abstract.aux)
 \openout1 = `abstract.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 113.
-LaTeX Font Info:    ... okay on input line 113.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 113.
-LaTeX Font Info:    ... okay on input line 113.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 113.
-LaTeX Font Info:    ... okay on input line 113.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 113.
-LaTeX Font Info:    ... okay on input line 113.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 113.
-LaTeX Font Info:    ... okay on input line 113.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 113.
-LaTeX Font Info:    ... okay on input line 113.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 113.
-LaTeX Font Info:    ... okay on input line 113.
-LaTeX Font Info:    Try loading font information for T1+lmr on input line 113.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 195.
+LaTeX Font Info:    ... okay on input line 195.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 195.
+LaTeX Font Info:    ... okay on input line 195.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 195.
+LaTeX Font Info:    ... okay on input line 195.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 195.
+LaTeX Font Info:    ... okay on input line 195.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 195.
+LaTeX Font Info:    ... okay on input line 195.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 195.
+LaTeX Font Info:    ... okay on input line 195.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 195.
+LaTeX Font Info:    ... okay on input line 195.
+LaTeX Font Info:    Try loading font information for T1+lmr on input line 195.
 
 (/usr/share/texmf/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
@@ -1068,17 +1121,17 @@ File: t1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count183
-\scratchdimen=\dimen274
-\scratchbox=\box49
-\nofMPsegments=\count184
-\nofMParguments=\count185
-\everyMPshowfont=\toks52
-\MPscratchCnt=\count186
-\MPscratchDim=\dimen275
-\MPnumerator=\count187
-\makeMPintoPDFobject=\count188
-\everyMPtoPDFconversion=\toks53
+\scratchcounter=\count195
+\scratchdimen=\dimen282
+\scratchbox=\box53
+\nofMPsegments=\count196
+\nofMParguments=\count197
+\everyMPshowfont=\toks53
+\MPscratchCnt=\count198
+\MPscratchDim=\dimen283
+\MPnumerator=\count199
+\makeMPintoPDFobject=\count266
+\everyMPtoPDFconversion=\toks54
 ) (/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
 Package: epstopdf-base 2016/05/15 v2.6 Base part for package epstopdf
 
@@ -1097,9 +1150,9 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
 ABD: EveryShipout initializing macros
-\c@lstlisting=\count189
-\AtBeginShipoutBox=\box50
-Package hyperref Info: Link coloring OFF on input line 113.
+\c@lstlisting=\count267
+\AtBeginShipoutBox=\box54
+Package hyperref Info: Link coloring OFF on input line 195.
 
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2016/05/21 v2.44 Cross-referencing by name of section
@@ -1107,11 +1160,11 @@ Package: nameref 2016/05/21 v2.44 Cross-referencing by name of section
 (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/gettitlestring.sty
 Package: gettitlestring 2016/05/16 v1.5 Cleanup title references (HO)
 )
-\c@section@level=\count190
+\c@section@level=\count268
 )
-LaTeX Info: Redefining \ref on input line 113.
-LaTeX Info: Redefining \pageref on input line 113.
-LaTeX Info: Redefining \nameref on input line 113.
+LaTeX Info: Redefining \ref on input line 195.
+LaTeX Info: Redefining \pageref on input line 195.
+LaTeX Info: Redefining \nameref on input line 195.
 
 (./abstract.out) (./abstract.out)
 \@outlinefile=\write4
@@ -1125,9 +1178,9 @@ Package caption Info: End \AtBeginDocument code.
 Package pgfplots Warning: running in backwards compatibility mode (unsuitable t
 ick labels; missing features). Consider writing \pgfplotsset{compat=1.15} into 
 your preamble.
- on input line 113.
+ on input line 195.
 
-LaTeX Info: Redefining \microtypecontext on input line 113.
+LaTeX Info: Redefining \microtypecontext on input line 195.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
@@ -1147,7 +1200,7 @@ Package microtype Info: Character `029' is missing
  [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-LaTeX Font Info:    Try loading font information for T1+lmss on input line 127.
+LaTeX Font Info:    Try loading font information for T1+lmss on input line 209.
 
  (/usr/share/texmf/tex/latex/lm/t1lmss.fd
 File: t1lmss.fd 2009/10/30 v1.6 Font defs for Latin Modern
@@ -1156,7 +1209,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmss' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-LaTeX Font Info:    Try loading font information for T1+lmtt on input line 133.
+LaTeX Font Info:    Try loading font information for T1+lmtt on input line 215.
 
  (/usr/share/texmf/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
@@ -1165,46 +1218,46 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
-<images/heatmap/v0.png, id=33, 1144.275pt x 321.45094pt>
+<images/heatmap/v0.png, id=53, 1144.275pt x 321.45094pt>
 File: images/heatmap/v0.png Graphic file (type png)
 <use images/heatmap/v0.png>
-Package pdftex.def Info: images/heatmap/v0.png  used on input line 138.
+Package pdftex.def Info: images/heatmap/v0.png  used on input line 220.
 (pdftex.def)             Requested size: 376.4258pt x 105.74559pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 142--144
+Underfull \hbox (badness 10000) in paragraph at lines 224--226
 
  []
 
-LaTeX Font Info:    Try loading font information for OT1+lmr on input line 147.
+LaTeX Font Info:    Try loading font information for OT1+lmr on input line 229.
 
 (/usr/share/texmf/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OML+lmm on input line 147.
+LaTeX Font Info:    Try loading font information for OML+lmm on input line 229.
 
 
 (/usr/share/texmf/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 147
+LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 229
 .
 
 (/usr/share/texmf/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMX+lmex on input line 147
+LaTeX Font Info:    Try loading font information for OMX+lmex on input line 229
 .
 
 (/usr/share/texmf/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 147.
+(Font)              <10> on input line 229.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 147.
+(Font)              <7> on input line 229.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 147.
-LaTeX Font Info:    Try loading font information for U+msa on input line 147.
+(Font)              <5> on input line 229.
+LaTeX Font Info:    Try loading font information for U+msa on input line 229.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
@@ -1212,7 +1265,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 147.
+LaTeX Font Info:    Try loading font information for U+msb on input line 229.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
@@ -1220,7 +1273,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-Overfull \hbox (38.00563pt too wide) detected at line 149
+Overfull \hbox (38.00563pt too wide) detected at line 231
 \OML/lmm/m/it/10 diff \OT1/lmr/m/n/10 = \OML/lmm/m/it/10 abs\OT1/lmr/m/n/10 (\O
 ML/lmm/m/it/10 Previous\OT1/lmr/m/n/10 [\OML/lmm/m/it/10 i; R\OT1/lmr/m/n/10 ] 
 \OMS/lmsy/m/n/10 ^^@ \OML/lmm/m/it/10 Curr\OT1/lmr/m/n/10 [\OML/lmm/m/it/10 i; 
@@ -1236,75 +1289,120 @@ pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.183 
-       [1 <./images/heatmap/v0.png>]
-<images/heatmap/v0-red.png, id=49, 722.7pt x 408.02437pt>
+l.265 	T
+        he CPU implementation is the following: [1 <./images/heatmap/v0.png>]
+(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2015/06/04 1.6 listings language file
+)
+(/usr/share/texlive/texmf-dist/tex/latex/listings/lstmisc.sty
+File: lstmisc.sty 2015/06/04 1.6 (Carsten Heinz)
+)
+LaTeX Font Info:    Try loading font information for OMS+lmr on input line 275.
+
+
+(/usr/share/texmf/tex/latex/lm/omslmr.fd
+File: omslmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
+)
+LaTeX Font Info:    Font shape `OMS/lmr/m/n' in size <8> not available
+(Font)              Font shape `OMS/lmsy/m/n' tried instead on input line 275.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <8> on input line 278.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <6> on input line 278.
+
+Underfull \hbox (badness 10000) in paragraph at lines 315--317
+
+ []
+
+[2]
+Underfull \hbox (badness 10000) in paragraph at lines 333--335
+
+ []
+
+[3]
+Overfull \hbox (9.55032pt too wide) in paragraph at lines 400--401
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
+ []
+
+
+Overfull \hbox (9.55032pt too wide) in paragraph at lines 402--404
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
+ []
+
+[4]
+Underfull \hbox (badness 10000) in paragraph at lines 501--503
+
+ []
+
+[5] (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2015/06/04 1.6 listings language file
+)
+(/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
+File: lstlang1.sty 2015/06/04 1.6 listings language file
+)
+<images/heatmap/plot_kernel_times.png, id=229, 462.528pt x 346.896pt>
+File: images/heatmap/plot_kernel_times.png Graphic file (type png)
+<use images/heatmap/plot_kernel_times.png>
+Package pdftex.def Info: images/heatmap/plot_kernel_times.png  used on input li
+ne 529.
+(pdftex.def)             Requested size: 150.57088pt x 112.9304pt.
+<images/heatmap/hd.png, id=230, 462.528pt x 346.896pt>
+File: images/heatmap/hd.png Graphic file (type png)
+<use images/heatmap/hd.png>
+Package pdftex.def Info: images/heatmap/hd.png  used on input line 536.
+(pdftex.def)             Requested size: 150.57088pt x 112.9304pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 543--546
+
+ []
+
+[6 <./images/heatmap/plot_kernel_times.png> <./images/heatmap/hd.png>]
+<images/heatmap/histo_results.png, id=260, 455.45157pt x 255.95625pt>
+File: images/heatmap/histo_results.png Graphic file (type png)
+<use images/heatmap/histo_results.png>
+Package pdftex.def Info: images/heatmap/histo_results.png  used on input line 5
+70.
+(pdftex.def)             Requested size: 271.86237pt x 152.786pt.
+<images/heatmap/v0-red.png, id=261, 722.7pt x 408.02437pt>
 File: images/heatmap/v0-red.png Graphic file (type png)
 <use images/heatmap/v0-red.png>
-Package pdftex.def Info: images/heatmap/v0-red.png  used on input line 187.
+Package pdftex.def Info: images/heatmap/v0-red.png  used on input line 580.
 (pdftex.def)             Requested size: 167.29893pt x 94.45377pt.
-
-Underfull \hbox (badness 10000) in paragraph at lines 195--197
-
- []
-
-[2 <./images/heatmap/v0-red.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 220--240
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 241--263
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 241--263
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 241--263
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 265--267
-
- []
-
-[3] [4]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 268.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 268.
+ [7 <./images/heatmap/histo_results.png> <./images/heatmap/v0-red.png>]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 587.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 587.
  (./abstract.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 268.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 268.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 587.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 587.
 Package rerunfilecheck Info: File `abstract.out' has not changed.
-(rerunfilecheck)             Checksum: 0A37B09C56B0983E7D04FF95FDBF8CCA;259.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 268.
+(rerunfilecheck)             Checksum: 0A0B49A621FD79F105193A0C2370313F;668.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 587.
  ) 
 Here is how much of TeX's memory you used:
- 35051 strings out of 494847
- 796238 string characters out of 6179080
- 1270548 words of memory out of 5000000
- 37692 multiletter control sequences out of 15000+600000
- 58715 words of font info for 74 fonts, out of 8000000 for 9000
+ 36139 strings out of 494847
+ 811481 string characters out of 6179080
+ 1309238 words of memory out of 5000000
+ 38554 multiletter control sequences out of 15000+600000
+ 74131 words of font info for 100 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
- 73i,11n,106p,8865b,2049s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 73i,12n,106p,8865b,2049s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dv
-ips/lm/lm-mathit.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/s
+ips/lm/lm-mathsy.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/s
 hare/texmf/fonts/enc/dvips/lm/lm-rm.enc}</usr/share/texmf/fonts/type1/public/lm
 /lmbx10.pfb></usr/share/texmf/fonts/type1/public/lm/lmbx12.pfb></usr/share/texm
 f/fonts/type1/public/lm/lmcsc10.pfb></usr/share/texmf/fonts/type1/public/lm/lmm
 i10.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi7.pfb></usr/share/texmf/fon
 ts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr12.pfb>
-</usr/share/texmf/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf/fonts/type
-1/public/lm/lmssbx10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></u
-sr/share/texmf/fonts/type1/public/lm/lmtt10.pfb>
-Output written on abstract.pdf (5 pages, 1260457 bytes).
+</usr/share/texmf/fonts/type1/public/lm/lmr5.pfb></usr/share/texmf/fonts/type1/
+public/lm/lmr8.pfb></usr/share/texmf/fonts/type1/public/lm/lmr9.pfb></usr/share
+/texmf/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf/fonts/type1/public/lm
+/lmssbx10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/te
+xmf/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf/fonts/type1/public/lm/lmt
+t10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt9.pfb>
+Output written on abstract.pdf (8 pages, 1517598 bytes).
 PDF statistics:
- 114 PDF objects out of 1000 (max. 8388607)
- 91 compressed objects within 1 object stream
- 15 named destinations out of 1000 (max. 500000)
- 17975 words of extra memory for PDF output out of 20736 (max. 10000000)
+ 365 PDF objects out of 1000 (max. 8388607)
+ 325 compressed objects within 4 object streams
+ 178 named destinations out of 1000 (max. 500000)
+ 25198 words of extra memory for PDF output out of 29859 (max. 10000000)
 

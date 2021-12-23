@@ -49,6 +49,9 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
 int main() {
     uint8_t *d_current, *d_previous;
     uint8_t *d_heat_pixels;
+    struct cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0);
+    int threads = prop.maxThreadsPerBlock;
 
     cudaMalloc((void **)&d_current, W*H*C * sizeof *d_current);
     cudaMalloc((void **)&d_previous, W*H*C * sizeof *d_previous);
@@ -78,7 +81,7 @@ int main() {
         
         cudaMemcpy(d_previous, image1.data,  W*H*C * sizeof *image1.data, cudaMemcpyHostToDevice);
         cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
-        kernel<<<1, 300>>>(d_current, d_previous, (W*H*C)/300, d_heat_pixels);
+        kernel<<<1, threads>>>(d_current, d_previous, (W*H*C)/threads, d_heat_pixels);
         cudaMemcpy(res.data, d_heat_pixels, W*H*C * sizeof *res.data, cudaMemcpyDeviceToHost);
 
         auto end = std::chrono::high_resolution_clock::now();

@@ -24,15 +24,27 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textit  {Example of real-time heat map from webcam}\relax }}{1}{figure.caption.1}}
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
 \newlabel{fig:heat_v0}{{1}{1}{\textit {Example of real-time heat map from webcam}\relax }{figure.caption.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Heat map pixel mapping - Naif implementation}{1}{subsection.2.1}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Heat map pixel mapping - CPU Naif implementation}{1}{subsection.2.1}}
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \textit  {Mapping function from pixel difference to RGB components}\relax }}{2}{figure.caption.2}}
 \newlabel{fig:heat_sine}{{2}{2}{\textit {Mapping function from pixel difference to RGB components}\relax }{figure.caption.2}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textit  {All non normalized pixel difference are turned to red if above a certain threshold, in this case 30}\relax }}{2}{figure.caption.3}}
-\newlabel{fig:v0-red}{{3}{2}{\textit {All non normalized pixel difference are turned to red if above a certain threshold, in this case 30}\relax }{figure.caption.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}CUDA heat map implementation}{2}{subsection.2.2}}
-\newlabel{fig:table_v1}{{\caption@xref {fig:table_v1}{ on input line 217}}{3}{CUDA heat map implementation}{figure.caption.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textit  {Profiling result v1.cu}\relax }}{3}{figure.caption.4}}
-\newlabel{fig:table_v2}{{\caption@xref {fig:table_v2}{ on input line 238}}{3}{CUDA heat map implementation}{figure.caption.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textit  {Profiling result v2.cu}\relax }}{3}{figure.caption.5}}
-\newlabel{fig:table_v3}{{\caption@xref {fig:table_v3}{ on input line 261}}{3}{CUDA heat map implementation}{figure.caption.6}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textit  {Profiling result v3.cu}\relax }}{3}{figure.caption.6}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.1}CUDA first naif version}{2}{subsubsection.2.2.1}}
+\newlabel{fig:table_v1}{{\caption@xref {fig:table_v1}{ on input line 381}}{3}{CUDA first naif version}{figure.caption.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textit  {Profiling result v1.cu}\relax }}{3}{figure.caption.3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.2}CUDA switching frames}{4}{subsubsection.2.2.2}}
+\newlabel{fig:table_v2}{{\caption@xref {fig:table_v2}{ on input line 423}}{4}{CUDA switching frames}{figure.caption.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textit  {Profiling result v2.cu}\relax }}{4}{figure.caption.4}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {2.2.3}CUDA access at the int level instead of uint8\_t}{4}{subsubsection.2.2.3}}
+\newlabel{fig:table_v3}{{\caption@xref {fig:table_v3}{ on input line 493}}{5}{CUDA access at the int level instead of uint8\_t}{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textit  {Profiling result v3.cu}\relax }}{5}{figure.caption.5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Evaluation of the number of threads}{5}{subsection.2.3}}
+\newlabel{sec:thread_n}{{2.3}{5}{Evaluation of the number of threads}{subsection.2.3}{}}
+\newlabel{fig:sub1}{{6a}{6}{Time needed to perform an heatmap depending on the number of kernel set\relax }{figure.caption.6}{}}
+\newlabel{sub@fig:sub1}{{a}{6}{Time needed to perform an heatmap depending on the number of kernel set\relax }{figure.caption.6}{}}
+\newlabel{fig:sub2}{{6b}{6}{Time needed to copy from Host to Device (blue) and from Device to Host (orange)\relax }{figure.caption.6}{}}
+\newlabel{sub@fig:sub2}{{b}{6}{Time needed to copy from Host to Device (blue) and from Device to Host (orange)\relax }{figure.caption.6}{}}
+\newlabel{fig:table_v4}{{\caption@xref {fig:table_v4}{ on input line 564}}{7}{Evaluation of the number of threads}{figure.caption.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces \textit  {Profiling result v3.cu}\relax }}{7}{figure.caption.7}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Noise filtering}{7}{section.3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces \textit  {All non normalized pixel difference are turned to red if above a certain threshold, in this case 30}\relax }}{7}{figure.caption.8}}
+\newlabel{fig:v0-red}{{8}{7}{\textit {All non normalized pixel difference are turned to red if above a certain threshold, in this case 30}\relax }{figure.caption.8}{}}

@@ -5,7 +5,7 @@ LFLAGS += -lv4l2
 CFLAGS += -std=c++11 -g -lineinfo --use_fast_math
 INCLUDES += -I/usr/include/opencv4
 
-all: build-v3 run
+all: build-v4 run
 
 build-cpu: 
 	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) cpu.cu -o heatMap
@@ -18,6 +18,9 @@ build-v2:
 
 build-v3: 
 	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v3.cu -o heatMap
+
+build-v4: 
+	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v4.cu -o heatMap
 
 run:
 	./heatMap

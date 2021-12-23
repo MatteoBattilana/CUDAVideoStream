@@ -16,13 +16,13 @@
 #include "opencv2/opencv.hpp"
 #include <pthread.h>
 #include <cmath>
-#include <cstdlib>
 using namespace cv;
 
 #define SINE
 #define H 1080
 #define W 1920
 #define C 3
+#define STREAM_N 1
 
 __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t* d_heat_pixels) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
@@ -33,11 +33,11 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
 
         cc = ((int *)current)[i];
         pc = ((int *)previous)[i];
+        int pixelDiff = 0;
         for (int j = 0; j < 4; j++) {
-            
-            if((i*4+j) % 3 == 0){
-                int pixelDiff = fabsf(((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j]) + fabsf(((uint8_t *)&cc)[j+1] - ((uint8_t *)&pc)[j+1]) + fabsf(((uint8_t *)&cc)[j+2] - ((uint8_t *)&pc)[j+2]);
+            pixelDiff += fabsf(((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j]);
 
+            if((i*4+j) % 3 == 0){
                 #ifdef SINE
                 float diff1 = pixelDiff/(255*2.0);
                 int r = fminf(fmaxf(sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
@@ -58,19 +58,17 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
 }
    
 
-int main(int argc, char *argv[]) {
-    int threads = 1024;
-    if(argc == 2){
-        threads = atoi(argv[1]);
-    }
-    printf("Number of threads set to: %d\n", threads);
-
+int main() {
     uint8_t *d_current, *d_previous;
     uint8_t *d_heat_pixels;
 
     cudaMalloc((void **)&d_current, W*H*C * sizeof *d_current);
     cudaMalloc((void **)&d_previous, W*H*C * sizeof *d_previous);
     cudaMalloc((void **)&d_heat_pixels, W*H*C * sizeof *d_heat_pixels);
+
+    // Stream creation
+    cudaStream_t stream[STREAM_N];
+    for (int i = 0; i < STREAM_N; i++) cudaStreamCreate(&stream[i]);
 
     Mat image1, image2, res;
     VideoCapture cap;
@@ -83,9 +81,7 @@ int main(int argc, char *argv[]) {
     res = image1.clone();
     cudaMemcpy(d_previous, image1.data,  W*H*C * sizeof *image1.data, cudaMemcpyHostToDevice);
 
-    auto start = std::chrono::high_resolution_clock::now();
-    auto end = std::chrono::high_resolution_clock::now();
-    for (int a = 0; a < 100; a++){
+    for (int a = 0; a < 150; a++){
         cap >> image2;
         
         namedWindow("Original", WINDOW_GUI_NORMAL);
@@ -98,16 +94,25 @@ int main(int argc, char *argv[]) {
         d_current = d_previous;
         d_previous = tmp;
 
-        start = std::chrono::high_resolution_clock::now();
-        
-        cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
-        kernel<<<1, threads>>>(d_current, d_previous, (((W*H*C)/threads)/4), d_heat_pixels);
-        cudaMemcpy(res.data, d_heat_pixels, W*H*C * sizeof *res.data, cudaMemcpyDeviceToHost);
+        int sector_size = ((W*H*C)/STREAM_N);
+        auto start = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < STREAM_N; i++) {
+            cudaMemcpyAsync(d_current+i*sector_size, image2.data+i*sector_size, sector_size, cudaMemcpyHostToDevice, stream[i]);
+            kernel<<<1, 300, 0, stream[i]>>>(d_current+i*sector_size, d_previous+i*sector_size, (((sector_size)/300)/4), d_heat_pixels+i*sector_size);
+            cudaMemcpyAsync(res.data+i*sector_size, d_heat_pixels+i*sector_size, sector_size, cudaMemcpyDeviceToHost, stream[i]);
+        }
 
-        end = std::chrono::high_resolution_clock::now();
+        cudaDeviceSynchronize();
+
+        // cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
+        // kernel<<<1, 300>>>(d_current, d_previous, (((W*H*C)/300)/4), d_heat_pixels);
+        // cudaMemcpy(res.data, d_heat_pixels, W*H*C * sizeof *res.data, cudaMemcpyDeviceToHost);
+
+        auto end = std::chrono::high_resolution_clock::now();
         auto elaps = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
         printf("\rHeatmap time generation: %.3f ms", (float)elaps.count() * 1e-6);
         fflush(stdout);
+
         namedWindow("HeatMap", WINDOW_GUI_NORMAL);
         imshow("HeatMap", res);
         if (waitKey(10) == 27) {
@@ -117,7 +122,5 @@ int main(int argc, char *argv[]) {
         image1 = image2.clone();
     }
     
-
-
     return 0;
 }

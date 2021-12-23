@@ -1,4 +1,9 @@
 \BOOKMARK [1][-]{section.1}{Introduction}{}% 1
 \BOOKMARK [1][-]{section.2}{HeatMap}{}% 2
-\BOOKMARK [2][-]{subsection.2.1}{Heat map pixel mapping - Naif implementation}{section.2}% 3
+\BOOKMARK [2][-]{subsection.2.1}{Heat map pixel mapping - CPU Naif implementation}{section.2}% 3
 \BOOKMARK [2][-]{subsection.2.2}{CUDA heat map implementation}{section.2}% 4
+\BOOKMARK [3][-]{subsubsection.2.2.1}{CUDA first naif version}{subsection.2.2}% 5
+\BOOKMARK [3][-]{subsubsection.2.2.2}{CUDA switching frames}{subsection.2.2}% 6
+\BOOKMARK [3][-]{subsubsection.2.2.3}{CUDA access at the int level instead of uint8\137t}{subsection.2.2}% 7
+\BOOKMARK [2][-]{subsection.2.3}{Evaluation of the number of threads}{section.2}% 8
+\BOOKMARK [1][-]{section.3}{Noise filtering}{}% 9

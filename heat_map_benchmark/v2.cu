@@ -81,7 +81,7 @@ int main() {
         auto start = std::chrono::high_resolution_clock::now();
         
         cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
-        kernel<<<1, 300>>>(d_current, d_previous, (W*H*C)/300, d_heat_pixels);
+        kernel<<<1, 1024>>>(d_current, d_previous, (W*H*C)/1024, d_heat_pixels);
         cudaMemcpy(res.data, d_heat_pixels, W*H*C * sizeof *res.data, cudaMemcpyDeviceToHost);
 
         auto end = std::chrono::high_resolution_clock::now();

@@ -5,7 +5,7 @@ using namespace cv;
 #include <chrono>
 #include <time.h>
 
-// #define SINE 
+#define SINE 
 #define H 1080
 #define W 1920
 #define C 3
