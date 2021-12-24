@@ -530,7 +530,7 @@ cudaMemcpyAsync(pready->h_xs,d_xs,pready->h_pos*sizeof *d_xs,cdMemcpyDToH);
 cudaDeviceSynchronize();
 	\end{lstlisting}
 
-	Last but not least, the \textit{cudaMemsetAsync} at line 6 can be removed completely. In fact, it's possible to move the initial reset of the \textit{d\_pos} counter can be done at the beginning of the kernel and it's easily done even in a concurrent environment by letting doing the reset only at one kernel only. This can be achieved thanks to the kernel index. In this case it will be done by the first kernel. In order to have all the kernel executing more or less in parallel the same instructions, after the reset of the counter, a \texttt{\_\_syncthreads()} is executed that assures that all threads are synchred untill that point. \\
+	Last but not least, the \textit{cudaMemsetAsync} at line 6 can be removed completely. In fact, it's possible to move the initial reset of the \textit{d\_pos} counter by doing it at the beginning of the kernel and it's easily done even in a concurrent environment by letting only one kernel to perform the reset. This can be achieved by putting a condition on the kernel index. In this case it will be done by the first kernel. In order to have all the kernel executing more or less in parallel the same instructions, after the reset of the counter, a \texttt{\_\_syncthreads()} is executed that assures that all threads are synchred untill that point. \\
 
 	Thus, the kernel code becomes:
 
@@ -567,7 +567,7 @@ int maxSect, unsigned int *pos, int *xs) {
 }
 	\end{lstlisting}
 
-	All these optimizations let achieving a big result in performance terms. The video streaming is elaborated at around 20 fps with an average \texttt{for} time of 55.0 ms and an average \texttt{read} time of 0.0 ms, and the comparison with the previous case can be seen in Figure \ref{fig:chart3}. 
+	All these optimizations let achieve a big result in performance terms. The video streaming is elaborated at around 20 fps with an average \texttt{for} time of 55.0 ms and an average \texttt{read} time of 0.0 ms, and the comparison with the previous case can be seen in Figure \ref{fig:chart3}. 
 
 	\begin{figure}[H]
 		\centering

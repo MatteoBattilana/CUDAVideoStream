@@ -1,5 +1,5 @@
 # Fdb version 3
-["pdflatex"] 1640261878 "/home/gabriele97/Repos/CUDAVideoStream/REPORT/report.tex" "report.pdf" "report" 1640261881
+["pdflatex"] 1640304319 "/home/gabriele97/Repos/CUDAVideoStream/REPORT/report.tex" "report.pdf" "report" 1640304321
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc" 1254269338 2375 baa924870cfb487815765f9094cf3728 ""
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc" 1202520719 2405 5dcf2c1b967ee25cc46c58cd52244aed ""
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc" 1202520719 2840 216e6e45ad352e2456e1149f28885bee ""
@@ -235,7 +235,7 @@
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1636389416 76115 ec242285d43ff56cca29f65afed9ca99 ""
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf-var/web2c/pdftex/pdflatex.fmt" 1636389421 1411214 005e4e47d645b65de149249c236e9f12 ""
   "/home/gabriele97/.texlive2021/local/texlive/2021/texmf.cnf" 1636389415 488 741ec02f1ec7fa15d8c3219e74fb1427 ""
-  "/home/gabriele97/Repos/CUDAVideoStream/REPORT/report.tex" 1640261878 45822 9618509d6cb07266e66d4c3b21ddc030 ""
+  "/home/gabriele97/Repos/CUDAVideoStream/REPORT/report.tex" 1640304318 45833 2b18d71a1bc1c72d9656f3d2e05d1ba9 ""
   "images/chart1.png" 1640175425 15819 65bc41bbb5fc47676c7fbb23109d8654 ""
   "images/chart2.png" 1640196515 16617 46ad57a9a030c8a642b914f26818309e ""
   "images/chart3.png" 1640201310 17454 8397b87b59cd16e678cfb598925be6aa ""
@@ -244,13 +244,13 @@
   "images/chart6.png" 1640261730 27139 cd21e696fc4c7c120c4494ef4364f969 ""
   "images/streaming_differror.png" 1640132171 510958 68533f4d3940f5a21088a3e3af23fdfd ""
   "images/streaming_ok2.png" 1640168030 459393 cd8668f628d577cbcdd760bb34c4a1ed ""
-  "report.aux" 1640261881 9167 8d7b342e7fa136a71697bc0491ff3cff "pdflatex"
-  "report.out" 1640261880 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "report.tex" 1640261878 45822 9618509d6cb07266e66d4c3b21ddc030 ""
-  "report.toc" 1640261881 849 719bca22afac72980a6940edc7c64b3f "pdflatex"
+  "report.aux" 1640304321 9167 8d7b342e7fa136a71697bc0491ff3cff "pdflatex"
+  "report.out" 1640304320 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
+  "report.tex" 1640304318 45833 2b18d71a1bc1c72d9656f3d2e05d1ba9 ""
+  "report.toc" 1640304321 849 719bca22afac72980a6940edc7c64b3f "pdflatex"
   (generated)
   "report.aux"
+  "report.out"
   "report.log"
   "report.toc"
-  "report.out"
   "report.pdf"
