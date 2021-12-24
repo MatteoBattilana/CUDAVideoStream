@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2021.3.29)  23 DEC 2021 21:32
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2021.3.29)  24 DEC 2021 16:55
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1223,7 +1223,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 211--213
 
  []
 
-<images/heatmap/v0.png, id=57, 1144.275pt x 321.45094pt>
+<images/heatmap/v0.png, id=69, 1144.275pt x 321.45094pt>
 File: images/heatmap/v0.png Graphic file (type png)
 <use images/heatmap/v0.png>
 Package pdftex.def Info: images/heatmap/v0.png  used on input line 216.
@@ -1331,7 +1331,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 378--382
 
  []
 
-<images/heatmap/gpu_naif.png, id=149, 455.45157pt x 255.95625pt>
+<images/heatmap/gpu_naif.png, id=161, 455.45157pt x 255.95625pt>
 File: images/heatmap/gpu_naif.png Graphic file (type png)
 <use images/heatmap/gpu_naif.png>
 Package pdftex.def Info: images/heatmap/gpu_naif.png  used on input line 437.
@@ -1362,13 +1362,13 @@ File: lstlang1.sty 2015/06/04 1.6 listings language file
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2015/06/04 1.6 listings language file
 )
-<images/heatmap/plot_kernel_times.png, id=256, 462.528pt x 346.896pt>
+<images/heatmap/plot_kernel_times.png, id=268, 462.528pt x 346.896pt>
 File: images/heatmap/plot_kernel_times.png Graphic file (type png)
 <use images/heatmap/plot_kernel_times.png>
 Package pdftex.def Info: images/heatmap/plot_kernel_times.png  used on input li
 ne 588.
 (pdftex.def)             Requested size: 150.57088pt x 112.9304pt.
-<images/heatmap/hd.png, id=257, 462.528pt x 346.896pt>
+<images/heatmap/hd.png, id=269, 462.528pt x 346.896pt>
 File: images/heatmap/hd.png Graphic file (type png)
 <use images/heatmap/hd.png>
 Package pdftex.def Info: images/heatmap/hd.png  used on input line 595.
@@ -1379,13 +1379,13 @@ Underfull \hbox (badness 10000) in paragraph at lines 602--605
  []
 
 [7 <./images/heatmap/plot_kernel_times.png> <./images/heatmap/hd.png>]
-<images/heatmap/histo_results.png, id=285, 455.45157pt x 255.95625pt>
+<images/heatmap/histo_results.png, id=297, 455.45157pt x 255.95625pt>
 File: images/heatmap/histo_results.png Graphic file (type png)
 <use images/heatmap/histo_results.png>
 Package pdftex.def Info: images/heatmap/histo_results.png  used on input line 6
 31.
 (pdftex.def)             Requested size: 271.86237pt x 152.786pt.
-<images/heatmap/v0-red.png, id=286, 722.7pt x 408.02437pt>
+<images/heatmap/v0-red.png, id=298, 722.7pt x 408.02437pt>
 File: images/heatmap/v0-red.png Graphic file (type png)
 <use images/heatmap/v0-red.png>
 Package pdftex.def Info: images/heatmap/v0-red.png  used on input line 641.
@@ -1395,28 +1395,91 @@ Underfull \hbox (badness 10000) in paragraph at lines 647--649
 
  []
 
-<images/heatmap/gpu_red_2.png, id=293, 723.45282pt x 407.27156pt>
+<images/heatmap/noise.png, id=305, 361.35pt x 361.35pt>
+File: images/heatmap/noise.png Graphic file (type png)
+<use images/heatmap/noise.png>
+Package pdftex.def Info: images/heatmap/noise.png  used on input line 659.
+(pdftex.def)             Requested size: 104.56343pt x 104.56274pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 663--664
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 663--664
+
+ []
+
+<images/heatmap/controls.png, id=307, 331.2375pt x 145.29282pt>
+File: images/heatmap/controls.png Graphic file (type png)
+<use images/heatmap/controls.png>
+Package pdftex.def Info: images/heatmap/controls.png  used on input line 670.
+(pdftex.def)             Requested size: 138.02449pt x 60.54147pt.
+[9 <./images/heatmap/v0-red.png> <./images/heatmap/noise.png (PNG copy)>]
+
+Package hyperref Warning: Difference (2) between bookmark levels is greater 
+(hyperref)                than one, level fixed on input line 675.
+
+
+Overfull \hbox (9.55032pt too wide) in paragraph at lines 708--710
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
+ []
+
+
+Overfull \hbox (9.55032pt too wide) in paragraph at lines 713--713
+[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
+ []
+
+[10 <./images/heatmap/controls.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 750--752
+
+ []
+
+<images/heatmap/noise1.png, id=353, 455.45157pt x 255.95625pt>
+File: images/heatmap/noise1.png Graphic file (type png)
+<use images/heatmap/noise1.png>
+Package pdftex.def Info: images/heatmap/noise1.png  used on input line 775.
+(pdftex.def)             Requested size: 146.39134pt x 82.27087pt.
+[11 <./images/heatmap/noise1.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 815--817
+
+ []
+
+[12]
+Underfull \hbox (badness 10000) in paragraph at lines 882--909
+
+ []
+
+[13]
+<images/heatmap/gpu_red_2.png, id=466, 723.45282pt x 407.27156pt>
 File: images/heatmap/gpu_red_2.png Graphic file (type png)
 <use images/heatmap/gpu_red_2.png>
-Package pdftex.def Info: images/heatmap/gpu_red_2.png  used on input line 652.
-(pdftex.def)             Requested size: 167.29893pt x 94.18007pt.
-[9 <./images/heatmap/v0-red.png> <./images/heatmap/gpu_red_2.png>]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 655.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 655.
+Package pdftex.def Info: images/heatmap/gpu_red_2.png  used on input line 920.
+(pdftex.def)             Requested size: 188.21289pt x 105.95645pt.
+ [14 <./images/heatmap/gpu_red_2.png>]
+<images/heatmap/noise2.png, id=508, 455.45157pt x 255.95625pt>
+File: images/heatmap/noise2.png Graphic file (type png)
+<use images/heatmap/noise2.png>
+Package pdftex.def Info: images/heatmap/noise2.png  used on input line 998.
+(pdftex.def)             Requested size: 146.39134pt x 82.27087pt.
+ [15 <./images/heatmap/noise2.png>]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1004.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1004.
 
 (./abstract.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 655.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 655.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1004.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1004.
+
 Package rerunfilecheck Info: File `abstract.out' has not changed.
-(rerunfilecheck)             Checksum: 7858624F3F122611439CFD81A2B917C3;734.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 655.
+(rerunfilecheck)             Checksum: 794B41CBC07A0276B5F3346229F98B0A;1033.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1004.
  ) 
 Here is how much of TeX's memory you used:
- 36199 strings out of 494847
- 812391 string characters out of 6179080
- 1313681 words of memory out of 5000000
- 38577 multiletter control sequences out of 15000+600000
- 75066 words of font info for 109 fonts, out of 8000000 for 9000
+ 36551 strings out of 494847
+ 817333 string characters out of 6179080
+ 1314235 words of memory out of 5000000
+ 38700 multiletter control sequences out of 15000+600000
+ 76214 words of font info for 120 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  73i,12n,106p,8865b,2049s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dv
@@ -1432,10 +1495,10 @@ public/lm/lmr8.pfb></usr/share/texmf/fonts/type1/public/lm/lmr9.pfb></usr/share
 /lmssbx10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/te
 xmf/fonts/type1/public/lm/lmsy8.pfb></usr/share/texmf/fonts/type1/public/lm/lmt
 t10.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt9.pfb>
-Output written on abstract.pdf (10 pages, 2784852 bytes).
+Output written on abstract.pdf (16 pages, 3299374 bytes).
 PDF statistics:
- 400 PDF objects out of 1000 (max. 8388607)
- 354 compressed objects within 4 object streams
- 195 named destinations out of 1000 (max. 500000)
- 25216 words of extra memory for PDF output out of 29859 (max. 10000000)
+ 686 PDF objects out of 1000 (max. 8388607)
+ 624 compressed objects within 7 object streams
+ 398 named destinations out of 1000 (max. 500000)
+ 25260 words of extra memory for PDF output out of 29859 (max. 10000000)
 

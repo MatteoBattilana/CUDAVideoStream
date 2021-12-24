@@ -635,7 +635,7 @@ done\end{lstlisting}
 	\section{Noise visualizer}
 	As already explained in the first sections, the algorithm is based on sending only the difference of all pixels whose color components are above a certain threshold.
 	
-	In order to better visualize the noise in each frame taken from the webcam, all colors of all pixels that are above a certain threshold, are colored in red. The threshold is the same used by the kernel that computes all pixel differences. Obviously, the complexity of this computation is much easier than the previous one and the CPU allows to compute that kind of map in around 300ms.
+	In order to better visualize the noise in each frame taken from the webcam, all colors of all pixels that are above a certain threshold, are colored in red. The threshold is the same used by the kernel that computes all pixel differences. Obviously, the complexity of this computation is much easier than the previous one and the CPU allows to compute that kind of map in around 250ms.
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.4\linewidth]{images/heatmap/v0-red}
@@ -645,11 +645,361 @@ done\end{lstlisting}
 	The purpose of this new color mapping is completely different from the heatmap, since the latter one is used to understand the magnitude of the pixel difference while the second one (the black-red) is used to better visualize the noise pixels, by using a threshold.
 	
 	\textit{Why is this necessary?} This allows to have a visual evaluation of the noise filter, that is used to reduce smooth the noise in order to reduce the difference between two frames and reduce even more the bandwidth. The noise filter will be explained in the next section.\newline\newline
-	First of all, we need to define what it the noise:
+	First of all, we need to define what is the noise: by means of noise we are referring to all the random variations on the color information in an image, that is visible as grain in film and pixel level. The level of the noise mainly depends:
+	\begin{itemize}
+		\itemsep0sp
+		\item Length of the exposure
+		\item Sensitivity of the optical camera
+		\item Brightness of the environment
+		\item Temperature
+	\end{itemize}
+	In most of the cases, the webcam used at home is a cheap one that has an extremely small pixels in the camera sensor. There are mainly three types of noises: fixed pattern noise, random noise and banding noise. The common noise in our webcam is the one shown below. As you can see, the dark and less brightness parts of the image are characterized by some particles that shows different color from the whole context. 
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.25\linewidth]{images/heatmap/noise}
+		\caption{\textit{Example of noise}}
+		\label{fig:noise}
+	\end{figure}
+	From our perspective this is a very bad behaviour due to the fact that the noise is random, and can change the value of the pixel at each frame. This leads to an high amount of pixel changed, even if the image is always the same. For this reason, \textit{noise image filtering} is performed over the frame, before being analyzed by the CUDA kernel that computes the pixel differences.\newline\newline
+
+	The internal logic of a webcam allows to trim some parameters of the video capture directly by OpenCV. This is not a software level manipulation of the frame, but the internal control unit of the webcam, while sampling the frame, performs different behaviour depending on the selected configuration. 
 	
-	\subsubsection{Fastest implementation}
+	For this reason, the original image has been enhanced with a control panel, so that the user can change the brightness, the contrast, the saturation and the gain of the image. The Figure \ref{fig:controls}, shows the panel that is shown to the user. Even if it can be used to reduce the noise, by for example reducing the contrast, it allows the user to increase the quality of the send image.
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.33\linewidth]{images/heatmap/controls}
+		\caption{\textit{Image Control panel}}
+		\label{fig:controls}
+	\end{figure}
+	
+	\subsubsection{Naif CPU implementation}
+	The \textit{naif} CPU implementation starts from the same program base used for the heat map. The entire image, pixel by pixel, is analyzed and if one of the color component is above the same threshold set for the pixel difference, that pixel is colored in red otherwise in black.
+	
+	The code below is the C implementation of what explained before, where \texttt{LR\_THRESHOLDS} is set to 20.
+\begin{lstlisting}[style=CStyle]
+for (int y = 0; y < H; y++){
+	for (int x = 0; x < W; x++){
+		Vec3b & intensity = image1.at<Vec3b>(y, x);
+		Vec3b a = image1.at<Vec3b>(y, x);
+		Vec3b b = image2.at<Vec3b>(y, x);
+		
+		if(abs(a.val[0] - b.val[0]) > LR_THRESHOLDS ||
+					abs(a.val[1] - b.val[1]) > LR_THRESHOLDS ||
+					abs(a.val[2] - b.val[2]) > LR_THRESHOLDS)
+		{
+			intensity.val[0] = 0;
+			intensity.val[1] = 0;
+			intensity.val[2] = 255;
+		} else {
+			intensity.val[0] = 0;
+			intensity.val[1] = 0;
+			intensity.val[2] = 0;
+		}
+	}
+}\end{lstlisting}
+	The resulting image is the one at Figure \ref{fig:v0-red}. From the time perspective, as said before, being the operations for the noise visualizer less complex, the CPU is able to generate the image in around 250ms.
+	
+	\subsubsection{CUDA implementation}
+	The same considerations and optimization steps done for the heat map can be done also for the generation of the frames that allows the user to better visualize the noise in the frames. So, starting from an already optimized memory management, the resulting kernel call is based as always on first copy the frame into the Device Global memory, call the kernel and then retrieve the image, as in the code below:
+\begin{lstlisting}[style=CStyle]
+	cudaGetDeviceProperties(&prop, 0);
+	int threads = prop.maxThreadsPerBlock;
+	
+	cudaMemcpy(d_curr, image2,  W*H*C * sizeof *image2, cudaMemcpyHostToDevice);
+	
+	// Kernel call /4
+	kernel_red<<<1, threads>>>(d_curr, d_prev, ((W*H*C)/threads/
+																(sizeof(chunk_t)), d_out);
+	cudaMemcpy(heatmap, d_out, W*H*C * sizeof *heatmap, cudaMemcpyDeviceToHost);\end{lstlisting}
+	
+	In this case, the optimization described in the pixel difference generation, regarding the \textit{vectorized access} to memory is also applied here, where a new type called \texttt{chunk\_t} is defined. In this way more byte can be read with a single memory access.
+	
+	\begin{lstlisting}[style=CStyle]
+typedef int4 chunk_t;
+	
+__global__ void kernel_red(uint8_t *current, uint8_t *previous,
+					int maxSect, uint8_t* d_heat_pixels) {
+	int x = threadIdx.x + blockDim.x * blockIdx.x;
+	int start = x * maxSect;
+	int max = start + maxSect;
+	chunk_t cc, pc;
+	
+	uint8_t redColor = 0;
+	for (int i = start; i < max; i++) {
+		cc = ((chunk_t *)current)[i];
+		pc = ((chunk_t *)previous)[i];
+		for (int j = 0; j < sizeof cc; j++) {
+			int8_t df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
+			
+			if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+				redColor = 255;
+			}
+			
+			// Access to the global memory
+			if((i*(sizeof cc)+j) % 3 == 2){
+				d_heat_pixels[i*(sizeof cc)+j] = redColor;
+				redColor = 0;
+			}  else {
+				d_heat_pixels[i*(sizeof cc)+j] = 0;
+			}
+		}
+	}
+}	\end{lstlisting}
+	By iteration on all the color components of all the pixels in the frame, the difference with the previous frame is checked. If it is above the threshold, the value of the red color for that pixel is set to 255. 
+	
+	Being the red component the third in a pixel, it is set accordingly to the \texttt{redColor} variable only if the \texttt{i*(sizeof cc) + j \% 3 == 2} (the red color).\newline\newline
+	This implementation allows to copy the frame from Host to Device, compute the noise visualization and retrieve back the image from Device to Host memory in around 26ms.
+	
+	The following table shows some meaningful data extracted from the profiler:
+	\begin{figure}[H]
+		\centering
+		\begin{center}
+			\begin{tabular}{ |c|c|c|c|c|c| } 
+				\hline
+				\textbf{Type} & \textbf{Time} (\%) & \textbf{Avg} & \textbf{Min} & \textbf{Max} & \textbf{Name} \\ 
+				\hline
+				GPU activities & 81.38 & 21.759 & 19.489 & 32.94 & kernel\_red \\ 
+				& 9.59 & 2.5469 & 2.2134 & 6.8552 & [CUDA memcpy HtoD] \\ 
+				& 9.03 & 2.4141 & 2.1828 & 3.5408 & [CUDA memcpy DtoH] \\ 
+				\hline
+				API calls & 87.41 & 13.992 &  2.7579 & 156.01 & cudaMemcpy \\ 
+				& 12.13 & 194.86  & 3.8501 & 576.73 & cudaMalloc \\ 
+				\hline
+			\end{tabular}
+		\end{center}
+		\label{fig:table_v1_red}
+		\caption{\textit{Profiling result v1.cu for noise visualizer}}
+	\end{figure}
+	As you can see, the average time needed to compute the kernel is less with the respect to the heat map. This is due to the simplicity of the function that only need to check the difference against a threshold. As you can see, the GPU acceleration has a huge impact over the computation.
 	\begin{center}
-		\includegraphics[width=0.4\linewidth]{images/heatmap/gpu_red_2}
+		\includegraphics[width=0.35\linewidth]{images/heatmap/noise1}
 	\end{center}
 	
+	
+	\subsubsection{CUDA reduction of global memory accesses}
+	The fact that the only pixels that changes is the red one, the previous CUDA kernel can be optimized even more in order to reduce the number of access to the global memory. In fact, if we set assume that at the beginning all pixels in the \texttt{d\_heat\_map} array are all completely black, the algorithm can reduce the memory access of on third since it will work only on a the red color component. As before, if the difference is above a threshold, the red pixel is turned to red, or to black otherwise.
+
+	The resulting kernel is the following:
+	
+\begin{lstlisting}[style=CStyle]
+	typedef int4 chunk_t;
+	
+	__global__ void kernel_red(uint8_t *current, uint8_t *previous,
+	int maxSect, uint8_t* d_heat_pixels) {
+		int x = threadIdx.x + blockDim.x * blockIdx.x;
+		int start = x * maxSect;
+		int max = start + maxSect;
+		chunk_t cc, pc;
+		
+		uint8_t redColor = 0;
+		for (int i = start; i < max; i++) {
+			cc = ((chunk_t *)current)[i];
+			pc = ((chunk_t *)previous)[i];
+			for (int j = 0; j < sizeof cc; j++) {
+				int8_t df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
+				
+				if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+					redColor = 255;
+				}
+				
+				// Access to the global memory
+				if((i*(sizeof cc)+j) % 3 == 2){
+					d_heat_pixels[i*(sizeof cc)+j] = redColor;
+					redColor = 0;
+			}
+		}
+	}
+}	\end{lstlisting}
+	As you can notice, the only difference is that the else condition is the last if statement has been removed. This means that the green and blue component are not modified, thus the global memory is left as is for these two bytes.
+	
+	This allowed to increase the performance of the kernel even more; as you can see from the table below the kernel now lasts in average 16.684ms, that is a 23\% faster. The entire loop is done in about 22ms. \newline\newline
+	Moreover, the test must be performed in the same conditions because, depending on the video captured, it can show different number of changed pixels with the value of the difference above or below the threshold. For this reason, the \textit{nvprof} has been run while the webcam was covered with a black tape. Due to the fashion of the algorithm, also the minimum and maximum values have been included in the table below.
+
+	\begin{figure}[H]
+		\centering
+		\begin{center}
+			\begin{tabular}{ |c|c|c|c|c|c| } 
+				\hline
+				\textbf{Type} & \textbf{Time} (\%) & \textbf{Avg} & \textbf{Min} & \textbf{Max} & \textbf{Name} \\ 
+				\hline
+				GPU activities & 75.63 & 16.684 & 16.372 & 35.942 & kernel\_red \\ 
+							   & 12.37 & 2.6294 & 2.2265 & 6.3841 & [CUDA memcpy HtoD] \\ 
+							   & 12.00 & 2.6294 &  2.2265 & 6.3841 & [CUDA memcpy DtoH] \\ 
+				\hline
+				API calls & 86.00 &  11.610 & 2.6999 & 41.414 & cudaMemcpy \\ 
+						  & 13.56 & 183.71 & 3.7352 & 543.50 & cudaMalloc \\ 
+				\hline
+			\end{tabular}
+		\end{center}
+		\label{fig:table_v2_red}
+		\caption{\textit{Profiling result v2.cu for noise visualizer}}
+	\end{figure}
+
+	The code of this and the previous implementation has been disassembled using the NVIDIA tools \textit{cuobjdump} and \textit{nvdisasm}; the last one is also needed to get information about the control flow. In order to avoid that the \textit{nvcc} compiler to avoid, with very limited exceptions, dead-code eliminations and register-spilling optimizations. For this reason the code has been compiled with the \texttt{-O0} flag.
+
+	The generation of the assembly is:
+	\begin{lstlisting}[language=bash]
+cuobjdump ./a.out -xelf all
+nvdisasm v1.sm_30.cubin\end{lstlisting}
+	
+	By looking carefully at the assembly code of the first implementation, it's possible to understand the correlation between the assembly code and the instructions. As we would have expected, in the code of the first implementation are present two \texttt{ST.E.U8} instructions, used to perform the if and else case.
+	
+	The following is an extract of the assembly that manage the if statement on the first CUDA implementation.
+	\begin{figure}[H]
+		\begin{lstlisting}[style=CStyle]
+	// Perform comparison
+	/*0ab0*/ ISETP.EQ.X.AND P0, PT, R5, RZ, PT;
+	/*0ab8*/ PSETP.AND.AND P0, PT, !P0, PT, PT;
+	/*0ac8*/ SSY `(.L_16);
+	
+	// Go to if
+	/*0ad0*/ @P0 BRA `(.L_17);
+	
+	// Go to else
+	/*0ad8*/ BRA `(.L_18);
+
+
+
+// IF
+.L_17
+	...
+	/*0e10*/ ST.E.U8 [R4], R0;
+	/*0e28*/ NOP.S (*"TARGET= .L_16 "*);
+
+// ELSE
+.L_18:
+	...
+	/*0c50*/ ST.E.U8 [R4], R0;
+	/*0c88*/ NOP.S (*"TARGET= .L_16 "*);
+
+
+// Management of the loop control flow	
+.L_16
+	...\end{lstlisting}
+	\caption{Assembly extract of the first CUDA implementation of the noise visualizer}
+	\end{figure}
+
+	So, label \texttt{.L\_17} and \texttt{.L\_18} are used to identify the branch that is used to write 0 or 255, accordingly to the fact that it is or not the red component and only if above the threshold.\newline\newline
+	On the other hand, the assembly of the second implementation shows only one instance of the store byte instruction, as we would have expected:
+	\begin{figure}[H]
+	\begin{lstlisting}[style=CStyle]
+	// Perform comparison
+	/*0aa8*/ IADD32I RZ.CC, R4, -0x2;
+	/*0ab0*/ ISETP.EQ.X.AND P0, PT, R5, RZ, PT;
+	/*0ab8*/ PSETP.AND.AND P0, PT, !P0, PT, PT;
+	/*0ac8*/ PRMT R0, R29, 0x7610, R0;
+	/*0ad0*/ PSETP.AND.AND P0, PT, P0, PT, PT;
+	/*0ad8*/ PRMT R0, R0, 0x7610, R0;
+	/*0ae0*/ SSY `(.L_16);
+	/*0ae8*/ @P0 NOP.S (*"TARGET= .L_16 "*);
+	/*0af0*/ BRA `(.L_17);
+
+
+// IF
+.L_17
+	...
+	/*0e10*/ ST.E.U8 [R4], R0;
+	/*0e28*/ NOP.S (*"TARGET= .L_16 "*);
+
+
+// Management of the loop control flow	
+.L_16
+	...\end{lstlisting}
+	\caption{Assembly extract of the second CUDA implementation of the noise visualizer}
+	\end{figure}
+	
+
+	
+	\subsubsection{Fastest implementation}
+	The fact that the we can have a frame that changes completely with the respect to the previous one, implies that not only the black pixels must be turned in red if above a certain threshold, but also the red ones that are below must be changed to black. This means that we if we have an image $1920*1080*3$ we can't go below $1920*1080$ access to Global Memory. 
+	
+	A second approach resort to not use the output \texttt{d\_heat\_pixels} as output array but instead write directly over the \textit{previous} frame. In this way, the red pixel will be placed over the frame itself; this is a completely different representation but, if we can modify the original frame (that will be discharged at the end of the loop), this solution is feasible. The result is visible at Figure \ref{fig:red_frame}.
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.45\linewidth]{images/heatmap/gpu_red_2}
+		\caption{\textit{Red pixels over the frame}}
+		\label{fig:red_frame}
+	\end{figure}
+	
+	This has be done to overcome the need of setting a pixel to black when the difference between the pixels is below the threshold. With this approach, the number of write to the Global Memory should corresponds to the number of pixels whose difference is above the threshold. Hypothetically, two identical frames should not need any write access to the Global Memory.
+	
+	The kernel has been modified in the following way, so that the red color is set only if at least one color component of that pixel is above the threshold:
+\begin{lstlisting}[style=CStyle]
+typedef int4 chunk_t;
+
+__global__ void kernel_red(uint8_t *current, uint8_t *previous,
+int maxSect) {
+	int x = threadIdx.x + blockDim.x * blockIdx.x;
+	int start = x * maxSect;
+	int max = start + maxSect;
+	chunk_t cc, pc;
+	
+	bool toUpdate = false;
+	for (int i = start; i < max; i++) {
+		
+		cc = ((chunk_t *)current)[i];
+		pc = ((chunk_t *)previous)[i];
+		for (int j = 0; j < sizeof cc; j++) {
+			int8_t df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
+			
+			if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+				toUpdate = true;
+			}
+			
+			// Update only if needed
+			if (toUpdate && (i*(sizeof cc)+j) % 3 == 2){
+			previous[i*(sizeof cc)+j] = 255;
+			toUpdate = false;
+		}
+	}
+}	\end{lstlisting}
+
+	Obviously, also the kernel call must be modified, so that instead of copying back data from the \texttt{d\_heat\_map} the data are retrieved from the previous frame, that has been overwrite during the kernel execution:
+	
+\begin{lstlisting}[style=CStyle]
+cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data,
+												cudaMemcpyHostToDevice);
+kernel<<<1, threads>>>(d_current, d_previous, (((W*H*C)/threads)/
+												(sizeof(chunk_t))));
+
+// Rewrite d_previous frame
+cudaMemcpy(res.data, d_previous, W*H*C * sizeof *res.data,
+											cudaMemcpyDeviceToHost);\end{lstlisting}	
+										
+										
+	This implementation, in the same test condition that has been used also for the other two implementations of the noise visualizer, allows to perform the copy of the frame from Host to Device, compute the noise visualization and copy it from the Global memory of the Device to the Host in around 16.5ms.
+	
+	These are the results from \textit{nvprof}:
+	\begin{figure}[H]
+		\centering
+		\begin{center}
+			\begin{tabular}{ |c|c|c|c|c|c| } 
+				\hline
+				\textbf{Type} & \textbf{Time} (\%) & \textbf{Avg} & \textbf{Min} & \textbf{Max} & \textbf{Name} \\ 
+				\hline
+				GPU activities & 53.05 & 7.5647 &  4.9421 &  51.426 & kernel\_red \\ 
+				& 23.69 & 3.3450 & 2.4960 & 6.6161 & [CUDA memcpy HtoD] \\ 
+				& 23.26 & 3.3160 & 2.8359 & 4.2297 & [CUDA memcpy DtoH] \\ 
+				\hline
+				API calls & 81.86 &  7.7539 &  2.9697 &  57.082 & cudaMemcpy \\ 
+				& 17.51 & 166.67 & 5.4298 & 327.91 & cudaMalloc \\ 
+				\hline
+			\end{tabular}
+		\end{center}
+		\label{fig:table_v3_red}
+		\caption{\textit{Profiling result v3.cu for noise visualizer, overwriting the red pixels over the previous frame}}
+	\end{figure}
+	
+	As you can see from the time for the kernel execution, there is a huge improvement from the black and red implementation of about 25\% more.
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.35\linewidth]{images/heatmap/noise2}
+		\caption{\textit{Comparison between GPU versions for noise visualizer}}
+		\label{fig:noise2}
+	\end{figure}
+	
+
 \end{document}
+	
