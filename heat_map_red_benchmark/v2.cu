@@ -19,9 +19,24 @@
 #include <cstdlib>
 using namespace cv;
 
+int B;
+int C;
+int S;
+int G;
+
+VideoCapture cap;
+
+void onTrackbar_changed(int, void*)
+{
+    cap.set(cv::CAP_PROP_BRIGHTNESS, float(B));
+    cap.set(cv::CAP_PROP_CONTRAST, float(C));
+    cap.set(cv::CAP_PROP_SATURATION, float(S));
+    cap.set(cv::CAP_PROP_GAIN, float(G));
+}
+
+
 #define H 1080
 #define W 1920
-#define C 3
 #define LR_THRESHOLDS 20
 
 typedef int4 chunk_t;
@@ -32,7 +47,7 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
     int max = start + maxSect;
     chunk_t cc, pc;
 
-    bool toUpdate = false;
+    uint8_t redColor = 0;
     int8_t df;
     for (int i = start; i < max; i++) {
 
@@ -42,12 +57,12 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
             df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
 
             if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
-                toUpdate = true;
+                redColor = 255;
             }
             
-            if(toUpdate && (i*(sizeof cc)+j) % 3 == 2){
-                previous[i*(sizeof cc)+j] = 255;
-                toUpdate = false;
+            if((i*(sizeof cc)+j) % 3 == 2){
+                d_heat_pixels[i*(sizeof cc)+j] = redColor;
+                redColor = 0;
             }
         }
     }
@@ -55,36 +70,49 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
    
 
 int main(int argc, char *argv[]) {
+
+    Mat image1, image2, res;
+    if (!cap.open("/dev/video0")) return 1;
+    auto codec = cv::VideoWriter::fourcc('M','J','P','G');
+    cap.set(cv::CAP_PROP_FOURCC, codec);
+    cap.set(cv::CAP_PROP_BRIGHTNESS, 10);
+    cap.set(3, W);
+    cap.set(4, H);
+    B=cap.get(cv::CAP_PROP_BRIGHTNESS);
+    C=cap.get(cv::CAP_PROP_CONTRAST );
+    S=cap.get(cv::CAP_PROP_SATURATION);
+    G=cap.get(cv::CAP_PROP_GAIN);
+
+    namedWindow("Original", WINDOW_GUI_EXPANDED);
+    createTrackbar( "Brightness","Original", &B, 100, onTrackbar_changed );
+    createTrackbar( "Contrast","Original", &C, 100,onTrackbar_changed );
+    createTrackbar( "Saturation","Original", &S, 100,onTrackbar_changed);
+    createTrackbar( "Gain","Original", &G, 100,onTrackbar_changed);
+
+    cap >> image1;
+    res = image1.clone();
+
     int threads = 1024;
     if(argc == 2){
         threads = atoi(argv[1]);
     }
     printf("Number of threads set to: %d\n", threads);
 
+
     uint8_t *d_current, *d_previous;
     uint8_t *d_heat_pixels;
 
-    cudaMalloc((void **)&d_current, W*H*C * sizeof *d_current);
-    cudaMalloc((void **)&d_previous, W*H*C * sizeof *d_previous);
-    cudaMalloc((void **)&d_heat_pixels, W*H*C * sizeof *d_heat_pixels);
+    cudaMalloc((void **)&d_current, W*H*3 * sizeof *d_current);
+    cudaMalloc((void **)&d_previous, W*H*3 * sizeof *d_previous);
+    cudaMalloc((void **)&d_heat_pixels, W*H*3 * sizeof *d_heat_pixels);
 
-    Mat image1, image2, res;
-    VideoCapture cap;
-    if (!cap.open("/dev/video0")) return 1;
-    auto codec = cv::VideoWriter::fourcc('M','J','P','G');
-    cap.set(cv::CAP_PROP_FOURCC, codec);
-    cap.set(3, W);
-    cap.set(4, H);
-    cap >> image1;
-    res = image1.clone();
-    cudaMemcpy(d_previous, image1.data,  W*H*C * sizeof *image1.data, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_previous, image1.data,  W*H*3 * sizeof *image1.data, cudaMemcpyHostToDevice);
 
     auto start = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
-    for (int a = 0; a < 100; a++){
+    for (int i = 0;  i < 150; i++){
         cap >> image2;
         
-        namedWindow("Original", WINDOW_GUI_NORMAL);
         imshow("Original", image2);
         if (waitKey(10) == 27) {
             break;  // stop capturing by pressing ESC
@@ -96,9 +124,9 @@ int main(int argc, char *argv[]) {
 
         start = std::chrono::high_resolution_clock::now();
         
-        cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
-        kernel<<<1, threads>>>(d_current, d_previous, (((W*H*C)/threads)/(sizeof(chunk_t))), d_heat_pixels);
-        cudaMemcpy(res.data, d_previous, W*H*C * sizeof *res.data, cudaMemcpyDeviceToHost);
+        cudaMemcpy(d_current, image2.data,  W*H*3 * sizeof *image2.data, cudaMemcpyHostToDevice);
+        kernel<<<1, threads>>>(d_current, d_previous, (((W*H*3)/threads)/(sizeof(chunk_t))), d_heat_pixels);
+        cudaMemcpy(res.data, d_heat_pixels, W*H*3 * sizeof *res.data, cudaMemcpyDeviceToHost);
 
         end = std::chrono::high_resolution_clock::now();
         auto elaps = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);

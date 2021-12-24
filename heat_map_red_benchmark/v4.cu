@@ -24,33 +24,35 @@ using namespace cv;
 #define C 3
 #define LR_THRESHOLDS 20
 
-typedef int4 chunk_t;
+typedef long4 chunk_t;
 
-__global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect) {
+__global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t* d_heat_pixels) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int start = x * maxSect;
     int max = start + maxSect;
     chunk_t cc, pc;
+    bool toUpdate = true;
+    int df;
+    int c = 0;
 
-    bool toUpdate = false;
-    int8_t df;
     for (int i = start; i < max; i++) {
-
         cc = ((chunk_t *)current)[i];
         pc = ((chunk_t *)previous)[i];
+
         for (int j = 0; j < sizeof cc; j++) {
+            bool isDiv = ((i*sizeof cc)+ j ) % 3 == 2;
             df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
 
-            if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+            if ((df < -LR_THRESHOLDS || df > LR_THRESHOLDS)){
                 toUpdate = true;
             }
-            
-            if(toUpdate && (i*(sizeof cc)+j) % 3 == 2){
-                previous[i*(sizeof cc)+j] = 255;
+            if(toUpdate && isDiv){
+                previous[(i*sizeof cc)+j] = 255;
                 toUpdate = false;
             }
         }
     }
+
 }
    
 
@@ -62,9 +64,11 @@ int main(int argc, char *argv[]) {
     printf("Number of threads set to: %d\n", threads);
 
     uint8_t *d_current, *d_previous;
+    uint8_t *d_heat_pixels;
 
     cudaMalloc((void **)&d_current, W*H*C * sizeof *d_current);
     cudaMalloc((void **)&d_previous, W*H*C * sizeof *d_previous);
+    cudaMalloc((void **)&d_heat_pixels, W*H*C * sizeof *d_heat_pixels);
 
     Mat image1, image2, res;
     VideoCapture cap;
@@ -95,7 +99,7 @@ int main(int argc, char *argv[]) {
         start = std::chrono::high_resolution_clock::now();
         
         cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
-        kernel<<<1, threads>>>(d_current, d_previous, (((W*H*C)/threads)/(sizeof(chunk_t))));
+        kernel<<<1, threads, 0>>>(d_current, d_previous, (((W*H*C)/threads)/(sizeof(chunk_t))), d_heat_pixels);
         cudaMemcpy(res.data, d_previous, W*H*C * sizeof *res.data, cudaMemcpyDeviceToHost);
 
         end = std::chrono::high_resolution_clock::now();
