@@ -11,3 +11,8 @@
 \BOOKMARK [3][-]{subsubsection.2.0.2}{CUDA implementation}{subsubsection.2.0.1}% 11
 \BOOKMARK [3][-]{subsubsection.2.0.3}{CUDA reduction of global memory accesses}{subsubsection.2.0.1}% 12
 \BOOKMARK [3][-]{subsubsection.2.0.4}{Fastest implementation}{subsubsection.2.0.1}% 13
+\BOOKMARK [1][-]{section.3}{Noise filter}{}% 14
+\BOOKMARK [2][-]{subsection.3.1}{Convolution filters}{section.3}% 15
+\BOOKMARK [2][-]{subsection.3.2}{Mean filter}{section.3}% 16
+\BOOKMARK [2][-]{subsection.3.3}{Gaussian filter}{section.3}% 17
+\BOOKMARK [2][-]{subsection.3.4}{CUDA implementation}{section.3}% 18

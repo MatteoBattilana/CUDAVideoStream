@@ -53,7 +53,7 @@
 \usepackage{float}
 
 \usepackage{lmodern}
-
+\usepackage{amsmath}
 \usepackage{todonotes}
 \usepackage{listings}
 \usepackage{graphbox}
@@ -633,13 +633,14 @@ done\end{lstlisting}
 	
 	
 	\section{Noise visualizer}
+	\label{sec:noise_visualizer}
 	As already explained in the first sections, the algorithm is based on sending only the difference of all pixels whose color components are above a certain threshold.
 	
 	In order to better visualize the noise in each frame taken from the webcam, all colors of all pixels that are above a certain threshold, are colored in red. The threshold is the same used by the kernel that computes all pixel differences. Obviously, the complexity of this computation is much easier than the previous one and the CPU allows to compute that kind of map in around 250ms.
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.4\linewidth]{images/heatmap/v0-red}
-		\caption{\textit{All non normalized pixel difference are turned to red if above a certain threshold, in this case 20}}
+		\caption{\textit{All non normalized pixel difference are turned to red if above a certain threshold, in this case 20. Beside the figure in the center, all red pixels can be identified as noise.}}
 		\label{fig:v0-red}
 	\end{figure}
 	The purpose of this new color mapping is completely different from the heatmap, since the latter one is used to understand the magnitude of the pixel difference while the second one (the black-red) is used to better visualize the noise pixels, by using a threshold.
@@ -999,7 +1000,334 @@ cudaMemcpy(res.data, d_previous, W*H*C * sizeof *res.data,
 		\caption{\textit{Comparison between GPU versions for noise visualizer}}
 		\label{fig:noise2}
 	\end{figure}
-	
 
+	\section{Noise filter}
+	The sensor of an digital camera contains a certain number of pixel, used to acquire the image. The settings of a camera allows to adapt the sensor to the external conditions in order to always get the best shot). In a sunny day, a slow  shutter speed, a wide open aperture allows a large number of photons to hit completely the image sensor.
+	
+	On the other hand, in darker conditions, faster shutter speeds and a closer aperture do not allow enough photons to hit the sensor to generate a suitable voltage to overcome the noise present at the ground. This leads to a low Signal-To-Noise ratio that is directly converted into noise from the internal camera logic. In this case, a correct trim of the of ISO and the shutter aperture time allow to have an image with lower noise; but, in most of the cases, the cheap webcams do not have these advanced configurable feature but perform an auto-adapt procedure.\newline\newline
+	This is where the \textit{noise filtering} take a major role for this project. Being the data sent based on the difference with the previous frame, each pixel that is mainly driven by the noise, has higher probability to flip drastically change its value. So, even if the pixel itself does not contains any information, its difference is still sent.
+	
+	\subsection{Convolution filters}
+	Convolution filters are used to perform some perturbation over an image in order to obtain some enhancement. They are based on a \textit{kernel}, a convolution matrix, that is used to perform the convolution between the image and the kernel itself, in the following way:
+	
+	\begin{align*}
+		g(x,y) = \sum_{u = \frac{-k}{2}}^{\frac{k}{2}} \sum_{v = \frac{-k}{2}}^{\frac{k}{2}} K[u,v] \cdot I(x-u, y-u)
+	\end{align*}
+	
+	Where $K$ is the kernel and $I$ is the original image; $g$ will be the perturbed resulting image. Depending on the type of selected kernel, the image will be modified in a different way. By defining the size of the kernel as $3\cdot 3$, the identity is the following:
+	\begin{center}
+		$
+		K = \begin{bmatrix}
+			0 & 0 & 0\\
+			0 & 1 & 0\\
+			0 & 0 & 0
+		\end{bmatrix}
+		$
+	\end{center}
+	In this way, the original image is not modified; let's check it:
+	\begin{align*}
+		 I * K &=\\ 
+		 &=\left({\begin{bmatrix}a&b&c\\d&e&f\\g&h&i\end{bmatrix}}*{\begin{bmatrix}0&0&0\\0&1&0\\0&0&0\end{bmatrix}}\right) = \\
+			&=(i\cdot 0)+(h\cdot 0)+(g\cdot 0)+(f\cdot 0)+(e\cdot 1)+(d\cdot 0)+(c\cdot 0)+(b\cdot 0)+(a\cdot 0)\\
+			&= e
+	\end{align*}
+
+	
+	\subsection{Mean filter}
+	The idea of the Mean filter, also called \textit{blur box}, is to set the kernel with the elements that have all the same weight but normalized, like in the following 3x3 convolution matrix:
+	\begin{center}
+		$
+		K = \frac{1}{9}\begin{bmatrix}
+			1 & 1 & 1\\
+			1 & 1 & 1\\
+			1 & 1 & 1
+		\end{bmatrix} = \begin{bmatrix}
+		0.11 & 0.11 & 0.11\\
+		0.11 & 0.11 & 0.11\\
+		0.11 & 0.11 & 0.11
+	\end{bmatrix}
+		$
+	\end{center}
+	It can be simple computed in the following way, assuming the kernel is on $KxK$:
+	\begin{lstlisting}[style=CStyle]
+float* computeMeanKernel(int K){
+	double sum = 0;
+	float* k = (float*)malloc(K*K*sizeof(float));
+	for (int i = 0; i < K; i++){
+		for (int j = 0; j < K; j++){
+			k[i*K+j] = 1.0/(K*K);
+		}
+	}
+	
+	return k;
+}\end{lstlisting}	
+	In this way, the image is basically blurred due to the fact that the pixel at $i$ position is based now also on the values of the surrounding 8 pixels.
+
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}[b]{0.45\textwidth}
+			\centering
+			\includegraphics[width=0.32\textwidth]{images/heatmap/scoiattolo1.png}
+			\caption{\textit{Original}}
+		\end{minipage}
+		\hfill
+		\begin{minipage}[b]{0.45\textwidth}
+			\centering
+			\includegraphics[width=0.32\textwidth]{images/heatmap/scoiattolo1_blur.png}
+			\caption{\textit{Mean filtering 3x3}}
+		\end{minipage}
+	\end{figure}
+
+	This solution can be exploited in order to make the pixels that suffers from the noise problem more smooth with the respect to the neighbors ones. In this way, even if the two consecutive frames are not exactly the same, the difference among the single pixels will be lower, resorting to a lower data sent over the socket. Let's take for simplicity two frames that are in gray scale, between 0 and 255, that are describes as two 3x3 matrices.
+	\begin{center}
+		$
+		A = \frac{1}{9}\begin{bmatrix}
+		120 & 131 & 112\\
+			112 & 101 & 82\\
+			44 & 106 & 65
+		\end{bmatrix}
+	\quad\quad B = \begin{bmatrix}
+			120 & 139 & 90\\
+			99 & 126 & 106\\
+			46 & 75 & 88
+		\end{bmatrix}
+		$
+	\end{center}
+	If we simply compute the difference, and we set the threshold to 20, by computing the difference location by location, 5 pixels must be sent as difference. If we apply now the kernel to both the two frames, in order to simulate the behaviour of the algorithm, the two resulting matrices are the following:
+	\begin{center}
+		$
+		A = \frac{1}{9}\begin{bmatrix}
+			51 & 73 & 47\\
+			68 & 96 & 66\\
+			40 & 56 & 39
+		\end{bmatrix}
+		\quad\quad B = \begin{bmatrix}
+			53 & 75 & 51\\
+			67 & 98 & 69\\
+			38 & 60 & 43
+		\end{bmatrix}
+		$
+	\end{center}
+	As you can see now, no pixels need to be sent. This is a huge improvement, since we have saved 100\% of the bandwidth if we neglect the overhead to transmit the information that no pixels have changed. Even if this seems an optimal solution, it has one major drawback. The image will became distorted from the details point of view. In fact, a trade-off between image quality and saved bandwidth must be selected.
+
+
+	\subsection{Gaussian filter}
+	The second type of filter that has been selected to reduce the noise, is the \textit{Gaussian filter}, that allows to reach a similar result with the respect to the Mean one. The idea is always to distorce the image to reduce the noise and make the difference among pixels lower. The matrix of a 3x3 Gaussian filter is the following:
+		\begin{center}
+		$
+		K = \frac{1}{16}\begin{bmatrix}
+			1 & 2 & 1\\
+			2 & 4 & 2\\
+			1 & 2 & 1
+		\end{bmatrix}
+		$
+	\end{center}
+	It can be computed using the following formula:
+	\begin{align*}
+		K(x,y) = \frac{1}{2 \cdot \pi \cdot \sigma^2}\cdot e^{-\frac{x^2 + y^2}{2 \sigma^2}}
+	\end{align*}
+	It is called Gaussian filter because of its shape, corresponds to a Gaussian function. A filter of this type requires $6 \sigma - 1$ values (to make it sure it's odd), so that for a $\sigma$ of 3 the kernel must be 17 elements long. The $\sigma$ value if given is pixels. If we use a square kernel its size can be simply computed as:
+	\[
+		side_{lenght} = \sqrt{6 \cdot \sigma - 1}
+	\]
+	Where $side_{lenght}$ is one of the length of the matrix that composes the kernel. A visual example representation is available in the following image.
+	\begin{center}
+		\includegraphics[width=0.45\linewidth]{images/heatmap/sigma_representation}
+	\end{center}
+	Gaussian filter weights pixels into a bell-shape curve around the central pixel. This means that the farther the pixel from the center, the lower the weight. On the other hand the Mean filter is just an average between the center and the neighboring pixels. This means that that for all the pixels, equal weights are assigned, regardless the distance from the center.
+		\begin{figure}[H]
+		\centering
+		\begin{minipage}[b]{0.45\textwidth}
+			\centering
+			\includegraphics[width=0.32\textwidth]{images/heatmap/scoiattolo1.png}
+			\caption{\textit{Original}}
+		\end{minipage}
+		\hfill
+		\begin{minipage}[b]{0.45\textwidth}
+			\centering
+			\includegraphics[width=0.32\textwidth]{images/heatmap/scoiattolo1_gaussian.png}
+			\caption{\textit{Gaussian filter 3x3}}
+		\end{minipage}
+	\end{figure}
+
+	The C code, that give $\sigma$, computes the entire convolution matrix is the following:
+\begin{lstlisting}[style=CStyle]
+float* computeGaussianKernel(float s, int K){
+	float sum = 0;
+	float* k = (float*)malloc(K*K*sizeof(float));
+	for (int i = 0; i < K; i++){
+		for (int j = 0; j < K; j++){
+			double x = i - (K - 1) / 2.0;
+			double y = j - (K - 1) / 2.0;
+			k[i*K+j] = (1.0/(2.0*M_PI*s*s)) * exp(-((x*x + y*y)/(2.0*s*s)));
+			sum += k[i*K+j];
+		}
+	}
+	for (int i = 0; i < K; i++) {
+		for (int j = 0; j < K; j++) {
+			k[i*K+j] /= sum;
+		}
+	}
+	
+	return k;
+}\end{lstlisting}	
+
+	\subsection{CUDA implementation}
+	In order to test the effectiveness of the algorithm and if it is suitable for this project, a configurable implementation has been developed in CUDA. In order to have all the same test environment, two sequential frames have been taken from the webcam in a semi dark environment with a person in the center. 
+	
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}[b]{0.45\textwidth}
+			\centering
+			\includegraphics[width=0.85\textwidth]{images/heatmap/f1.jpg}
+			\caption{\textit{First frame}}
+		\end{minipage}
+		\hfill
+		\begin{minipage}[b]{0.45\textwidth}
+			\centering
+			\includegraphics[width=0.85\textwidth]{images/heatmap/f2.jpg}
+			\caption{\textit{Second frame}}
+		\end{minipage}
+	\end{figure}
+	As you can see, the two images are pretty similar in term of content; a trained eye can see that the head of the second frame is slightly tilted to the right with the respect to the previous one. The idea is to run now the \textit{noise visualizer}, refer to Section \ref{sec:noise_visualizer}, on these two frames and understand where the noise is located.
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.35\linewidth]{images/heatmap/noise_visual}
+		\caption{\textit{Red-black representation of the noise}}
+		\label{fig:noisevisual}
+	\end{figure}
+	The noise, is the one in the background that do not contribute in any way to the video flow. In fact, even if it is fixed, it is sent anyway via the socket, increasing the used bandwidth. The CUDA implementation is based on the 2D tiled version but includes the management for all three color components.\newline\newline
+	The entire algorithm is based on the usage of the shared memory and the synchronization among the thread. The idea is to make each thread work on single pixel and apply the kernel, by using the portion of the image that is in the shared memory, called \textit{tile}. 
+
+	The kernel implementation is composed of multiple parts:
+	\begin{enumerate}
+		\itemsep0sp
+		\item \textbf{Shared memory initialization and boundary condition management}:
+		As introduced before, each thread, identified by its $ty$ and $tx$ coordinates should work on a precise pixels, identified as:
+		\begin{lstlisting}[style=CStyle]
+__shared__ int N_ds[BLOCK_SIZE][BLOCK_SIZE*3];
+
+x = threadIdx.x + blockIdx.x*TILE_SIZE - K/2;
+y = threadIdx.y + blockIdx.y*TILE_SIZE - K/2; \end{lstlisting}
+	In fact, the idea is to create a block of threads that corresponds to \texttt{BLOCK\_SIZE}*\texttt{BLOCK\_SIZE} as dimension, so that each one of the loads into the shared memory the value of its pixel (the multiplication by 3 in the kernel implies that each threads read all three color components). The following code, instead, includes also the write into the shared memory.
+		
+		\begin{lstlisting}[style=CStyle]
+int tx = threadIdx.x;   //W
+int ty = threadIdx.y;   //H
+int row_o = blockIdx.y*TILE_SIZE + ty;
+int col_o = blockIdx.x*TILE_SIZE + tx;
+int row_i = row_o - K/2;
+int col_i = col_o - K/2;
+
+if(row_i >= 0 && row_i < H && col_i >= 0 && col_i < W){
+	N_ds[ty][tx*3] = image[row_i*W*3+ col_i * C];
+	N_ds[ty][tx*3+1] = image[row_i*W*3+ col_i*3 + 1 ];
+	N_ds[ty][tx*3+2] = image[row_i*W*3+ col_i*3 + 2 ];
+} else {
+	N_ds[ty][tx*3] = 0;
+	N_ds[ty][tx*3+1] = 0;
+	N_ds[ty][tx*3+1] = 0;
+}	\end{lstlisting}
+	The value \texttt{TILE\_SIZE} defines the dimension of the tile, in which each the kernel is applied. The problem is that, the first pixel (position [0,0]) in the image, if the kernel has a dimension of 3x3, need to access also the location [-1,-1], [-1, 0], [-1, 1], [0, -1], [1, -1]. In this case, they are not available. This is the reason of the presence of the if condition, that sets 0 at these locations in the shared memory by ``shifting" the indexes by $K/2$. The problem is shown in the below picture:
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=0.45\linewidth]{images/heatmap/kernel_and_mask}
+			\caption{\textit{Boundary conditions among the image border}}
+			\label{fig:kernelandmask}
+		\end{figure}
+	In this way, all the pixels needed to process a tile of \texttt{TILE\_SIZE}x\texttt{TILE\_SIZE} dimension, are loaded into the \texttt{N\_ds} shared memory that is large \texttt{BLOCK\_SIZE}*\texttt{BLOCK\_SIZE*3} in order to contains also the values at the boundary of the tile.
+		\item \textbf{Filter application}:
+		Foreach element in the tile and for all three color components, the kernel is computed using the shared memory. 
+	\end{enumerate}
+	 
+
+
+	The entire kernel is the following:
+
+\begin{lstlisting}[style=CStyle]
+__constant__ float dev_k[K*K];
+
+__global__ void convolution_kernel(uint8_t *image, uint8_t *R)
+{
+	__shared__ int N_ds[BLOCK_SIZE][BLOCK_SIZE*3];
+	
+	int tx = threadIdx.x;   //W
+	int ty = threadIdx.y;   //H
+	int row_o = blockIdx.y*TILE_SIZE + ty;
+	int col_o = blockIdx.x*TILE_SIZE + tx;
+	int row_i = row_o - K/2;
+	int col_i = col_o - K/2;
+	
+	// Management of the boudary conditions
+	if(row_i >= 0 && row_i < H && col_i >= 0 && col_i < W){
+		N_ds[ty][tx*3] = image[row_i*W*3+ col_i * C];
+		N_ds[ty][tx*3+1] = image[row_i*W*3+ col_i*3 + 1 ];
+		N_ds[ty][tx*3+2] = image[row_i*W*3+ col_i*3 + 2 ];
+	} else {
+		N_ds[ty][tx*3] = 0;
+		N_ds[ty][tx*3+1] = 0;
+		N_ds[ty][tx*3+1] = 0;
+	}
+	
+    __syncthreads();
+
+	if(row_o < H && col_o < W){
+		float outputR = 0.0;
+		float outputG = 0.0;
+		float outputB = 0.0;
+		if(ty < TILE_SIZE && tx < TILE_SIZE){
+			for(int i = 0; i < K; i++)
+			for(int j = 0; j < K; j++){
+				outputR += dev_k[i*K+j] * N_ds[i+ty][(j+tx)*3];
+				outputG += dev_k[i*K+j] * N_ds[i+ty][(j+tx)*3 + 1];
+				outputB += dev_k[i*K+j] * N_ds[i+ty][(j+tx)*3 +2];
+			}
+			
+			R[row_o*W*3 + col_o*3] = outputR;
+			R[row_o*W*3 + col_o*3 + 1] = outputG;
+			R[row_o*W*3 + col_o*3 + 2] = outputB;
+		}
+	}
+}\end{lstlisting}
+
+	The kernel call needs to work on an image of 1920*1080*3 elements divided into square tiles of \texttt{TILE\_SIZE}x\texttt{TILE\_SIZE} dimensions. Since the tile needs also the surrounding element to compute the kernel, the block size is composed of \texttt{BLOCK\_SIZE}x\texttt{BLOCK\_SIZE} elements, where:
+	\[
+		BLOCK\_SIZE = TILE\_SIZE + K - 1
+	\]
+	
+	The grid instead, is configured to generate as many tile as needed from the image. In this case, a grid of \texttt{W/TILE\_SIZE}x\texttt{H/TILE\_SIZE} is enough (need to be rounded to the upper value).
+	This is the complete kernel call
+\begin{lstlisting}[style=CStyle]
+dim3 blockSize, gridSize;
+blockSize.x = BLOCK_SIZE, blockSize.y = BLOCK_SIZE, blockSize.z = 1;
+gridSize.x = ceil((float)W/TILE_SIZE),
+gridSize.y = ceil((float)H/TILE_SIZE),
+gridSize.z = 1;
+
+// Kernel call
+convolution_kernel<<<gridSize, blockSize>>>(d_current, d_current_filtered);
+\end{lstlisting}
+
+	 This solution includes already optimal solution in order to increase the performance and reduce at minimum the overhead introduced by the computation of the filter. In fact, by having defined how convolution if performed, it can be simple called, after have set the kernel in the constant memory.
+	 
+	 Having defined the kernel, that once computed is fixed for the entire program execution, allows to not cope with the cache coherence management, allowing data to be aggressively cached in the L1 cache (the nearest to the SM).
+	
+	Moreover, access to the memory has been optimized by resorting to the usage of the shared memory. Since the larger the dimension of the tile, the higher the ration between the manipulated pixels and the memory accesses, an optimal solution is to increase as much as possible the tile size. The limit is the shared memory, that is limited. \newline\newline
+	The execution of the kernel is inversely proportional to the size of the tile and the kernel dimension; the code shown before has been run for multiple sessions in order to be able to plot the following data:
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.42\linewidth]{images/heatmap/kernel_time_noise_2.png}
+		\caption{\textit{Kernel execution time from profiler}}
+		\label{fig:noise_kernel_time}
+	\end{figure}
+
+TODO:
+	\begin{itemize}
+		\item Try vertical and horizontal kernel
+		\item try median and mean
+		\item show new number of different pixels
+	\end{itemize}
+	
 \end{document}
 	
