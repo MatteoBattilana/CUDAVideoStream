@@ -19,7 +19,6 @@
 #include <cstdlib>
 using namespace cv;
 
-#define SINE
 #define H 1080
 #define W 1920
 #define C 3
@@ -37,21 +36,13 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
             
             if((i*4+j) % 3 == 0){
                 int pixelDiff = fabsf(((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j]) + fabsf(((uint8_t *)&cc)[j+1] - ((uint8_t *)&pc)[j+1]) + fabsf(((uint8_t *)&cc)[j+2] - ((uint8_t *)&pc)[j+2]);
-
-                #ifdef SINE
                 float diff1 = pixelDiff/(255*2.0);
-                int r = fminf(fmaxf(sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
-                int g = fminf(fmaxf(sinf(M_PI*diff1)*255.0, 0.0),255.0);
-                int b = fminf(fmaxf(sinf(M_PI*diff1 + M_PI/2.0)*255.0, 0.0),255.0);
+                int r = fminf(fmaxf(__sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
+                int g = fminf(fmaxf(__sinf(M_PI*diff1)*255.0, 0.0),255.0);
+                int b = fminf(fmaxf(__sinf(M_PI*diff1 + M_PI/2.0)*255.0, 0.0),255.0);
                 d_heat_pixels[i*4+j] = b;
                 d_heat_pixels[i*4+j+1] = g;
                 d_heat_pixels[i*4+j+2] = r;
-                #else
-                d_heat_pixels[i*4+j+2] = pixelDiff > 30 ? 255: 0;
-                d_heat_pixels[i*4+j+1] = 0;
-                d_heat_pixels[i*4+j] = 0;
-                #endif
-                pixelDiff = 0;
             }
         }
     }

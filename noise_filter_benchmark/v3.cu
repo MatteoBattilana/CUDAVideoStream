@@ -23,16 +23,30 @@ using namespace cv;
 #define W 1920
 #define C 3
 #define LR_THRESHOLDS 20
-#define SIGMA 8
-#define K 7
+#define K 5
 #define TILE_SIZE 10
 #define BLOCK_SIZE (TILE_SIZE + K - 1)
 
 typedef int4 chunk_t;
 
-__constant__ float dev_k[K*K];
+__device__ uint8_t median(uint8_t *array, int N){
+    bool swapped = true;
+    for (int a = 0; a < N && swapped; a++){
+        swapped = false;
+        for (int i = 0; i < N - 1; i++){
+            if(array[i] > array[i+1]){
+                uint8_t tmp = array[i];
+                array[i] = array[i+1];
+                array[i+1] = tmp;
+                swapped = true;
+            }
+        }
+    }
 
-__global__ void convolution_kernel(uint8_t *image, uint8_t *R)
+    return array[N/2];
+}
+
+__global__ void median_kernel(uint8_t *image, uint8_t *R)
 {
     __shared__ uint8_t N_ds[BLOCK_SIZE][BLOCK_SIZE*3];
 
@@ -55,22 +69,23 @@ __global__ void convolution_kernel(uint8_t *image, uint8_t *R)
 
     __syncthreads();
 
-    if(row_o < H && col_o < W){
-        float outputR = 0.0;
-        float outputG = 0.0;
-        float outputB = 0.0;
-        if(ty < TILE_SIZE && tx < TILE_SIZE){
-            for(int i = 0; i < K; i++)
-                for(int j = 0; j < K; j++){
-                    outputR += dev_k[i*K+j] * N_ds[i+ty][(j+tx)*3];
-                    outputG += dev_k[i*K+j] * N_ds[i+ty][(j+tx)*3 + 1];
-                    outputB += dev_k[i*K+j] * N_ds[i+ty][(j+tx)*3 +2];
-                }
+    if(row_o < H && col_o < W && ty < TILE_SIZE && tx < TILE_SIZE){
+        uint8_t medR[K*K];
+        uint8_t medG[K*K];
+        uint8_t medB[K*K];
+        int r = 0;
+        int g = 0;
+        int b = 0;
+        for(int i = 0; i < K; i++)
+            for(int j = 0; j < K; j++){
+                medR[r++] = N_ds[i+ty][(j+tx)*3];
+                medG[g++] = N_ds[i+ty][(j+tx)*3 + 1];
+                medB[b++] = N_ds[i+ty][(j+tx)*3 + 2];
+            }
 
-                R[row_o*W*3 + col_o*3] = outputR;
-                R[row_o*W*3 + col_o*3 + 1] = outputG;
-                R[row_o*W*3 + col_o*3 + 2] = outputB;
-        }
+        R[row_o*W*3 + col_o*3] = median(medR, K*K);
+        R[row_o*W*3 + col_o*3 + 1] = median(medG, K*K);
+        R[row_o*W*3 + col_o*3 + 2] = median(medB, K*K);
     }
 }
 
@@ -113,52 +128,6 @@ int getCountDifference(uint8_t *orig, uint8_t *mod){
     return count;
 }
 
-float* computeMeanKernel(){
-    float* k = (float*)malloc(K*K*sizeof(float));
-    for (int i = 0; i < K; i++){
-        for (int j = 0; j < K; j++){
-            k[i*K+j] = 1.0/(K*K);
-        }
-    }
-
-    return k;
-}
-
-float* dummyKernel(){
-    float* k = (float*)malloc(K*K*sizeof(float));
-    for (int i = 0; i < K; i++){
-        for (int j = 0; j < K; j++){
-            k[i*K+j] = 0;
-        }
-    }
-    k[(K/2)*K + K/2] = 1;
-
-    return k;
-}
-
-
-float* computeGaussianKernel(float sigma){
-    float sum = 0;
-    float* k = (float*)malloc(K*K*sizeof(float));
-    for (int i = 0; i < K; i++){
-        for (int j = 0; j < K; j++){
-            float x = i - (K - 1) / 2.0;
-            float y = j - (K - 1) / 2.0;
-            k[i*K+j] = (1.0/(2.0*M_PI*sigma*sigma)) * exp(-((x*x + y*y)/(2.0*sigma*sigma)));
-            sum += k[i*K+j];
-        }
-    }
-
-    for (int i = 0; i < K; i++) {
-        for (int j = 0; j < K; j++) {
-            k[i*K+j] /= sum;
-        }
-    }
-
-
-    return k;
-}
-
 int main(int argc, char *argv[]) {
     int threads = 1024;
     if(argc == 2){
@@ -169,28 +138,12 @@ int main(int argc, char *argv[]) {
     printf("Mask dimension set to: %d\n", K);
     printf("Tile dimension set to: %d\n", TILE_SIZE);
     
-    //float k[K*K] = {0,0,0,0,1,0,0,0,0};
-    //float k[K*K] = {1.0/9.0, 1.0/9.0, 1.0/9.0,1.0/9.0, 1.0/9.0, 1.0/9.0,1.0/9.0, 1.0/9.0, 1.0/9.0};
-    //float k[K*K] = {1.0/16, 2.0/16, 1.0/16, 2.0/16, 1.0/4, 1.0/8, 1.0/16, 1.0/8, 1.0/16};
-    //float k[K*K] = {1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0, 1.0/36.0};
-
-    // float * k = computeMeanKernel();
-    float * k = computeGaussianKernel(SIGMA);
-    printf("Kernel: \n");
-    for (int i = 0; i < K; i++) {
-        for (int j = 0; j < K; j++) {
-            printf("%f ", k[i*K+j]);
-        }
-        printf("\n");
-    }
-
     uint8_t *d_current, *d_previous, *d_current_filtered, *d_heat_map;
 
     cudaMalloc((void **)&d_current, W*H*C * sizeof *d_current);
     cudaMalloc((void **)&d_previous, W*H*C * sizeof *d_previous);
     cudaMalloc((void **)&d_heat_map, W*H*C * sizeof *d_heat_map);
     cudaMalloc((void **)&d_current_filtered, W*H*C * sizeof *d_current_filtered);
-    cudaMemcpyToSymbol(dev_k, k, K*K * sizeof(float) );
 
     Mat image1 = imread("f1.jpg");
     Mat image2 = imread("f2.jpg");
@@ -217,13 +170,13 @@ int main(int argc, char *argv[]) {
         int orig_diff = getCountDifference(image1.data, image2.data);
 
         cudaMemcpy(d_current, image1.data,  W*H*C * sizeof *image1.data, cudaMemcpyHostToDevice);
-        convolution_kernel<<<gridSize, blockSize>>>(d_current, d_current_filtered);
+        median_kernel<<<gridSize, blockSize>>>(d_current, d_current_filtered);
         cudaMemcpy(image1.data, d_current_filtered, W*H*C * sizeof *image1.data, cudaMemcpyDeviceToHost);
         
         cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
 
         start = std::chrono::high_resolution_clock::now();
-        convolution_kernel<<<gridSize, blockSize>>>(d_current, d_current_filtered);
+        median_kernel<<<gridSize, blockSize>>>(d_current, d_current_filtered);
         
 
         cudaMemcpy(image2.data, d_current_filtered, W*H*C * sizeof *image2.data, cudaMemcpyDeviceToHost);

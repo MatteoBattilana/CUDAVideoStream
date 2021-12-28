@@ -16,9 +16,9 @@
 #include "opencv2/opencv.hpp"
 #include <pthread.h>
 #include <cmath>
+#include <cstdlib>
 using namespace cv;
 
-#define SINE 
 #define H 1080
 #define W 1920
 #define C 3
@@ -27,31 +27,37 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int start = x * maxSect;
     int max = start + maxSect;
-    for (int i = start; i < max; i=i+C) {
-        int pixelDiff = fabsf(current[i] - previous[i]) + fabsf(current[i+1] - previous[i+1]) + fabsf(current[i+2] - previous[i+2]); 
-        #ifdef SINE
-        float diff1 = pixelDiff/(255*2.0);
-        int r = fminf(fmaxf(sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
-        int g = fminf(fmaxf(sinf(M_PI*diff1)*255.0, 0.0),255.0);
-        int b = fminf(fmaxf(sinf(M_PI*diff1 + M_PI/2.0)*255.0, 0.0),255.0);
-        d_heat_pixels[i] = b;
-        d_heat_pixels[i+1] = g;
-        d_heat_pixels[i+2] = r;
-        #else
-        d_heat_pixels[i+2] = pixelDiff > 30 ? 255: 0;
-        d_heat_pixels[i+1] = 0;
-        d_heat_pixels[i] = 0;
-        #endif
+    int cc, pc;
+    for (int i = start; i < max; i++) {
+
+        cc = ((int *)current)[i];
+        pc = ((int *)previous)[i];
+        for (int j = 0; j < 4; j++) {
+            
+            if((i*4+j) % 3 == 0){
+                int pixelDiff = (((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j]) + (((uint8_t *)&cc)[j+1] - ((uint8_t *)&pc)[j+1]) + (((uint8_t *)&cc)[j+2] - ((uint8_t *)&pc)[j+2]);
+                float diff1 = pixelDiff/(255*2.0);
+                int r = fminf(fmaxf(__sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
+                int g = fminf(fmaxf(__sinf(M_PI*diff1)*255.0, 0.0),255.0);
+                int b = fminf(fmaxf(__sinf(M_PI*diff1 + M_PI/2.0)*255.0, 0.0),255.0);
+                d_heat_pixels[i*4+j] = b;
+                d_heat_pixels[i*4+j+1] = g;
+                d_heat_pixels[i*4+j+2] = r;
+            }
+        }
     }
 }
    
 
-int main() {
+int main(int argc, char *argv[]) {
+    int threads = 1024;
+    if(argc == 2){
+        threads = atoi(argv[1]);
+    }
+    printf("Number of threads set to: %d\n", threads);
+
     uint8_t *d_current, *d_previous;
     uint8_t *d_heat_pixels;
-    struct cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, 0);
-    int threads = prop.maxThreadsPerBlock;
 
     cudaMalloc((void **)&d_current, W*H*C * sizeof *d_current);
     cudaMalloc((void **)&d_previous, W*H*C * sizeof *d_previous);
@@ -66,8 +72,11 @@ int main() {
     cap.set(4, H);
     cap >> image1;
     res = image1.clone();
+    cudaMemcpy(d_previous, image1.data,  W*H*C * sizeof *image1.data, cudaMemcpyHostToDevice);
 
-    while (1) {
+    auto start = std::chrono::high_resolution_clock::now();
+    auto end = std::chrono::high_resolution_clock::now();
+    for (int a = 0; a < 100; a++){
         cap >> image2;
         
         namedWindow("Original", WINDOW_GUI_NORMAL);
@@ -75,20 +84,21 @@ int main() {
         if (waitKey(10) == 27) {
             break;  // stop capturing by pressing ESC
         }
-
-
-        auto start = std::chrono::high_resolution_clock::now();
         
-        cudaMemcpy(d_previous, image1.data,  W*H*C * sizeof *image1.data, cudaMemcpyHostToDevice);
+        uint8_t* tmp = d_current;
+        d_current = d_previous;
+        d_previous = tmp;
+
+        start = std::chrono::high_resolution_clock::now();
+        
         cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
-        kernel<<<1, threads>>>(d_current, d_previous, (W*H*C)/threads, d_heat_pixels);
+        kernel<<<1, threads>>>(d_current, d_previous, (((W*H*C)/threads)/4), d_heat_pixels);
         cudaMemcpy(res.data, d_heat_pixels, W*H*C * sizeof *res.data, cudaMemcpyDeviceToHost);
 
-        auto end = std::chrono::high_resolution_clock::now();
+        end = std::chrono::high_resolution_clock::now();
         auto elaps = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
         printf("\rHeatmap time generation: %.3f ms", (float)elaps.count() * 1e-6);
         fflush(stdout);
-
         namedWindow("HeatMap", WINDOW_GUI_NORMAL);
         imshow("HeatMap", res);
         if (waitKey(10) == 27) {
@@ -98,5 +108,7 @@ int main() {
         image1 = image2.clone();
     }
     
+
+
     return 0;
 }
