@@ -19,7 +19,14 @@
 #include "v4l.h"
 
 // 1 for heat map, 2 for red-black, 0 nothing
-#define NOISE_VISUALIZER 1
+#define NOISE_FILTER
+#define K 3
+#define TILE_SIZE 10
+#define BLOCK_SIZE (TILE_SIZE + K - 1)
+
+// Noise visualizer: 0 nothing, 1 heatmap, 2 red-black
+#define NOISE_VISUALIZER 2
+
 #define LR_THRESHOLDS 20
 #define NSTREAMS 1
 #define GPU
@@ -31,7 +38,6 @@ typedef long4 chunk_t;
 
 struct mat_show {
     Mat *nframe;
-    Mat *originalframe;
 };
 
 struct mat_ready {
@@ -58,7 +64,52 @@ struct ctxs {
 };
 
 #ifdef GPU
-__global__ void heat_map(uint8_t *current, uint8_t *previous, int maxSect, uint8_t *noise_visualization, int total){
+
+__constant__ float dev_k[K*K];
+
+__global__ void convolution_kernel(uint8_t *image, uint8_t *R)
+{
+    __shared__ uint8_t N_ds[BLOCK_SIZE][BLOCK_SIZE*3];
+
+    int tx = threadIdx.x;   //1920
+    int ty = threadIdx.y;   //1080
+    int row_o = blockIdx.y*TILE_SIZE + ty;
+    int col_o = blockIdx.x*TILE_SIZE + tx;
+    int row_i = row_o - K/2;
+    int col_i = col_o - K/2;
+
+    if(row_i >= 0 && row_i < 1080 && col_i >= 0 && col_i < 1920){
+        N_ds[ty][tx*3] = image[row_i*1920*3+ col_i * 3];
+        N_ds[ty][tx*3+1] = image[row_i*1920*3+ col_i*3 + 1 ];
+        N_ds[ty][tx*3+2] = image[row_i*1920*3+ col_i*3 + 2 ];
+    } else {
+        N_ds[ty][tx*3] = 0;
+        N_ds[ty][tx*3+1] = 0;
+        N_ds[ty][tx*3+1] = 0;
+    }
+
+    __syncthreads();
+
+    if(row_o < 1080 && col_o < 1920){
+        float outputR = 0.0;
+        float outputG = 0.0;
+        float outputB = 0.0;
+        if(ty < TILE_SIZE && tx < TILE_SIZE){
+            for(int i = 0; i < K; i++)
+                for(int j = 0; j < K; j++){
+                    outputR += dev_k[i*K+j] * N_ds[i+ty][(j+tx)*3];
+                    outputG += dev_k[i*K+j] * N_ds[i+ty][(j+tx)*3 + 1];
+                    outputB += dev_k[i*K+j] * N_ds[i+ty][(j+tx)*3 +2];
+                }
+
+                R[row_o*1920*3 + col_o*3] = outputR;
+                R[row_o*1920*3 + col_o*3 + 1] = outputG;
+                R[row_o*1920*3 + col_o*3 + 2] = outputB;
+        }
+    }
+}
+
+__global__ void heat_map(uint8_t *current, uint8_t *previous, int maxSect, uint8_t *noise_visualization){
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int start = x * maxSect;
     int max = start + maxSect;
@@ -73,7 +124,7 @@ __global__ void heat_map(uint8_t *current, uint8_t *previous, int maxSect, uint8
         for (int j = 0; j < size; j++) {
             df += fabsf(((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j]);
 
-            if(((i*size)+ j ) < total && ((i*size)+ j ) % 3 == 2){
+            if(((i*size)+ j ) % 3 == 2){
                 float diff1 = df/(255*2.0);
                 int r = fminf(fmaxf(sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
                 int g = fminf(fmaxf(sinf(M_PI*diff1)*255.0, 0.0),255.0);
@@ -88,7 +139,7 @@ __global__ void heat_map(uint8_t *current, uint8_t *previous, int maxSect, uint8
 }
 
 
-__global__ void red_black_map(uint8_t *current, uint8_t *previous, int maxSect, uint8_t *noise_visualization, int total){
+__global__ void red_black_map(uint8_t *current, uint8_t *previous, int maxSect, uint8_t *noise_visualization){
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int start = x * maxSect;
     int max = start + maxSect;
@@ -108,7 +159,7 @@ __global__ void red_black_map(uint8_t *current, uint8_t *previous, int maxSect, 
                 redColor = 255;
             }
             
-            if(((i*size)+ j ) < total && ((i*size)+ j ) % 3 == 2){
+            if(((i*size)+ j ) % 3 == 2){
                 noise_visualization[(i*size)+j] = redColor;
                 redColor = 0;
             }
@@ -116,13 +167,14 @@ __global__ void red_black_map(uint8_t *current, uint8_t *previous, int maxSect, 
     }
 }
 
+
 /*
 Optimizations done:
  - compute difference int by int instead of uint8 by uint8
  - same stuff on updating current[i]
  - vectorized instructions (int2 or greater)
 */
-__global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs, int total) {
+__global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int maxSect, unsigned int *pos, int *xs) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     unsigned int npos;
     int df;
@@ -144,20 +196,18 @@ __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int 
         #pragma unroll
         for (int j = 0; j < sizeof cc; j++) {
             df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
-            if ((i*sizeof cc) + j < total ){
-                if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
-                    npos = atomicInc(pos, 6220801);
-                    diff[npos] = df;
-                    xs[npos] = (i*sizeof cc) + j;
-                } else {
+            if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+                npos = atomicInc(pos, 6220801);
+                diff[npos] = df;
+                xs[npos] = (i*sizeof cc) + j;
+            } else {
 
-    #ifdef KERNEL2_NEGFEED_OPT
-                    ((uint8_t *)&cc)[j] -= df;
-                    currUpdateRequired = true;
-    #else 
-                    current[(i*sizeof cc) + j] -= df;
-    #endif
-                }
+#ifdef KERNEL2_NEGFEED_OPT
+                ((uint8_t *)&cc)[j] -= df;
+                currUpdateRequired = true;
+#else 
+                current[(i*sizeof cc) + j] -= df;
+#endif
             }
         }
 
@@ -186,12 +236,6 @@ void *th_noise_hdl(void *args) {
         if (waitKey(10) == 27) {
             break;  // stop capturing by pressing ESC
         }
-
-        // namedWindow("Original", WINDOW_GUI_NORMAL);
-        // imshow("Original", *(show_ready->originalframe));
-        // if (waitKey(10) == 27) {
-        //     break;  // stop capturing by pressing ESC
-        // }
     }
 
     return NULL;
@@ -282,6 +326,24 @@ void sigpipe_hdl(int sig) {
     write(pargs->show_w_fd, &pargs->pready, sizeof pargs->pready);
 }*/
 
+void computeGaussianKernel(float* k, float sigma){
+    float sum = 0;
+    for (int i = 0; i < K; i++){
+        for (int j = 0; j < K; j++){
+            float x = i - (K - 1) / 2.0;
+            float y = j - (K - 1) / 2.0;
+            k[i*K+j] = (1.0/(2.0*M_PI*sigma*sigma)) * exp(-((x*x + y*y)/(2.0*sigma*sigma)));
+            sum += k[i*K+j];
+        }
+    }
+
+    for (int i = 0; i < K; i++) {
+        for (int j = 0; j < K; j++) {
+            k[i*K+j] /= sum;
+        }
+    }
+}
+
 int main() {
 
     VideoCapture cap;
@@ -331,6 +393,9 @@ int main() {
     pthread_create(&th_show, NULL, th_show_hdl, &ctx);
     pthread_create(&th_noise, NULL, th_noise_hdl, &ctx);
 
+    float* k = (float*)malloc(K*K*sizeof(float));
+    computeGaussianKernel(k, (1+K*K)/6.0);
+
     struct mat_ready *pready;
     struct mat_show *show_ready;
     for (int i = 0; i < 6; i++) {
@@ -341,13 +406,12 @@ int main() {
 
 #ifdef GPU
         uint8_t *h_frame, *n_frame, *o_frame;
-        cudaMallocHost((void **)&h_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *h_frame);
-        cudaMallocHost((void **)&n_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *n_frame);
-        cudaMallocHost((void **)&o_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *o_frame);
+        cudaMallocHost((void **)&h_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *h_frame + sizeof(chunk_t));
+        cudaMallocHost((void **)&n_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *n_frame + sizeof(chunk_t));
+        cudaMallocHost((void **)&o_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *o_frame + sizeof(chunk_t));
         cudaMallocHost((void **)&pready->h_xs, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *pready->h_xs);
         pready->pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type(), h_frame);
         show_ready->nframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type(), n_frame);
-        show_ready->originalframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type(), o_frame);
 #else
         pready->pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type());
         pready->h_xs = new int[3 * ctx.sampleMat->rows * ctx.sampleMat->cols];
@@ -362,7 +426,7 @@ int main() {
 
 #ifdef GPU
     struct cudaDeviceProp prop;
-    uint8_t *d_current, *d_previous;
+    uint8_t *d_current, *d_previous, *d_filtered;
     uint8_t *d_diff;
     uint8_t *d_noise_visualization;
     int *d_xs;
@@ -370,10 +434,12 @@ int main() {
 
     cudaGetDeviceProperties(&prop, 0);
 
+    cudaMemcpyToSymbol(dev_k, k, K*K * sizeof(float));
     cudaMalloc((void **)&d_diff, total * sizeof *d_diff);
     cudaMalloc((void **)&d_xs, total * sizeof *d_xs);
     cudaMalloc((void **)&d_current, total * sizeof *d_current);
     cudaMalloc((void **)&d_previous, total * sizeof *d_previous);
+    cudaMalloc((void **)&d_filtered, total * sizeof *d_filtered);
     cudaMalloc((void **)&d_noise_visualization, total * sizeof *d_noise_visualization);
 
     cudaMalloc((void **)&d_pos, sizeof *d_pos);
@@ -382,7 +448,13 @@ int main() {
     int maxAtTime = total / nMaxThreads;
     cudaMemcpy(d_current, ctx.sampleMat->data, total * sizeof *ctx.sampleMat->data, cudaMemcpyHostToDevice);
 
-    int max4 = ceil(maxAtTime / sizeof(chunk_t));
+    int max4 = ceil(1.0 * maxAtTime / sizeof(chunk_t));
+
+    dim3 blockSize, gridSize;
+    blockSize.x = BLOCK_SIZE, blockSize.y = BLOCK_SIZE, blockSize.z = 1;
+    gridSize.x = ceil((float)1920/TILE_SIZE),
+    gridSize.y = ceil((float)1080/TILE_SIZE),
+    gridSize.z = 1;
 
     // struct cb_args *pargs = new struct cb_args;
     // pargs->d_pos = d_pos;
@@ -449,27 +521,30 @@ int main() {
         // cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
 
         // Copy in the current pointer and run 
+
+        #ifdef NOISE_FILTER
+        cudaMemcpyAsync(d_filtered, pready->pframe->data, total, cudaMemcpyHostToDevice);
+        convolution_kernel<<<gridSize, blockSize>>>(d_filtered, d_current);
+        #else
         cudaMemcpyAsync(d_current, pready->pframe->data, total, cudaMemcpyHostToDevice);
+        #endif
 
         // Noise visualization
         #ifdef NOISE_VISUALIZER
             #if NOISE_VISUALIZER == 1         
-            heat_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization, total);
+            heat_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
             #elif NOISE_VISUALIZER == 2
-            red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization, total);
+            red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
             #endif
         #endif
-        // kernel<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, maxAtTime, d_pos, d_xs);
-        kernel2<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, max4, d_pos, d_xs, total);
+        kernel2<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, max4, d_pos, d_xs);
 
         cudaMemcpyAsync(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
 
-        #ifdef NOISE_VISUALIZER
-        
+        #if NOISE_VISUALIZER != 0
         // Copy noise frame into the Mat
         cudaMemcpyAsync(show_ready->nframe->data, d_noise_visualization, total, cudaMemcpyDeviceToHost);
-        // cudaMemcpyAsync(show_ready->originalframe->data, d_noise_visualization, total, cudaMemcpyDeviceToHost);
        
         write(noise_pipe[1], &show_ready, sizeof show_ready);
         #endif
