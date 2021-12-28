@@ -15,4 +15,5 @@
 \BOOKMARK [2][-]{subsection.3.1}{Convolution filters}{section.3}% 15
 \BOOKMARK [2][-]{subsection.3.2}{Mean filter}{section.3}% 16
 \BOOKMARK [2][-]{subsection.3.3}{Gaussian filter}{section.3}% 17
-\BOOKMARK [2][-]{subsection.3.4}{CUDA implementation}{section.3}% 18
+\BOOKMARK [2][-]{subsection.3.4}{Tiled CUDA 2D implementation}{section.3}% 18
+\BOOKMARK [2][-]{subsection.3.5}{2D CUDA Tiled Median filter}{section.3}% 19

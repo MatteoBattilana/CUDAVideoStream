@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2021.3.29)  27 DEC 2021 20:39
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2021.3.29)  28 DEC 2021 13:59
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1223,7 +1223,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 211--213
 
  []
 
-<images/heatmap/v0.png, id=89, 1144.275pt x 321.45094pt>
+<images/heatmap/v0.png, id=93, 1144.275pt x 321.45094pt>
 File: images/heatmap/v0.png Graphic file (type png)
 <use images/heatmap/v0.png>
 Package pdftex.def Info: images/heatmap/v0.png  used on input line 216.
@@ -1331,7 +1331,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 378--382
 
  []
 
-<images/heatmap/gpu_naif.png, id=181, 455.45157pt x 255.95625pt>
+<images/heatmap/gpu_naif.png, id=185, 455.45157pt x 255.95625pt>
 File: images/heatmap/gpu_naif.png Graphic file (type png)
 <use images/heatmap/gpu_naif.png>
 Package pdftex.def Info: images/heatmap/gpu_naif.png  used on input line 437.
@@ -1362,13 +1362,13 @@ File: lstlang1.sty 2015/06/04 1.6 listings language file
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2015/06/04 1.6 listings language file
 )
-<images/heatmap/plot_kernel_times.png, id=288, 462.528pt x 346.896pt>
+<images/heatmap/plot_kernel_times.png, id=292, 462.528pt x 346.896pt>
 File: images/heatmap/plot_kernel_times.png Graphic file (type png)
 <use images/heatmap/plot_kernel_times.png>
 Package pdftex.def Info: images/heatmap/plot_kernel_times.png  used on input li
 ne 588.
 (pdftex.def)             Requested size: 150.57088pt x 112.9304pt.
-<images/heatmap/hd.png, id=289, 462.528pt x 346.896pt>
+<images/heatmap/hd.png, id=293, 462.528pt x 346.896pt>
 File: images/heatmap/hd.png Graphic file (type png)
 <use images/heatmap/hd.png>
 Package pdftex.def Info: images/heatmap/hd.png  used on input line 595.
@@ -1379,13 +1379,13 @@ Underfull \hbox (badness 10000) in paragraph at lines 602--605
  []
 
 [7 <./images/heatmap/plot_kernel_times.png> <./images/heatmap/hd.png>]
-<images/heatmap/histo_results.png, id=317, 455.45157pt x 255.95625pt>
+<images/heatmap/histo_results.png, id=321, 455.45157pt x 255.95625pt>
 File: images/heatmap/histo_results.png Graphic file (type png)
 <use images/heatmap/histo_results.png>
 Package pdftex.def Info: images/heatmap/histo_results.png  used on input line 6
 31.
 (pdftex.def)             Requested size: 271.86237pt x 152.786pt.
-<images/heatmap/v0-red.png, id=318, 722.7pt x 408.02437pt>
+<images/heatmap/v0-red.png, id=322, 722.7pt x 408.02437pt>
 File: images/heatmap/v0-red.png Graphic file (type png)
 <use images/heatmap/v0-red.png>
 Package pdftex.def Info: images/heatmap/v0-red.png  used on input line 642.
@@ -1395,7 +1395,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 648--650
 
  []
 
-<images/heatmap/noise.png, id=325, 361.35pt x 361.35pt>
+<images/heatmap/noise.png, id=329, 361.35pt x 361.35pt>
 File: images/heatmap/noise.png Graphic file (type png)
 <use images/heatmap/noise.png>
 Package pdftex.def Info: images/heatmap/noise.png  used on input line 660.
@@ -1410,7 +1410,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 664--665
 
  []
 
-<images/heatmap/controls.png, id=327, 331.2375pt x 145.29282pt>
+<images/heatmap/controls.png, id=331, 331.2375pt x 145.29282pt>
 File: images/heatmap/controls.png Graphic file (type png)
 <use images/heatmap/controls.png>
 Package pdftex.def Info: images/heatmap/controls.png  used on input line 671.
@@ -1435,7 +1435,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 751--753
 
  []
 
-<images/heatmap/noise1.png, id=373, 455.45157pt x 255.95625pt>
+<images/heatmap/noise1.png, id=377, 455.45157pt x 255.95625pt>
 File: images/heatmap/noise1.png Graphic file (type png)
 <use images/heatmap/noise1.png>
 Package pdftex.def Info: images/heatmap/noise1.png  used on input line 776.
@@ -1451,13 +1451,13 @@ Underfull \hbox (badness 10000) in paragraph at lines 883--910
  []
 
 [13]
-<images/heatmap/gpu_red_2.png, id=487, 723.45282pt x 407.27156pt>
+<images/heatmap/gpu_red_2.png, id=491, 723.45282pt x 407.27156pt>
 File: images/heatmap/gpu_red_2.png Graphic file (type png)
 <use images/heatmap/gpu_red_2.png>
 Package pdftex.def Info: images/heatmap/gpu_red_2.png  used on input line 921.
 (pdftex.def)             Requested size: 188.21289pt x 105.95645pt.
  [14 <./images/heatmap/gpu_red_2.png>]
-<images/heatmap/noise2.png, id=528, 455.45157pt x 255.95625pt>
+<images/heatmap/noise2.png, id=532, 455.45157pt x 255.95625pt>
 File: images/heatmap/noise2.png Graphic file (type png)
 <use images/heatmap/noise2.png>
 Package pdftex.def Info: images/heatmap/noise2.png  used on input line 999.
@@ -1468,19 +1468,19 @@ Underfull \hbox (badness 10000) in paragraph at lines 1007--1009
  []
 
 [16]
-<images/heatmap/scoiattolo1.png, id=579, 31.42174pt x 31.42174pt>
+<images/heatmap/scoiattolo1.png, id=583, 31.42174pt x 31.42174pt>
 File: images/heatmap/scoiattolo1.png Graphic file (type png)
 <use images/heatmap/scoiattolo1.png>
 Package pdftex.def Info: images/heatmap/scoiattolo1.png  used on input line 107
 0.
 (pdftex.def)             Requested size: 60.22949pt x 60.23648pt.
-<images/heatmap/scoiattolo1_blur.png, id=580, 31.42174pt x 31.42174pt>
+<images/heatmap/scoiattolo1_blur.png, id=584, 31.42174pt x 31.42174pt>
 File: images/heatmap/scoiattolo1_blur.png Graphic file (type png)
 <use images/heatmap/scoiattolo1_blur.png>
 Package pdftex.def Info: images/heatmap/scoiattolo1_blur.png  used on input lin
 e 1076.
 (pdftex.def)             Requested size: 60.22949pt x 60.23648pt.
-<images/heatmap/sigma_representation.png, id=581, 1053.9375pt x 457.71pt>
+<images/heatmap/sigma_representation.png, id=585, 1053.9375pt x 457.71pt>
 File: images/heatmap/sigma_representation.png Graphic file (type png)
 <use images/heatmap/sigma_representation.png>
 Package pdftex.def Info: images/heatmap/sigma_representation.png  used on input
@@ -1493,23 +1493,23 @@ File: images/heatmap/scoiattolo1.png Graphic file (type png)
 Package pdftex.def Info: images/heatmap/scoiattolo1.png  used on input line 114
 2.
 (pdftex.def)             Requested size: 60.22949pt x 60.23648pt.
-<images/heatmap/scoiattolo1_gaussian.png, id=594, 31.42174pt x 31.42174pt>
+<images/heatmap/scoiattolo1_gaussian.png, id=598, 31.42174pt x 31.42174pt>
 File: images/heatmap/scoiattolo1_gaussian.png Graphic file (type png)
 <use images/heatmap/scoiattolo1_gaussian.png>
 Package pdftex.def Info: images/heatmap/scoiattolo1_gaussian.png  used on input
  line 1148.
 (pdftex.def)             Requested size: 60.22949pt x 60.23648pt.
-<images/heatmap/f1.jpg, id=595, 1927.2pt x 1084.05pt>
+<images/heatmap/f1.jpg, id=599, 1927.2pt x 1084.05pt>
 File: images/heatmap/f1.jpg Graphic file (type jpg)
 <use images/heatmap/f1.jpg>
 Package pdftex.def Info: images/heatmap/f1.jpg  used on input line 1182.
 (pdftex.def)             Requested size: 159.9821pt x 89.98439pt.
-<images/heatmap/f2.jpg, id=596, 1927.2pt x 1084.05pt>
+<images/heatmap/f2.jpg, id=600, 1927.2pt x 1084.05pt>
 File: images/heatmap/f2.jpg Graphic file (type jpg)
 <use images/heatmap/f2.jpg>
 Package pdftex.def Info: images/heatmap/f2.jpg  used on input line 1188.
 (pdftex.def)             Requested size: 159.9821pt x 89.98439pt.
-<images/heatmap/noise_visual.png, id=598, 721.94719pt x 406.51875pt>
+<images/heatmap/noise_visual.png, id=602, 721.94719pt x 406.51875pt>
 File: images/heatmap/noise_visual.png Graphic file (type png)
 <use images/heatmap/noise_visual.png>
 Package pdftex.def Info: images/heatmap/noise_visual.png  used on input line 11
@@ -1521,64 +1521,217 @@ Underfull \hbox (badness 10000) in paragraph at lines 1199--1201
 
  []
 
-<images/heatmap/kernel_and_mask.png, id=627, 612.78937pt x 227.34938pt>
+<images/heatmap/kernel_and_mask.png, id=631, 612.78937pt x 227.34938pt>
 File: images/heatmap/kernel_and_mask.png Graphic file (type png)
 <use images/heatmap/kernel_and_mask.png>
 Package pdftex.def Info: images/heatmap/kernel_and_mask.png  used on input line
  1234.
-(pdftex.def)             Requested size: 188.21289pt x 69.82886pt.
+(pdftex.def)             Requested size: 209.12686pt x 77.5857pt.
 [19 <./images/heatmap/noise_visual.png>] [20 <./images/heatmap/kernel_and_mask.
 png>]
 Underfull \hbox (badness 10000) in paragraph at lines 1315--1317
 
  []
 
-<images/heatmap/kernel_time_noise_2.png, id=710, 462.528pt x 346.896pt>
+<images/heatmap/kernel_time_noise_2.png, id=714, 462.528pt x 346.896pt>
 File: images/heatmap/kernel_time_noise_2.png Graphic file (type png)
 <use images/heatmap/kernel_time_noise_2.png>
 Package pdftex.def Info: images/heatmap/kernel_time_noise_2.png  used on input 
 line 1320.
 (pdftex.def)             Requested size: 175.66579pt x 131.74774pt.
+<images/heatmap/img_mean/img_man3.jpg, id=716, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_mean/img_man3.jpg Graphic file (type jpg)
+<use images/heatmap/img_mean/img_man3.jpg>
+Package pdftex.def Info: images/heatmap/img_mean/img_man3.jpg  used on input li
+ne 1353.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_mean/img_man5.jpg, id=717, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_mean/img_man5.jpg Graphic file (type jpg)
+<use images/heatmap/img_mean/img_man5.jpg>
+Package pdftex.def Info: images/heatmap/img_mean/img_man5.jpg  used on input li
+ne 1356.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_mean/img_man7.jpg, id=718, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_mean/img_man7.jpg Graphic file (type jpg)
+<use images/heatmap/img_mean/img_man7.jpg>
+Package pdftex.def Info: images/heatmap/img_mean/img_man7.jpg  used on input li
+ne 1359.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_mean/img_man9.jpg, id=719, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_mean/img_man9.jpg Graphic file (type jpg)
+<use images/heatmap/img_mean/img_man9.jpg>
+Package pdftex.def Info: images/heatmap/img_mean/img_man9.jpg  used on input li
+ne 1362.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_mean/img_man_red3.jpg, id=720, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_mean/img_man_red3.jpg Graphic file (type jpg)
+<use images/heatmap/img_mean/img_man_red3.jpg>
+Package pdftex.def Info: images/heatmap/img_mean/img_man_red3.jpg  used on inpu
+t line 1366.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <9> on input line 1367.
+<images/heatmap/img_mean/img_man_red5.jpg, id=721, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_mean/img_man_red5.jpg Graphic file (type jpg)
+<use images/heatmap/img_mean/img_man_red5.jpg>
+Package pdftex.def Info: images/heatmap/img_mean/img_man_red5.jpg  used on inpu
+t line 1370.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_mean/img_man_red7.jpg, id=722, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_mean/img_man_red7.jpg Graphic file (type jpg)
+<use images/heatmap/img_mean/img_man_red7.jpg>
+Package pdftex.def Info: images/heatmap/img_mean/img_man_red7.jpg  used on inpu
+t line 1374.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_mean/img_man_red9.jpg, id=723, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_mean/img_man_red9.jpg Graphic file (type jpg)
+<use images/heatmap/img_mean/img_man_red9.jpg>
+Package pdftex.def Info: images/heatmap/img_mean/img_man_red9.jpg  used on inpu
+t line 1378.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
 [21 <./images/heatmap/kernel_time_noise_2.png>]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1332.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1332.
- (./abstract.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1332.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1332.
+<images/heatmap/img_gaus/img_man_g3.jpg, id=740, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_gaus/img_man_g3.jpg Graphic file (type jpg)
+<use images/heatmap/img_gaus/img_man_g3.jpg>
+Package pdftex.def Info: images/heatmap/img_gaus/img_man_g3.jpg  used on input 
+line 1389.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_gaus/img_man_g4.jpg, id=741, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_gaus/img_man_g4.jpg Graphic file (type jpg)
+<use images/heatmap/img_gaus/img_man_g4.jpg>
+Package pdftex.def Info: images/heatmap/img_gaus/img_man_g4.jpg  used on input 
+line 1392.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_gaus/img_man_g5.jpg, id=742, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_gaus/img_man_g5.jpg Graphic file (type jpg)
+<use images/heatmap/img_gaus/img_man_g5.jpg>
+Package pdftex.def Info: images/heatmap/img_gaus/img_man_g5.jpg  used on input 
+line 1395.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_gaus/img_man_g6.jpg, id=743, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_gaus/img_man_g6.jpg Graphic file (type jpg)
+<use images/heatmap/img_gaus/img_man_g6.jpg>
+Package pdftex.def Info: images/heatmap/img_gaus/img_man_g6.jpg  used on input 
+line 1398.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_gaus/img_man_g7.jpg, id=744, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_gaus/img_man_g7.jpg Graphic file (type jpg)
+<use images/heatmap/img_gaus/img_man_g7.jpg>
+Package pdftex.def Info: images/heatmap/img_gaus/img_man_g7.jpg  used on input 
+line 1401.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_gaus/img_man_red_g3.jpg, id=745, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_gaus/img_man_red_g3.jpg Graphic file (type jpg)
+<use images/heatmap/img_gaus/img_man_red_g3.jpg>
+Package pdftex.def Info: images/heatmap/img_gaus/img_man_red_g3.jpg  used on in
+put line 1404.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_gaus/img_man_red_g4.jpg, id=746, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_gaus/img_man_red_g4.jpg Graphic file (type jpg)
+<use images/heatmap/img_gaus/img_man_red_g4.jpg>
+Package pdftex.def Info: images/heatmap/img_gaus/img_man_red_g4.jpg  used on in
+put line 1408.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_gaus/img_man_red_g5.jpg, id=747, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_gaus/img_man_red_g5.jpg Graphic file (type jpg)
+<use images/heatmap/img_gaus/img_man_red_g5.jpg>
+Package pdftex.def Info: images/heatmap/img_gaus/img_man_red_g5.jpg  used on in
+put line 1412.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_gaus/img_man_red_g6.jpg, id=748, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_gaus/img_man_red_g6.jpg Graphic file (type jpg)
+<use images/heatmap/img_gaus/img_man_red_g6.jpg>
+Package pdftex.def Info: images/heatmap/img_gaus/img_man_red_g6.jpg  used on in
+put line 1416.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+<images/heatmap/img_gaus/img_man_red_g7.jpg, id=749, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_gaus/img_man_red_g7.jpg Graphic file (type jpg)
+<use images/heatmap/img_gaus/img_man_red_g7.jpg>
+Package pdftex.def Info: images/heatmap/img_gaus/img_man_red_g7.jpg  used on in
+put line 1420.
+(pdftex.def)             Requested size: 83.64946pt x 47.0433pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 1433--1449
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1450--1452
+
+ []
+
+[22 <./images/heatmap/img_mean/img_man3.jpg> <./images/heatmap/img_mean/img_man
+5.jpg> <./images/heatmap/img_mean/img_man7.jpg> <./images/heatmap/img_mean/img_
+man9.jpg> <./images/heatmap/img_mean/img_man_red3.jpg> <./images/heatmap/img_me
+an/img_man_red5.jpg> <./images/heatmap/img_mean/img_man_red7.jpg> <./images/hea
+tmap/img_mean/img_man_red9.jpg> <./images/heatmap/img_gaus/img_man_g3.jpg> <./i
+mages/heatmap/img_gaus/img_man_g4.jpg> <./images/heatmap/img_gaus/img_man_g5.jp
+g> <./images/heatmap/img_gaus/img_man_g6.jpg> <./images/heatmap/img_gaus/img_ma
+n_g7.jpg> <./images/heatmap/img_gaus/img_man_red_g3.jpg> <./images/heatmap/img_
+gaus/img_man_red_g4.jpg> <./images/heatmap/img_gaus/img_man_red_g5.jpg> <./imag
+es/heatmap/img_gaus/img_man_red_g6.jpg> <./images/heatmap/img_gaus/img_man_red_
+g7.jpg>] [23]
+<images/heatmap/img_median_or.jpg, id=826, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_median_or.jpg Graphic file (type jpg)
+<use images/heatmap/img_median_or.jpg>
+Package pdftex.def Info: images/heatmap/img_median_or.jpg  used on input line 1
+528.
+(pdftex.def)             Requested size: 159.9821pt x 89.98439pt.
+<images/heatmap/img_median_red.jpg, id=827, 1927.2pt x 1084.05pt>
+File: images/heatmap/img_median_red.jpg Graphic file (type jpg)
+<use images/heatmap/img_median_red.jpg>
+Package pdftex.def Info: images/heatmap/img_median_red.jpg  used on input line 
+1534.
+(pdftex.def)             Requested size: 159.9821pt x 89.98439pt.
+<images/heatmap/salt_and_pepper_noise.png, id=828, 213.04594pt x 211.54031pt>
+File: images/heatmap/salt_and_pepper_noise.png Graphic file (type png)
+<use images/heatmap/salt_and_pepper_noise.png>
+Package pdftex.def Info: images/heatmap/salt_and_pepper_noise.png  used on inpu
+t line 1560.
+(pdftex.def)             Requested size: 108.74367pt x 107.97772pt.
+ [24 <./images/heatmap/img_median_or.jpg> <./images/heatmap/img_median_red.jpg>
+ <./images/heatmap/salt_and_pepper_noise.png (PNG copy)>]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1567.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1567.
+
+(./abstract.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1567.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1567.
 
 Package rerunfilecheck Info: File `abstract.out' has not changed.
-(rerunfilecheck)             Checksum: 98C912FF1430D144576DDC21DCE01662;1345.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1332.
+(rerunfilecheck)             Checksum: B765EBE0B8D1DE0853A961CD47EFE07D;1431.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1567.
  ) 
 Here is how much of TeX's memory you used:
- 36813 strings out of 494847
- 821808 string characters out of 6179080
- 1314579 words of memory out of 5000000
- 38811 multiletter control sequences out of 15000+600000
- 76936 words of font info for 127 fonts, out of 8000000 for 9000
+ 37048 strings out of 494847
+ 827676 string characters out of 6179080
+ 1324000 words of memory out of 5000000
+ 38934 multiletter control sequences out of 15000+600000
+ 81501 words of font info for 138 fonts, out of 8000000 for 9000
  59 hyphenation exceptions out of 8191
  73i,16n,106p,8865b,2049s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/share/texmf/fonts/en
-c/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}{/usr/s
-hare/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/texmf/fonts/enc/dvips/l
+{/usr/share/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dv
+ips/lm/lm-mathit.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/s
+hare/texmf/fonts/enc/dvips/lm/lm-mathex.enc}{/usr/share/texmf/fonts/enc/dvips/l
 m/lm-ec.enc}</usr/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texm
 f/fonts/type1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmcs
 c10.pfb></usr/share/texmf/fonts/type1/public/lm/lmex10.pfb></usr/share/texmf/fo
 nts/type1/public/lm/lmmi10.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi5.pf
 b></usr/share/texmf/fonts/type1/public/lm/lmmi7.pfb></usr/share/texmf/fonts/typ
-e1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr12.pfb></usr/
-share/texmf/fonts/type1/public/lm/lmr5.pfb></usr/share/texmf/fonts/type1/public
-/lm/lmr7.pfb></usr/share/texmf/fonts/type1/public/lm/lmr8.pfb></usr/share/texmf
-/fonts/type1/public/lm/lmr9.pfb></usr/share/texmf/fonts/type1/public/lm/lmri10.
-pfb></usr/share/texmf/fonts/type1/public/lm/lmssbx10.pfb></usr/share/texmf/font
-s/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy5.pfb>
-</usr/share/texmf/fonts/type1/public/lm/lmsy7.pfb></usr/share/texmf/fonts/type1
-/public/lm/lmsy8.pfb></usr/share/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/s
-hare/texmf/fonts/type1/public/lm/lmtt9.pfb>
-Output written on abstract.pdf (22 pages, 4830611 bytes).
+e1/public/lm/lmmi9.pfb></usr/share/texmf/fonts/type1/public/lm/lmr10.pfb></usr/
+share/texmf/fonts/type1/public/lm/lmr12.pfb></usr/share/texmf/fonts/type1/publi
+c/lm/lmr5.pfb></usr/share/texmf/fonts/type1/public/lm/lmr7.pfb></usr/share/texm
+f/fonts/type1/public/lm/lmr8.pfb></usr/share/texmf/fonts/type1/public/lm/lmr9.p
+fb></usr/share/texmf/fonts/type1/public/lm/lmri10.pfb></usr/share/texmf/fonts/t
+ype1/public/lm/lmssbx10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb>
+</usr/share/texmf/fonts/type1/public/lm/lmsy5.pfb></usr/share/texmf/fonts/type1
+/public/lm/lmsy7.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy8.pfb></usr/sh
+are/texmf/fonts/type1/public/lm/lmtt10.pfb></usr/share/texmf/fonts/type1/public
+/lm/lmtt9.pfb>
+Output written on abstract.pdf (25 pages, 13664082 bytes).
 PDF statistics:
- 910 PDF objects out of 1000 (max. 8388607)
- 823 compressed objects within 9 object streams
- 525 named destinations out of 1000 (max. 500000)
- 25345 words of extra memory for PDF output out of 29859 (max. 10000000)
+ 1040 PDF objects out of 1200 (max. 8388607)
+ 927 compressed objects within 10 object streams
+ 599 named destinations out of 1000 (max. 500000)
+ 27506 words of extra memory for PDF output out of 29859 (max. 10000000)
 

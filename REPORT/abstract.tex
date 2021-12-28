@@ -1172,7 +1172,7 @@ float* computeGaussianKernel(float s, int K){
 	return k;
 }\end{lstlisting}	
 
-	\subsection{CUDA implementation}
+	\subsection{Tiled CUDA 2D implementation}
 	In order to test the effectiveness of the algorithm and if it is suitable for this project, a configurable implementation has been developed in CUDA. In order to have all the same test environment, two sequential frames have been taken from the webcam in a semi dark environment with a person in the center. 
 	
 	\begin{figure}[H]
@@ -1231,7 +1231,7 @@ if(row_i >= 0 && row_i < H && col_i >= 0 && col_i < W){
 	The value \texttt{TILE\_SIZE} defines the dimension of the tile, in which each the kernel is applied. The problem is that, the first pixel (position [0,0]) in the image, if the kernel has a dimension of 3x3, need to access also the location [-1,-1], [-1, 0], [-1, 1], [0, -1], [1, -1]. In this case, they are not available. This is the reason of the presence of the if condition, that sets 0 at these locations in the shared memory by ``shifting" the indexes by $K/2$. The problem is shown in the below picture:
 		\begin{figure}[H]
 			\centering
-			\includegraphics[width=0.45\linewidth]{images/heatmap/kernel_and_mask}
+			\includegraphics[width=0.5\linewidth]{images/heatmap/kernel_and_mask}
 			\caption{\textit{Boundary conditions among the image border}}
 			\label{fig:kernelandmask}
 		\end{figure}
@@ -1313,7 +1313,7 @@ convolution_kernel<<<gridSize, blockSize>>>(d_current, d_current_filtered);
 	 Having defined the kernel, that once computed is fixed for the entire program execution, allows to not cope with the cache coherence management, allowing data to be aggressively cached in the L1 cache (the nearest to the SM).
 	
 	Moreover, access to the memory has been optimized by resorting to the usage of the shared memory. Since the larger the dimension of the tile, the higher the ration between the manipulated pixels and the memory accesses, an optimal solution is to increase as much as possible the tile size. The limit is the shared memory, that is limited. \newline\newline
-	The execution of the kernel is inversely proportional to the size of the tile and the kernel dimension; the code shown before has been run for multiple sessions in order to be able to plot the following data:
+	The execution of the kernel is directly proportional to the size of the tile and the kernel dimension; the code shown before has been run for multiple sessions in order to be able to plot the kernel time for multiple convolution matrix and multiple tile size.
 
 	\begin{figure}[H]
 		\centering
@@ -1322,12 +1322,247 @@ convolution_kernel<<<gridSize, blockSize>>>(d_current, d_current_filtered);
 		\label{fig:noise_kernel_time}
 	\end{figure}
 
-TODO:
-	\begin{itemize}
-		\item Try vertical and horizontal kernel
-		\item try median and mean
-		\item show new number of different pixels
-	\end{itemize}
+	Both the Gaussian and the Mean filters have been run over the two frames used as test dataset, the results are available at Table \ref{fig:filter_exe}. The number of pixels changed, if no filter is applied, is 369350, that is 5.93\% of the whole image.
+	\begin{figure}[H]
+		\centering
+		\begin{center}
+			\begin{tabular}{ |c|c|c| } 
+				\hline
+				\textbf{Filter Type} & \textbf{Kernel size}  & \textbf{Total saved pixels}  (\%) \\ 
+				\hline
+				Mean & 3 & 3.37\\
+					 & 5 & 2.31\\
+					 & 7 & 1.66\\
+					 & 9 & 1.24\\
+					 \hline
+				Gaussian & 3 ($\sigma=1$) & 3.58\\ 
+						& 4 ($\sigma=2$) & 2.87\\ 
+						& 5 ($\sigma=3$) & 2.37\\ 
+						& 6 ($\sigma=5$) & 1.98\\ 
+						& 7 ($\sigma=8$) & 1.66\\ 
+				\hline
+			\end{tabular}
+		\end{center}
+		\caption{\textit{Results of both Gaussian and Mean filter, with different kernel size}}
+		\label{fig:filter_exe}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\begin{subfigure}{0.2\textwidth}
+			\includegraphics[width=\linewidth]{images/heatmap/img_mean/img_man3.jpg}
+		\end{subfigure}%
+		\begin{subfigure}{0.2\textwidth}
+			\includegraphics[width=\linewidth]{images/heatmap/img_mean/img_man5.jpg}
+		\end{subfigure}%
+		\begin{subfigure}{0.2\textwidth}
+			\includegraphics[width=\linewidth]{images/heatmap/img_mean/img_man7.jpg}
+		\end{subfigure}%
+		\begin{subfigure}{0.2\textwidth}
+			\includegraphics[width=\linewidth]{images/heatmap/img_mean/img_man9.jpg}
+		\end{subfigure}
 	
+		\begin{subfigure}{0.2\textwidth}
+			\includegraphics[width=\linewidth]{images/heatmap/img_mean/img_man_red3.jpg}
+			\caption{$K=3$}
+		\end{subfigure}%
+		\begin{subfigure}{0.2\textwidth}
+			\includegraphics[width=\linewidth]{images/heatmap/img_mean/img_man_red5.jpg}
+			\caption{$K=5$}
+		\end{subfigure}%
+		\begin{subfigure}{0.2\textwidth}
+			\includegraphics[width=\linewidth]{images/heatmap/img_mean/img_man_red7.jpg}
+			\caption{$K=7$}
+		\end{subfigure}%
+		\begin{subfigure}{0.2\textwidth}
+			\includegraphics[width=\linewidth]{images/heatmap/img_mean/img_man_red9.jpg}
+			\caption{$K=9$}
+	\end{subfigure}
+		
+		\caption{Mean filtering results}
+		\label{fig:mean_filter}
+	\end{figure}
+
+	\begin{figure}[H]
+	\centering
+	\begin{subfigure}{0.2\textwidth}
+		\includegraphics[width=\linewidth]{images/heatmap/img_gaus/img_man_g3.jpg}
+	\end{subfigure}%
+	\begin{subfigure}{0.2\textwidth}
+		\includegraphics[width=\linewidth]{images/heatmap/img_gaus/img_man_g4.jpg}
+	\end{subfigure}%
+	\begin{subfigure}{0.2\textwidth}
+		\includegraphics[width=\linewidth]{images/heatmap/img_gaus/img_man_g5.jpg}
+	\end{subfigure}%
+	\begin{subfigure}{0.2\textwidth}
+		\includegraphics[width=\linewidth]{images/heatmap/img_gaus/img_man_g6.jpg}
+	\end{subfigure}%
+	\begin{subfigure}{0.2\textwidth}
+		\includegraphics[width=\linewidth]{images/heatmap/img_gaus/img_man_g7.jpg}
+	\end{subfigure}
+	\begin{subfigure}{0.2\textwidth}
+		\includegraphics[width=\linewidth]{images/heatmap/img_gaus/img_man_red_g3.jpg}
+		\caption{$K=3$}
+	\end{subfigure}%
+	\begin{subfigure}{0.2\textwidth}
+		\includegraphics[width=\linewidth]{images/heatmap/img_gaus/img_man_red_g4.jpg}
+		\caption{$K=4$}
+	\end{subfigure}%
+	\begin{subfigure}{0.2\textwidth}
+		\includegraphics[width=\linewidth]{images/heatmap/img_gaus/img_man_red_g5.jpg}
+		\caption{$K=5$}
+	\end{subfigure}%
+	\begin{subfigure}{0.2\textwidth}
+		\includegraphics[width=\linewidth]{images/heatmap/img_gaus/img_man_red_g6.jpg}
+		\caption{$K=6$}
+	\end{subfigure}%
+	\begin{subfigure}{0.2\textwidth}
+		\includegraphics[width=\linewidth]{images/heatmap/img_gaus/img_man_red_g7.jpg}
+		\caption{$K=7$}
+	\end{subfigure}
+	
+	\caption{Gaussian filtering results}
+	\label{fig:gaus_filter}
+	\end{figure}
+	
+	By visually inspecting the results, by using a kernel that is too large, leads to a non-negligible distortion to the image due to the blur effect. By the way, the team has defined that the best visual result is when $K=4$, using the Gaussian Filter, that allows to avoid to send about 10600 pixels, with the respect to the selected two frames.
+
+	\subsection{2D CUDA Tiled Median filter}
+	Another algorithm that has been selected to try to remove the noise from the image is the Medial filter. It works in a completely different way from the Mean and Gaussian filters. The idea behind of it is to preserve the useful details of the image while removing the noise.
+	
+	Like the Mean filter, the Median one takes $N$ neighbor pixels that are next to the selected one but, instead of replacing it with the average value between all of them it replace that pixel with the \textit{median}.\newline\newline
+	The median of a plan one dimensional array can be computed by first sorting all elements and then take the one in the middle of the array itself. On the other hand, if we have a matrix, the media con be computed in the same way, but all elements are considered and ordered.
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{ |c:c:c| } 
+			\hline
+			1 & 7 & 3 \\
+			\hdashline
+			2 & \textbf{9} & 6 \\ 
+			\hdashline
+			4 & 1 & 6 \\ 
+			\hline
+		\end{tabular}
+		$\implies$ [1, 1, 2, 3, \textbf{4}, 6, 6, 7, 9] $\implies$ 4
+		\caption{\textit{Median of a matrix 3x3}}
+		\label{tab:median_matrix}
+	\end{table}
+	In this case, the example above shows the media computation of a matrix 3x3 that can corresponds to the kernel size of CUDA kernel.\newline\newline
+	The CUDA algorithm is structured in the same way as the convolution one, in which the image processing is divided into \textit{tiles} of fixed dimensions. In the same way, pixels are loaded into the shared memory in order to reduce the accesses to the Global memory.
+	
+	So, the first step to do is to generate a CUDA function that is able to extract the media from a given array, of size $K*K$. The following code shows the implementation of the Bubble Sort and take the median element, by assuming that $N$ is odd:
+	\begin{lstlisting}[style=CStyle]
+__device__ uint8_t median(uint8_t *array, int N){
+	bool swapped = true;
+	for (int a = 0; a < N && swapped; a++){
+		swapped = false;
+		for (int i = 0; i < N - 1; i++){
+			if(array[i] > array[i+1]){
+				uint8_t tmp = array[i];
+				array[i] = array[i+1];
+				array[i+1] = tmp;
+				swapped = true;
+			}
+		}
+	}
+	
+	return array[N/2];
+}\end{lstlisting}
+
+	At this point, the kernel must load into the shared memory the image and then, foreach thread three arrays are computed; one for each of the color components. By iterating of the tile, elements are put in the three arrays and the median extracted. At this point, the new image is computed using that median. The following code shows the kernel for the media filtering.
+	
+		\begin{lstlisting}[style=CStyle]
+__global__ void median_kernel(uint8_t *image, uint8_t *R)
+{
+	__shared__ uint8_t N_ds[BLOCK_SIZE][BLOCK_SIZE*3];
+	
+	int tx = threadIdx.x;   //W
+	int ty = threadIdx.y;   //H
+	int row_o = blockIdx.y*TILE_SIZE + ty;
+	int col_o = blockIdx.x*TILE_SIZE + tx;
+	int row_i = row_o - K/2;
+	int col_i = col_o - K/2;
+	
+	if(row_i >= 0 && row_i < H && col_i >= 0 && col_i < W){
+		N_ds[ty][tx*3] = image[row_i*W*3+ col_i * C];
+		N_ds[ty][tx*3+1] = image[row_i*W*3+ col_i*3 + 1 ];
+		N_ds[ty][tx*3+2] = image[row_i*W*3+ col_i*3 + 2 ];
+	} else {
+		N_ds[ty][tx*3] = 0;
+		N_ds[ty][tx*3+1] = 0;
+		N_ds[ty][tx*3+1] = 0;
+	}
+	
+	__syncthreads();
+	
+	if(row_o < H && col_o < W && ty < TILE_SIZE && tx < TILE_SIZE){
+		uint8_t medR[K*K];
+		uint8_t medG[K*K];
+		uint8_t medB[K*K];
+		int r = 0;
+		int g = 0;
+		int b = 0;
+		
+		// Copying elements into the three arrays
+		for(int i = 0; i < K; i++)
+			for(int j = 0; j < K; j++){
+				medR[r++] = N_ds[i+ty][(j+tx)*3];
+				medG[g++] = N_ds[i+ty][(j+tx)*3 + 1];
+				medB[b++] = N_ds[i+ty][(j+tx)*3 + 2];
+			}
+		
+		// Computation of the median
+		R[row_o*W*3 + col_o*3] = median(medR, K*K);
+		R[row_o*W*3 + col_o*3 + 1] = median(medG, K*K);
+		R[row_o*W*3 + col_o*3 + 2] = median(medB, K*K);
+	}
+}\end{lstlisting}
+	
+	The problem with this implementation is that, it needs to sort an array of $K*K$ elements for each color component in the image, that obviously implies a longer computation. The below images are from the execution of the above algorithm, using $K=5$ and a frame of 1920*1080*3 elements. The kernel execution time from the \textit{profiler} is 574.67ms, that is a lot if we want to keep the FPS sufficiently high.
+	
+		
+	\begin{figure}[H]
+		\centering
+		\begin{minipage}[b]{0.45\textwidth}
+			\centering
+			\includegraphics[width=0.85\textwidth]{images/heatmap/img_median_or.jpg}
+			\caption{\textit{Median filtered frame}}
+		\end{minipage}
+		\hfill
+		\begin{minipage}[b]{0.45\textwidth}
+			\centering
+			\includegraphics[width=0.85\textwidth]{images/heatmap/img_median_red.jpg}
+			\caption{\textit{Red-black noise visualization}}
+		\end{minipage}
+		\caption{\textit{Example of Median filter with $K = 5$}}
+	\end{figure}
+
+	Let's suppose for a moment that we do not have any constraint from the FPS; \textit{is it a good solution for the noise?} From the point of view of the percentage of the total pixels saved, we have only 2.54\%, that is even higher the result from a simpler Mean filter with the same kernel size.
+	
+	The problem with this filter is comping from the type of noise that is characterizing out frames. In fact, the Median filter works better on \textit{Salt and Pepper} noise, that are some random pixels that have completely different values from the point of view of the magnitude. Let's see an example:
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{ |c:c:c| } 
+			\hline
+			1 & 7 & 3 \\
+			\hdashline
+			2 & \textbf{89} & 6 \\ 
+			\hdashline
+			4 & 1 & 6 \\ 
+			\hline
+		\end{tabular}
+		$\implies$ [1, 1, 2, 3, \textbf{4}, 6, 6, 7, 89] $\implies$ 4
+		\caption{\textit{Median of a matrix 3x3, with salt and pepper noise}}
+		\label{tab:median_matrix_work}
+	\end{table}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.26\linewidth]{images/heatmap/salt_and_pepper_noise}
+		\caption{\textit{Salt and pepper noise}}
+		\label{fig:saltandpeppernoise}
+	\end{figure}
+
+	So, due to the fact that the Median filter does not bring any advantage, it has not been optimized and even used. Beside this, the implementation allowed us to better understand the nature of the noise.
+
 \end{document}
 	
