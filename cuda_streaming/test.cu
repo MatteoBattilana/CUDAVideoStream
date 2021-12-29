@@ -24,8 +24,8 @@
 #define TILE_SIZE 10
 #define BLOCK_SIZE (TILE_SIZE + K - 1)
 
-// Noise visualizer: 1 heatmap, 2 red-black
-#define NOISE_VISUALIZER 2
+// Noise visualizer: 1 heatmap, 2 red-black, 3 red-black overlap
+#define NOISE_VISUALIZER 3
 
 #define CHARS_STR "0123456789BFPSWbkps :"
 #define LR_THRESHOLDS 20
@@ -139,7 +139,6 @@ __global__ void heat_map(uint8_t *current, uint8_t *previous, int maxSect, uint8
     }
 }
 
-
 __global__ void red_black_map(uint8_t *current, uint8_t *previous, int maxSect, uint8_t *noise_visualization){
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int start = x * maxSect;
@@ -165,6 +164,17 @@ __global__ void red_black_map(uint8_t *current, uint8_t *previous, int maxSect, 
                 redColor = 0;
             }
         }
+    }
+}
+
+//(d_xs, d_pos, max4, d_noise_visualization);
+__global__ void red_black_map_overlap(unsigned int *pos, int *xs, int maxSect, uint8_t *noise_visualization){
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    int start = x * maxSect;
+    int max = start + maxSect;
+
+    for (int i = start; i < max && i < *pos; i++) {
+        noise_visualization[xs[i] + (2-xs[i]%3)] = 255;
     }
 }
 
@@ -278,7 +288,7 @@ void *th_noise_hdl(void *args) {
         namedWindow("Noise Visualizer", WINDOW_GUI_NORMAL);
         imshow("Noise Visualizer", *(show_ready->nframe));
         if (waitKey(10) == 27) {
-            break;  // stop capturing by pressing ESC
+            exit(1);  // stop capturing by pressing ESC
         }
     }
 
@@ -604,14 +614,7 @@ int main() {
         cudaMemcpyAsync(d_current, pready->pframe->data, total, cudaMemcpyHostToDevice);
         #endif
 
-        // Noise visualization
-        #ifdef NOISE_VISUALIZER
-            #if NOISE_VISUALIZER == 1         
-            heat_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
-            #elif NOISE_VISUALIZER == 2
-            red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
-            #endif
-        #endif
+
         // cudaMemcpy(d_text, overImageText.c_str(), overImageText.length(), cudaMemcpyHostToDevice);
         // kernel3_char<<<1, nThreadsToUse, (sizeof(CHARS_STR) - 1) * fullArea>>>(d_current, d_charsPx, d_text, overImageText.length(), eachThreadDoes, 3 * txtsz.width, 3 * pready->pframe->cols, fullArea);
 
@@ -633,11 +636,19 @@ int main() {
         cudaMemcpyAsync(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
 
-        #if defined(NOISE_VISUALIZER) && NOISE_VISUALIZER != 0
-        // Copy noise frame into the Mat
-        cudaMemcpyAsync(show_ready->nframe->data, d_noise_visualization, total, cudaMemcpyDeviceToHost);
-       
-        write(noise_pipe[1], &show_ready, sizeof show_ready);
+        // Noise visualization
+        #ifdef NOISE_VISUALIZER
+            #if NOISE_VISUALIZER == 1         
+            heat_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
+            cudaMemcpyAsync(show_ready->nframe->data, d_noise_visualization, total, cudaMemcpyDeviceToHost);
+            #elif NOISE_VISUALIZER == 2
+            red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
+            cudaMemcpyAsync(show_ready->nframe->data, d_noise_visualization, total, cudaMemcpyDeviceToHost);
+            #elif NOISE_VISUALIZER == 3
+            red_black_map_overlap<<<1, nMaxThreads, 0>>>(d_pos, d_xs, pready->h_pos/nMaxThreads, d_previous);
+            cudaMemcpyAsync(show_ready->nframe->data, d_previous, total, cudaMemcpyDeviceToHost);
+            #endif
+            write(noise_pipe[1], &show_ready, sizeof show_ready);
         #endif
 
         cudaMemcpyAsync(pready->pframe->data, d_diff, pready->h_pos, cudaMemcpyDeviceToHost);
