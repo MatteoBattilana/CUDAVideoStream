@@ -25,5 +25,8 @@ test2:
 test3:
 	$(CC) $(CFLAGS) $(INCLUDES) test3.cu -o server
 
+test4:
+	$(CC) test4.cpp $(CFLAGS) $(LFLAGS) $(INCLUDES) -o server
+
 prof: 
 	sudo $(PROFILER) ./server

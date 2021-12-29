@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <iomanip>
 #include <fcntl.h>    /* For O_RDWR */
 #include <sys/ioctl.h>
 #include <unistd.h>   /* For open(), creat() */
@@ -24,9 +25,10 @@
 #define TILE_SIZE 10
 #define BLOCK_SIZE (TILE_SIZE + K - 1)
 
-// Noise visualizer: 0 nothing, 1 heatmap, 2 red-black
+// Noise visualizer: 1 heatmap, 2 red-black
 #define NOISE_VISUALIZER 2
 
+#define CHARS_STR "0123456789BFPSW :"
 #define LR_THRESHOLDS 20
 #define NSTREAMS 1
 #define GPU
@@ -222,6 +224,95 @@ __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int 
 
 }
 
+// access byte by byte
+// TODO: try chunk_t so N/sizeof(chunk_t)
+__global__ void kernel_char(uint8_t *current, uint8_t *matrix, int N, int offset, int matrixWidth, int currWidth) {
+    int thid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    int start = thid * N;
+    int max = start + N;
+
+    for (int i = start; i < max; i++) {
+        int x = offset + i % matrixWidth;
+        int y = i / matrixWidth;
+        current[y * currWidth + x] = matrix[i];
+    } 
+
+}
+
+__global__ void kernel2_char(uint8_t *current, uint8_t *matrix, int N, int offset, int matrixWidth, int currWidth) {
+    int thid = threadIdx.x + blockIdx.x * blockDim.x;
+    chunk_t cc;
+
+    int start = thid * N;
+    int max = start + N;
+
+    for (int i = start; i < max; i++) {
+
+        int reali = i * sizeof cc;
+        int x = offset + reali % matrixWidth;
+        int y = reali / matrixWidth;
+
+        int idx = (y * currWidth + x) / sizeof cc;
+        cc = ((chunk_t *)current)[idx];
+
+        #pragma unroll
+        for (int j = 0; j < sizeof cc; j++) {
+            ((uint8_t *)&cc)[j] = matrix[i * sizeof cc + j];
+        }
+
+        ((chunk_t *)current)[idx] = cc;
+    } 
+
+}
+
+__global__ void kernel3_char(uint8_t *current, uint8_t *matrix, char *text, int textLen, int N, int matrixWidth, int currWidth, int fullArea) {
+    int thid = threadIdx.x + blockIdx.x * blockDim.x;
+    chunk_t cc;
+    extern __shared__ uint8_t s_matrix[];
+
+    printf("%s\n", text);
+
+    if (!thid) {
+        for (int i = 0; i < (sizeof(CHARS_STR) - 1) * fullArea; i++) {
+            s_matrix[i] = matrix[i];
+        }
+    }
+
+    __syncthreads();
+
+    int start = thid * N;
+    int max = start + N;
+
+    for (int offset = 0, j = 0; j < textLen; j++, offset += matrixWidth) {
+        int idx;
+        for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
+            if (CHARS_STR[i] == text[j]) {
+                idx = i;
+                break;
+            }
+        }
+
+        for (int i = start; i < max; i++) {
+
+            int reali = i * sizeof cc;
+            int x = offset + reali % matrixWidth;
+            int y = reali / matrixWidth;
+
+            int idx = (y * currWidth + x) / sizeof cc;
+            cc = ((chunk_t *)current)[idx];
+
+            #pragma unroll
+            for (int j = 0; j < sizeof cc; j++) {
+                ((uint8_t *)&cc)[j] = matrix[i * sizeof cc + j];
+            }
+
+            ((chunk_t *)current)[idx] = cc;
+        } 
+    }
+
+}
+
 #endif
 
 void *th_noise_hdl(void *args) {
@@ -364,6 +455,27 @@ int main() {
     Mat base;
     cap >> base;
 
+    //448
+    auto txtsz = cv::getTextSize("A", cv::FONT_HERSHEY_PLAIN, 3, 2, 0);
+    std::cout << "Character pixel size: " << txtsz << std::endl;
+    int fullArea = 3 * txtsz.area();
+
+    uint8_t *charsPx = new uint8_t[(sizeof(CHARS_STR) - 1) * fullArea];
+    memset(charsPx, 0x0, (sizeof(CHARS_STR) - 1) * fullArea);
+
+    for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
+        Mat pxBaseMat(txtsz.height, txtsz.width, base.type(), charsPx + i * fullArea);
+        cv::putText(pxBaseMat, std::string(CHARS_STR).substr(i, 1), cv::Point(0, txtsz.height+1), cv::FONT_HERSHEY_PLAIN, 3, cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
+    }
+
+#ifdef GPU
+    uint8_t *d_charsPx;
+    int totcpy = fullArea * sizeof *d_charsPx * (sizeof(CHARS_STR) - 1);
+    cudaMalloc((void **)&d_charsPx, totcpy);
+    cudaMemcpy(d_charsPx, charsPx, totcpy, cudaMemcpyHostToDevice);
+    // cudaMemcpyToSymbol(c_matrix, charsPx, totcpy);
+#endif
+
     int cap_pipe[2];
     int show_pipe[2];
     int ptr_pipe[2];
@@ -409,7 +521,7 @@ int main() {
         cudaMallocHost((void **)&h_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *h_frame + sizeof(chunk_t));
         cudaMallocHost((void **)&n_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *n_frame + sizeof(chunk_t));
         cudaMallocHost((void **)&o_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *o_frame + sizeof(chunk_t));
-        cudaMallocHost((void **)&pready->h_xs, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *pready->h_xs);
+        cudaMallocHost((void **)&pready->h_xs, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *pready->h_xs + sizeof(chunk_t));
         pready->pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type(), h_frame);
         show_ready->nframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type(), n_frame);
 #else
@@ -419,7 +531,6 @@ int main() {
 
         pready->h_pos = 0;
         write(ctx.ptr_w_fd, &pready, sizeof pready);
-        write(ctx.noise_w_fd, &pready, sizeof pready);
     }
 
     int total = 3 * ctx.sampleMat->rows * ctx.sampleMat->cols;
@@ -449,7 +560,6 @@ int main() {
     cudaMemcpy(d_current, ctx.sampleMat->data, total * sizeof *ctx.sampleMat->data, cudaMemcpyHostToDevice);
 
     int max4 = ceil(1.0 * maxAtTime / sizeof(chunk_t));
-
     dim3 blockSize, gridSize;
     blockSize.x = BLOCK_SIZE, blockSize.y = BLOCK_SIZE, blockSize.z = 1;
     gridSize.x = ceil((float)1920/TILE_SIZE),
@@ -460,9 +570,29 @@ int main() {
     // pargs->d_pos = d_pos;
     // pargs->show_w_fd = show_pipe[1];
 
+    // TODO::: try other way 
+    // smaller i means less number of threads but higher memory transfer / s maybe (?)
+    // report: discuss what is better
+
+    int nThreadsToUse = nMaxThreads;
+    int eachThreadDoes = 1;
+    for (int i = nMaxThreads; i > 0; i--) {
+        float frac = fullArea / (i * 1.0);
+        int frac_int = fullArea / i;
+        if ((int)ceil(frac) == frac_int && frac_int % sizeof(chunk_t) == 0) {
+            nThreadsToUse = i;
+            eachThreadDoes = frac_int / sizeof(chunk_t);
+            break;
+        }
+    }
+
+    char *d_text;
+    cudaMalloc((void **)&d_text, 1920 * sizeof *d_text);
+
 #endif
 
     Mat previous = ctx.sampleMat->clone();
+    std::string overImageText;
 
     auto begin0 = std::chrono::high_resolution_clock::now();
     while (1) {
@@ -474,6 +604,24 @@ int main() {
 
         auto begin3 = std::chrono::high_resolution_clock::now();
 #ifdef CPU
+
+        const std::string welcomestr = "WELCOME";
+        for (int offset = 0, j = 0; j < welcomestr.length(); j++, offset += txtsz.width*3) {
+            int idx;
+            for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
+                if (CHARS_STR[i] == welcomestr.at(j)) {
+                    idx = i;
+                }
+            }
+
+            for (int i = 0; i < 3 * txtsz.area(); i++) {
+                int x = offset + i % (txtsz.width * 3);
+                int y = 10 + i / (txtsz.width * 3);
+                pready->pframe->data[y * 3 * pready->pframe->cols + x] = charsPx[idx * fullArea + i];
+            }
+        }
+
+
         Mat pvs = pready->pframe->clone();
 
         pready->h_pos = 0;
@@ -537,12 +685,27 @@ int main() {
             red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
             #endif
         #endif
+        // cudaMemcpy(d_text, overImageText.c_str(), overImageText.length(), cudaMemcpyHostToDevice);
+        // kernel3_char<<<1, nThreadsToUse, (sizeof(CHARS_STR) - 1) * fullArea>>>(d_current, d_charsPx, d_text, overImageText.length(), eachThreadDoes, 3 * txtsz.width, 3 * pready->pframe->cols, fullArea);
+        for (int offset = 0, j = 0; j < overImageText.length(); j++, offset += txtsz.width*3) {
+            int idx;
+            for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
+                if (CHARS_STR[i] == overImageText.at(j)) {
+                    idx = i;
+                    break;
+                }
+            }
+
+            kernel2_char<<<1, nThreadsToUse>>>(d_current, d_charsPx + idx * fullArea, eachThreadDoes, offset, 3 * txtsz.width, 3 * pready->pframe->cols);
+        }
+
+        // kernel<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, maxAtTime, d_pos, d_xs);
         kernel2<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, max4, d_pos, d_xs);
 
         cudaMemcpyAsync(&pready->h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
 
-        #if NOISE_VISUALIZER != 0
+        #if defined(NOISE_VISUALIZER) && NOISE_VISUALIZER != 0
         // Copy noise frame into the Mat
         cudaMemcpyAsync(show_ready->nframe->data, d_noise_visualization, total, cudaMemcpyDeviceToHost);
        
@@ -569,7 +732,17 @@ int main() {
             auto elaps3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end3 - begin3);
 
             float unit = 1 / ((float)elaps.count() * 1e-9);
-            printf("\rFPS: %5.0f\tFOR: %5.2f ms\tREAD: %9.2f\tPOS: %7d\t BW: %5d kbps", unit, (float)elaps3.count() * 1e-6, (float)elaps2.count() * 1e-6, pready->h_pos, (int)((pready->h_pos<<4)*unit*1e-3));
+            int bw = static_cast<int>((pready->h_pos<<4)*unit*1e-3);
+
+            std::stringstream strstream;
+            strstream << std::setfill(' ') << std::setw(5) << static_cast<int>(unit);
+
+            printf("\rFPS: %s\tFOR: %5.2f ms\tREAD: %9.2f\tPOS: %7d\t BW: %5d kbps", strstream.str().c_str(), (float)elaps3.count() * 1e-6, (float)elaps2.count() * 1e-6, pready->h_pos, bw);
+
+            strstream = std::stringstream();
+            strstream << "FPS: " << static_cast<int>(unit) << " BW: " << bw << " kbps";
+            overImageText = strstream.str();
+
             fflush(stdout);
         }
 
