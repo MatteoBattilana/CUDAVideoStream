@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <iomanip>
 #include <fcntl.h>    /* For O_RDWR */
@@ -28,7 +27,7 @@
 // Noise visualizer: 1 heatmap, 2 red-black
 #define NOISE_VISUALIZER 2
 
-#define CHARS_STR "0123456789BFPSW :"
+#define CHARS_STR "0123456789BFPSWbkps :"
 #define LR_THRESHOLDS 20
 #define NSTREAMS 1
 #define GPU
@@ -225,7 +224,6 @@ __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int 
 }
 
 // access byte by byte
-// TODO: try chunk_t so N/sizeof(chunk_t)
 __global__ void kernel_char(uint8_t *current, uint8_t *matrix, int N, int offset, int matrixWidth, int currWidth) {
     int thid = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -240,76 +238,31 @@ __global__ void kernel_char(uint8_t *current, uint8_t *matrix, int N, int offset
 
 }
 
+// access chunk_t by chunk_t
 __global__ void kernel2_char(uint8_t *current, uint8_t *matrix, int N, int offset, int matrixWidth, int currWidth) {
     int thid = threadIdx.x + blockIdx.x * blockDim.x;
-    chunk_t cc;
+    // chunk_t cc;
 
     int start = thid * N;
     int max = start + N;
 
     for (int i = start; i < max; i++) {
 
-        int reali = i * sizeof cc;
+        int reali = i * sizeof(chunk_t);
         int x = offset + reali % matrixWidth;
         int y = reali / matrixWidth;
 
-        int idx = (y * currWidth + x) / sizeof cc;
-        cc = ((chunk_t *)current)[idx];
+        int idx = (y * currWidth + x) / sizeof(chunk_t);
+        // cc = ((chunk_t *)current)[idx];
 
-        #pragma unroll
-        for (int j = 0; j < sizeof cc; j++) {
-            ((uint8_t *)&cc)[j] = matrix[i * sizeof cc + j];
-        }
+        // #pragma unroll
+        // for (int j = 0; j < sizeof cc; j++) {
+        //     ((uint8_t *)&cc)[j] = matrix[reali + j];
+        // }
 
-        ((chunk_t *)current)[idx] = cc;
+        ((chunk_t *)current)[idx] = ((chunk_t *)matrix)[i];
+        // ((chunk_t *)current)[idx] = cc;
     } 
-
-}
-
-__global__ void kernel3_char(uint8_t *current, uint8_t *matrix, char *text, int textLen, int N, int matrixWidth, int currWidth, int fullArea) {
-    int thid = threadIdx.x + blockIdx.x * blockDim.x;
-    chunk_t cc;
-    extern __shared__ uint8_t s_matrix[];
-
-    printf("%s\n", text);
-
-    if (!thid) {
-        for (int i = 0; i < (sizeof(CHARS_STR) - 1) * fullArea; i++) {
-            s_matrix[i] = matrix[i];
-        }
-    }
-
-    __syncthreads();
-
-    int start = thid * N;
-    int max = start + N;
-
-    for (int offset = 0, j = 0; j < textLen; j++, offset += matrixWidth) {
-        int idx;
-        for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
-            if (CHARS_STR[i] == text[j]) {
-                idx = i;
-                break;
-            }
-        }
-
-        for (int i = start; i < max; i++) {
-
-            int reali = i * sizeof cc;
-            int x = offset + reali % matrixWidth;
-            int y = reali / matrixWidth;
-
-            int idx = (y * currWidth + x) / sizeof cc;
-            cc = ((chunk_t *)current)[idx];
-
-            #pragma unroll
-            for (int j = 0; j < sizeof cc; j++) {
-                ((uint8_t *)&cc)[j] = matrix[i * sizeof cc + j];
-            }
-
-            ((chunk_t *)current)[idx] = cc;
-        } 
-    }
 
 }
 
@@ -442,26 +395,18 @@ int main() {
     auto codec = cv::VideoWriter::fourcc('M','J','P','G');
     cap.set(cv::CAP_PROP_FOURCC, codec);
 
-    // VideoCapture cap("v4l2src device=/dev/video0 ! video/x-raw, format=YUY2, width=640, height=480, framerate=30/1 ! nvvidconv ! video/x-raw(memory:NVMM) ! nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink", cv::CAP_GSTREAMER);
-    // VideoCapture cap("v4l2src device=%s ! video/x-raw, width=640, height=480, format=(string)YUY2, \
-    //             framerate=30/1 ! videoconvert ! video/x-raw, format=BGR ! appsink", cv::CAP_GSTREAMER);
-    // VideoCapture cap;
-    // if (!cap.open("v4l2src device=/dev/video0 io-mode=2 ! image/jpeg, width=1920, height=1080 ! nvjpegdec ! video/x-raw ! videoconvert ! video/x-raw, format=BGR ! appsink", CAP_GSTREAMER)) return 1;
-
-
     cap.set(3, 1920);
     cap.set(4, 1080);
 
     Mat base;
     cap >> base;
 
-    //448
     auto txtsz = cv::getTextSize("A", cv::FONT_HERSHEY_PLAIN, 3, 2, 0);
     std::cout << "Character pixel size: " << txtsz << std::endl;
     int fullArea = 3 * txtsz.area();
 
     uint8_t *charsPx = new uint8_t[(sizeof(CHARS_STR) - 1) * fullArea];
-    memset(charsPx, 0x0, (sizeof(CHARS_STR) - 1) * fullArea);
+    memset(charsPx, 0x00, (sizeof(CHARS_STR) - 1) * fullArea);
 
     for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
         Mat pxBaseMat(txtsz.height, txtsz.width, base.type(), charsPx + i * fullArea);
@@ -473,7 +418,11 @@ int main() {
     int totcpy = fullArea * sizeof *d_charsPx * (sizeof(CHARS_STR) - 1);
     cudaMalloc((void **)&d_charsPx, totcpy);
     cudaMemcpy(d_charsPx, charsPx, totcpy, cudaMemcpyHostToDevice);
-    // cudaMemcpyToSymbol(c_matrix, charsPx, totcpy);
+
+    // uint8_t *c_matrixPtr;
+    // auto x = cudaMemcpyToSymbol(c_matrix, charsPx, totcpy);
+    // cudaGetSymbolAddress((void **)&c_matrixPtr, c_matrix);
+
 #endif
 
     int cap_pipe[2];
@@ -570,10 +519,6 @@ int main() {
     // pargs->d_pos = d_pos;
     // pargs->show_w_fd = show_pipe[1];
 
-    // TODO::: try other way 
-    // smaller i means less number of threads but higher memory transfer / s maybe (?)
-    // report: discuss what is better
-
     int nThreadsToUse = nMaxThreads;
     int eachThreadDoes = 1;
     for (int i = nMaxThreads; i > 0; i--) {
@@ -586,13 +531,12 @@ int main() {
         }
     }
 
-    char *d_text;
-    cudaMalloc((void **)&d_text, 1920 * sizeof *d_text);
-
 #endif
 
     Mat previous = ctx.sampleMat->clone();
     std::string overImageText;
+
+    std::cout << "Ready to rock!" << std::endl;
 
     auto begin0 = std::chrono::high_resolution_clock::now();
     while (1) {
@@ -604,23 +548,6 @@ int main() {
 
         auto begin3 = std::chrono::high_resolution_clock::now();
 #ifdef CPU
-
-        const std::string welcomestr = "WELCOME";
-        for (int offset = 0, j = 0; j < welcomestr.length(); j++, offset += txtsz.width*3) {
-            int idx;
-            for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
-                if (CHARS_STR[i] == welcomestr.at(j)) {
-                    idx = i;
-                }
-            }
-
-            for (int i = 0; i < 3 * txtsz.area(); i++) {
-                int x = offset + i % (txtsz.width * 3);
-                int y = 10 + i / (txtsz.width * 3);
-                pready->pframe->data[y * 3 * pready->pframe->cols + x] = charsPx[idx * fullArea + i];
-            }
-        }
-
 
         Mat pvs = pready->pframe->clone();
 
@@ -687,6 +614,7 @@ int main() {
         #endif
         // cudaMemcpy(d_text, overImageText.c_str(), overImageText.length(), cudaMemcpyHostToDevice);
         // kernel3_char<<<1, nThreadsToUse, (sizeof(CHARS_STR) - 1) * fullArea>>>(d_current, d_charsPx, d_text, overImageText.length(), eachThreadDoes, 3 * txtsz.width, 3 * pready->pframe->cols, fullArea);
+
         for (int offset = 0, j = 0; j < overImageText.length(); j++, offset += txtsz.width*3) {
             int idx;
             for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
