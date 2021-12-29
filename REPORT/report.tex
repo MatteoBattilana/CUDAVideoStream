@@ -697,16 +697,30 @@ int maxSect, unsigned int *pos, int *xs) {
 }
 	\end{lstlisting}
 
-	The host code changes a little bit because maxAtTime now will be divided by the size of the \texttt{chunk\_t} type:
+	The host code changes a little bit because maxAtTime now needs to be divided by the size of the \texttt{chunk\_t} type. Because it's highly probable that the division results in a non integer value, it must be rounded to the nearest greater integer. \\
+	
+	This means that by rounding up, each thread will overlap with the next thread of a few bytes. Actually it's not a problem because the probability that while the thread \textit{i} writes at the very last bytes of its chunk the thread \textit{i+1} writes at the very beginning of its chunk is very low because each thread is executed in parallel. The only thing that happens is that the computations on a certain amount of bytes is done two times but each time it's done on the same inputs and the result is always the same. In the case of a low probability of two writes at the same time, as discussed, the overhead in managing the concurrent write is lower than the one of adding instructions to check if the thread is writing outside its chunk (about 1 ms of difference in execution time).\\
 
 	\begin{lstlisting}[style=CStyle]
-int max4 = maxAtTime / sizeof(chunk_t);
+int max4 = ceil(1.0 * maxAtTime / sizeof(chunk_t));
 
 // CUDA APIs call
 // ...
 kernel2<<<1,nMaxThreads>>>(d_current,d_previous, d_diff, max4, d_pos, d_xs);
-// ...\
+// ...
 \end{lstlisting}
+
+	The only problem to manage by choosing the path of not adding any check inside the kernel is that the last kernel can write outside the memory. In order to avoid wrong memory accesses, the allocaiton of the memory on the GPU is done by considering this margin. In fact, a thread will write at most \texttt{sizeof(chunk\_t)} bytes outside the memory, so each memory allocation is done by allocating an additional amount of bytes equal to \texttt{sizeof(chunk\_t)} bytes:
+
+	\begin{lstlisting}[style=CStyle]
+uint8_t *h_frame;
+cudaMallocHost((void **)&h_frame, total * sizeof*h_frame + sizeof(chunk_t));
+cudaMallocHost((void **)&pready->h_xs,tot*sizeof*prdy->hxs+sizeof(chunk_t));
+
+// init of Mat object with page-locked h_frame ptr
+pready->pframe = new Mat(ctx.sampleMat->rows,ctx.sampleMat->cols,
+		ctx.sampleMat->type(), h_frame); 
+	\end{lstlisting}
 
 	The results of the \textit{nvprof} profiler are shown in Table \ref{tab:nvprof_naif4} and is noticeable the big improvement in terms of performances for what concerns the Kernel execution time. In fact, it's almost the 50\% of the previous implementation. The average fps are 21, with a \textit{for} time of 26.0 ms and a \textit{read} time of 30 ms.
 
@@ -801,7 +815,7 @@ int maxSect, unsigned int *pos, int *xs) {
 
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.9\linewidth]{images/chart5.png}
+		\includegraphics[width=0.8\linewidth]{images/chart5.png}
 		\caption{\textit{Pixel Difference Comparison}}
 		\label{fig:chart5}
 	\end{figure}
