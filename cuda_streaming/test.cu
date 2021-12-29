@@ -395,8 +395,8 @@ int main() {
 
 #ifdef GPU
         uint8_t *h_frame;
-        cudaMallocHost((void **)&h_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *h_frame);
-        cudaMallocHost((void **)&pready->h_xs, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *pready->h_xs);
+        cudaMallocHost((void **)&h_frame, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *h_frame + sizeof(chunk_t));
+        cudaMallocHost((void **)&pready->h_xs, 3 * ctx.sampleMat->rows * ctx.sampleMat->cols * sizeof *pready->h_xs + sizeof(chunk_t));
         pready->pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type(), h_frame);
 #else
         pready->pframe = new Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type());
@@ -434,7 +434,7 @@ int main() {
     int maxAtTime = total / nMaxThreads;
     cudaMemcpy(d_current, ctx.sampleMat->data, total * sizeof *ctx.sampleMat->data, cudaMemcpyHostToDevice);
 
-    int max4 = maxAtTime / sizeof(chunk_t);
+    int max4 = ceil(1.0 * maxAtTime / sizeof(chunk_t));
 
     // struct cb_args *pargs = new struct cb_args;
     // pargs->d_pos = d_pos;
