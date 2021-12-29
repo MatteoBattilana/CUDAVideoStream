@@ -149,7 +149,6 @@ __global__ void kernel2(uint8_t *current, uint8_t *previous, uint8_t *diff, int 
 }
 
 // access byte by byte
-// TODO: try chunk_t so N/sizeof(chunk_t)
 __global__ void kernel_char(uint8_t *current, uint8_t *matrix, int N, int offset, int matrixWidth, int currWidth) {
     int thid = threadIdx.x + blockIdx.x * blockDim.x;
 
@@ -164,6 +163,7 @@ __global__ void kernel_char(uint8_t *current, uint8_t *matrix, int N, int offset
 
 }
 
+// access chunk_t by chunk_t
 __global__ void kernel2_char(uint8_t *current, uint8_t *matrix, int N, int offset, int matrixWidth, int currWidth) {
     int thid = threadIdx.x + blockIdx.x * blockDim.x;
     chunk_t cc;
@@ -182,58 +182,11 @@ __global__ void kernel2_char(uint8_t *current, uint8_t *matrix, int N, int offse
 
         #pragma unroll
         for (int j = 0; j < sizeof cc; j++) {
-            ((uint8_t *)&cc)[j] = matrix[i * sizeof cc + j];
+            ((uint8_t *)&cc)[j] = matrix[reali + j];
         }
 
         ((chunk_t *)current)[idx] = cc;
     } 
-
-}
-
-__global__ void kernel3_char(uint8_t *current, uint8_t *matrix, char *text, int textLen, int N, int matrixWidth, int currWidth, int fullArea) {
-    int thid = threadIdx.x + blockIdx.x * blockDim.x;
-    chunk_t cc;
-    extern __shared__ uint8_t s_matrix[];
-
-    printf("%s\n", text);
-
-    if (!thid) {
-        for (int i = 0; i < (sizeof(CHARS_STR) - 1) * fullArea; i++) {
-            s_matrix[i] = matrix[i];
-        }
-    }
-
-    __syncthreads();
-
-    int start = thid * N;
-    int max = start + N;
-
-    for (int offset = 0, j = 0; j < textLen; j++, offset += matrixWidth) {
-        int idx;
-        for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
-            if (CHARS_STR[i] == text[j]) {
-                idx = i;
-                break;
-            }
-        }
-
-        for (int i = start; i < max; i++) {
-
-            int reali = i * sizeof cc;
-            int x = offset + reali % matrixWidth;
-            int y = reali / matrixWidth;
-
-            int idx = (y * currWidth + x) / sizeof cc;
-            cc = ((chunk_t *)current)[idx];
-
-            #pragma unroll
-            for (int j = 0; j < sizeof cc; j++) {
-                ((uint8_t *)&cc)[j] = matrix[i * sizeof cc + j];
-            }
-
-            ((chunk_t *)current)[idx] = cc;
-        } 
-    }
 
 }
 
@@ -331,20 +284,12 @@ int main() {
     auto codec = cv::VideoWriter::fourcc('M','J','P','G');
     cap.set(cv::CAP_PROP_FOURCC, codec);
 
-    // VideoCapture cap("v4l2src device=/dev/video0 ! video/x-raw, format=YUY2, width=640, height=480, framerate=30/1 ! nvvidconv ! video/x-raw(memory:NVMM) ! nvvidconv ! video/x-raw, format=BGRx ! videoconvert ! video/x-raw, format=BGR ! appsink", cv::CAP_GSTREAMER);
-    // VideoCapture cap("v4l2src device=%s ! video/x-raw, width=640, height=480, format=(string)YUY2, \
-    //             framerate=30/1 ! videoconvert ! video/x-raw, format=BGR ! appsink", cv::CAP_GSTREAMER);
-    // VideoCapture cap;
-    // if (!cap.open("v4l2src device=/dev/video0 io-mode=2 ! image/jpeg, width=1920, height=1080 ! nvjpegdec ! video/x-raw ! videoconvert ! video/x-raw, format=BGR ! appsink", CAP_GSTREAMER)) return 1;
-
-
     cap.set(3, 1920);
     cap.set(4, 1080);
 
     Mat base;
     cap >> base;
 
-    //448
     auto txtsz = cv::getTextSize("A", cv::FONT_HERSHEY_PLAIN, 3, 2, 0);
     std::cout << "Character pixel size: " << txtsz << std::endl;
     int fullArea = 3 * txtsz.area();
@@ -439,10 +384,6 @@ int main() {
     // struct cb_args *pargs = new struct cb_args;
     // pargs->d_pos = d_pos;
     // pargs->show_w_fd = show_pipe[1];
-
-    // TODO::: try other way 
-    // smaller i means less number of threads but higher memory transfer / s maybe (?)
-    // report: discuss what is better
 
     int nThreadsToUse = nMaxThreads;
     int eachThreadDoes = 1;
@@ -541,8 +482,6 @@ int main() {
         // Copy in the current pointer and run 
         cudaMemcpyAsync(d_current, pready->pframe->data, total, cudaMemcpyHostToDevice);
 
-        // cudaMemcpy(d_text, overImageText.c_str(), overImageText.length(), cudaMemcpyHostToDevice);
-        // kernel3_char<<<1, nThreadsToUse, (sizeof(CHARS_STR) - 1) * fullArea>>>(d_current, d_charsPx, d_text, overImageText.length(), eachThreadDoes, 3 * txtsz.width, 3 * pready->pframe->cols, fullArea);
         for (int offset = 0, j = 0; j < overImageText.length(); j++, offset += txtsz.width*3) {
             int idx;
             for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
