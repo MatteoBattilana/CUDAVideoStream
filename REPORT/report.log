@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  29 DEC 2021 11:57
+This is pdfTeX, Version 3.141592653-2.6-1.40.23 (TeX Live 2021) (preloaded format=pdflatex 2021.11.8)  29 DEC 2021 17:24
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1007,15 +1007,15 @@ Underfull \hbox (badness 10000) in paragraph at lines 170--171
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 176--177
+Underfull \hbox (badness 10000) in paragraph at lines 177--178
 
  []
 
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 182.
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 183.
 (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 182.
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 183.
  (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
@@ -1024,16 +1024,16 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
-Underfull \hbox (badness 10000) in paragraph at lines 187--188
+Underfull \hbox (badness 10000) in paragraph at lines 188--189
 
  []
 
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.202 	\end{center}
+l.203 	\end{center}
                     [1]
-Underfull \hbox (badness 10000) in paragraph at lines 214--215
+Underfull \hbox (badness 10000) in paragraph at lines 215--216
 
  []
 
@@ -1042,224 +1042,254 @@ File: lstlang1.sty 2020/03/24 1.8d listings language file
 ) (/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/tex/latex/listings/lstmisc.sty
 File: lstmisc.sty 2020/03/24 1.8d (Carsten Heinz)
 )
-Underfull \hbox (badness 10000) in paragraph at lines 236--237
+Underfull \hbox (badness 10000) in paragraph at lines 237--238
 
  []
 
-<images/streaming_ok2.png, id=48, 504.38437pt x 286.82156pt>
+<images/streaming_ok2.png, id=52, 504.38437pt x 286.82156pt>
 File: images/streaming_ok2.png Graphic file (type png)
 <use images/streaming_ok2.png>
-Package pdftex.def Info: images/streaming_ok2.png  used on input line 240.
+Package pdftex.def Info: images/streaming_ok2.png  used on input line 241.
 (pdftex.def)             Requested size: 292.77632pt x 166.4879pt.
 pdfTeX warning (ext4): destination with the same identifier (name{page.2}) has been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.246 	
+l.247 	
         [2 <./images/streaming_ok2.png>]
-<images/streaming_differror.png, id=78, 433.62pt x 246.1697pt>
+<images/streaming_differror.png, id=82, 433.62pt x 246.1697pt>
 File: images/streaming_differror.png Graphic file (type png)
 <use images/streaming_differror.png>
-Package pdftex.def Info: images/streaming_differror.png  used on input line 249.
+Package pdftex.def Info: images/streaming_differror.png  used on input line 250.
 (pdftex.def)             Requested size: 292.77632pt x 166.21747pt.
-<images/chart1.png, id=79, 607.26875pt x 341.275pt>
+<images/chart1.png, id=83, 607.26875pt x 341.275pt>
 File: images/chart1.png Graphic file (type png)
 <use images/chart1.png>
-Package pdftex.def Info: images/chart1.png  used on input line 258.
+Package pdftex.def Info: images/chart1.png  used on input line 259.
 (pdftex.def)             Requested size: 334.60425pt x 188.0455pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 263--264
+Underfull \hbox (badness 10000) in paragraph at lines 264--265
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 265--266
+Underfull \hbox (badness 10000) in paragraph at lines 266--267
 
  []
 
 [3 <./images/streaming_differror.png> <./images/chart1.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 319--320
+Underfull \hbox (badness 10000) in paragraph at lines 320--321
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 332--333
+Underfull \hbox (badness 10000) in paragraph at lines 333--334
 
  []
 
 [4]
-Underfull \hbox (badness 10000) in paragraph at lines 360--361
+Underfull \hbox (badness 10000) in paragraph at lines 361--362
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 381--382
+Underfull \hbox (badness 10000) in paragraph at lines 382--383
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 391--392
+Underfull \hbox (badness 10000) in paragraph at lines 392--393
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 393--394
+Underfull \hbox (badness 10000) in paragraph at lines 394--395
 
  []
 
 [5]
-Underfull \hbox (badness 10000) in paragraph at lines 426--427
+Underfull \hbox (badness 10000) in paragraph at lines 427--428
 
  []
 
-<images/chart2.png, id=150, 607.26875pt x 341.275pt>
+<images/chart2.png, id=154, 607.26875pt x 341.275pt>
 File: images/chart2.png Graphic file (type png)
 <use images/chart2.png>
-Package pdftex.def Info: images/chart2.png  used on input line 432.
+Package pdftex.def Info: images/chart2.png  used on input line 433.
 (pdftex.def)             Requested size: 334.60425pt x 188.0455pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 460--461
+Underfull \hbox (badness 10000) in paragraph at lines 461--462
 
  []
 
 [6 <./images/chart2.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 462--463
+Underfull \hbox (badness 10000) in paragraph at lines 463--464
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 482--483
+Underfull \hbox (badness 10000) in paragraph at lines 483--484
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 505--506
+Underfull \hbox (badness 10000) in paragraph at lines 506--507
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 507--508
+Underfull \hbox (badness 10000) in paragraph at lines 508--509
 
  []
 
 [7]
-Underfull \hbox (badness 10000) in paragraph at lines 533--534
+Underfull \hbox (badness 10000) in paragraph at lines 534--535
 
  []
 
-<images/chart3.png, id=216, 607.26875pt x 341.275pt>
+<images/chart3.png, id=220, 607.26875pt x 341.275pt>
 File: images/chart3.png Graphic file (type png)
 <use images/chart3.png>
-Package pdftex.def Info: images/chart3.png  used on input line 574.
+Package pdftex.def Info: images/chart3.png  used on input line 575.
 (pdftex.def)             Requested size: 334.60425pt x 188.0455pt.
 [8]
-Underfull \hbox (badness 10000) in paragraph at lines 600--601
+Underfull \hbox (badness 10000) in paragraph at lines 601--602
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 602--603
+Underfull \hbox (badness 10000) in paragraph at lines 603--604
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 604--605
+Underfull \hbox (badness 10000) in paragraph at lines 605--606
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 606--607
+Underfull \hbox (badness 10000) in paragraph at lines 607--608
 
  []
 
 [9 <./images/chart3.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 608--609
+Underfull \hbox (badness 10000) in paragraph at lines 609--610
 
  []
 
-<images/chart4.png, id=284, 607.26875pt x 427.5975pt>
+<images/chart4.png, id=288, 607.26875pt x 427.5975pt>
 File: images/chart4.png Graphic file (type png)
 <use images/chart4.png>
-Package pdftex.def Info: images/chart4.png  used on input line 624.
+Package pdftex.def Info: images/chart4.png  used on input line 625.
 (pdftex.def)             Requested size: 334.60425pt x 235.60997pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 650--651
+Underfull \hbox (badness 10000) in paragraph at lines 651--652
 
  []
 
 [10 <./images/chart4.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 652--653
+Underfull \hbox (badness 10000) in paragraph at lines 653--654
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 654--655
+Underfull \hbox (badness 10000) in paragraph at lines 655--656
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 700--701
+Underfull \hbox (badness 10000) in paragraph at lines 701--702
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 702--703
+Underfull \hbox (badness 10000) in paragraph at lines 703--704
 
  []
 
 [11]
-Underfull \hbox (badness 10000) in paragraph at lines 744--745
+Underfull \hbox (badness 10000) in paragraph at lines 745--746
 
  []
 
 [12]
-<images/chart5.png, id=392, 607.26875pt x 427.5975pt>
+<images/chart5.png, id=396, 607.26875pt x 427.5975pt>
 File: images/chart5.png Graphic file (type png)
 <use images/chart5.png>
-Package pdftex.def Info: images/chart5.png  used on input line 818.
+Package pdftex.def Info: images/chart5.png  used on input line 819.
 (pdftex.def)             Requested size: 334.60425pt x 235.60997pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 823--824
+Underfull \hbox (badness 10000) in paragraph at lines 824--825
 
  []
 
 [13 <./images/chart5.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 834--835
+Underfull \hbox (badness 10000) in paragraph at lines 835--836
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 853--854
+Underfull \hbox (badness 10000) in paragraph at lines 854--855
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 876--877
+Underfull \hbox (badness 10000) in paragraph at lines 877--878
 
  []
 
 [14]
-<images/chart6.png, id=454, 607.26875pt x 475.7775pt>
+<images/chart6.png, id=458, 607.26875pt x 475.7775pt>
 File: images/chart6.png Graphic file (type png)
 <use images/chart6.png>
-Package pdftex.def Info: images/chart6.png  used on input line 892.
+Package pdftex.def Info: images/chart6.png  used on input line 893.
 (pdftex.def)             Requested size: 376.4258pt x 294.92091pt.
- [15 <./images/chart6.png>] (./report.aux)
+ [15 <./images/chart6.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 927--928
+
+ []
+
+<images/chars_ok.png, id=477, 516.42938pt x 292.09125pt>
+File: images/chars_ok.png Graphic file (type png)
+<use images/chars_ok.png>
+Package pdftex.def Info: images/chars_ok.png  used on input line 933.
+(pdftex.def)             Requested size: 376.4258pt x 212.91283pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 938--939
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 940--941
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 942--943
+
+ []
+
+[16 <./images/chars_ok.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 971--972
+
+ []
+
+[17] [18] (./report.aux)
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: D41D8CD98F00B204E9800998ECF8427E;0.
  ) 
 Here is how much of TeX's memory you used:
- 32466 strings out of 480539
- 604209 string characters out of 5900304
- 1291574 words of memory out of 5000000
- 48999 multiletter control sequences out of 15000+600000
+ 32627 strings out of 480539
+ 606369 string characters out of 5900304
+ 1292660 words of memory out of 5000000
+ 49089 multiletter control sequences out of 15000+600000
  472805 words of font info for 151 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  125i,13n,131p,10693b,1973s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}</home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmcsc10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmmi7.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr12.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr5.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr7.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmr8.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmri10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmssbx10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></home/gabriele97/.texlive2021/local/texlive/2021/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on report.pdf (17 pages, 1516262 bytes).
+Output written on report.pdf (20 pages, 2059904 bytes).
 PDF statistics:
- 636 PDF objects out of 1000 (max. 8388607)
- 566 compressed objects within 6 object streams
- 352 named destinations out of 1000 (max. 500000)
- 41589 words of extra memory for PDF output out of 42996 (max. 10000000)
+ 743 PDF objects out of 1000 (max. 8388607)
+ 667 compressed objects within 7 object streams
+ 422 named destinations out of 1000 (max. 500000)
+ 41610 words of extra memory for PDF output out of 42996 (max. 10000000)
 

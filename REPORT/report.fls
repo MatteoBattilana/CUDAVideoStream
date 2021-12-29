@@ -1400,6 +1400,11 @@ INPUT ./images/chart6.png
 INPUT images/chart6.png
 INPUT ./images/chart6.png
 INPUT ./images/chart6.png
+INPUT ./images/chars_ok.png
+INPUT ./images/chars_ok.png
+INPUT images/chars_ok.png
+INPUT ./images/chars_ok.png
+INPUT ./images/chars_ok.png
 INPUT report.aux
 INPUT ./report.out
 INPUT ./report.out

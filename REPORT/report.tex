@@ -172,6 +172,7 @@
 	The purpose of the project is to demonstrate the performances that are obtainable by computing the difference on a CPU and to compare them with the ones obtainable by using a General Purpose GPU or \textit{GPGPU}. A Nvidia GPU will be used for the benchmark and therefore the code will be based on CUDA. Among all these considerations, different filters will be added in order to demonstrate the potentiality of GPGPU computations on video elaboration and streaming.
 
 	\section{Video Streaming}
+	\label{sec:streaming}
 
 	Before looking at the algorithm that computes the difference between frames, is important to give a look at how frames are captured and the overall architecture of the software. It's a client server architecture where the server transmits the difference to the client via a socket.\\
 
@@ -919,5 +920,117 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 	% 	\item AtomicInc in global memory and in shared memory, there are differences?
 	% 	\item Why 512 kernels is best instead of 1024?
 	% \end{itemize}
+
+\newpage
+\section{Image Text Overlay}
+
+	Another part of the project under discussion is the ability to add a text overlay over an image. In this particular implementation, it supports ASCII characters over a single line of the image. In order to be send over internet, it's executed before applying the algorithm for sent the frame over a socket, according to Chapter \ref{sec:streaming}.\\
+
+	The final result can be seen in Figure \ref{fig:demo_chars}:
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.9\linewidth]{images/chars_ok.png}
+		\caption{\textit{Text Overlay}}
+		\label{fig:demo_chars}
+	\end{figure}
+
+	The basic idea behind the implementation is the ability to generate a frame (made of RGB pixels) of an ASCII character, dynamically and based on an available font. Everything starts from the specification of the supported alphabet. In fact, not all ASCII characters are supported but only a limited set, specified during the compilation time, in order to have an efficient code in terms of memory occupied and execution time without wasting useful resources (both on the host side and on the device side) for characters that are never used.\\
+
+	After defining the alphabet, at the beginning of the program, it's possible to translate each character into a set of pixels composing it. This is done thanks to a series of OpenCV's function like \texttt{cv::getTextSize} that is able to rietrieve the frame dimensions (width and height) of a character and \texttt{cv::putText} that is able to put a text (or a character in this case) over a frame.\\
+
+	First thing that is done is to retrieve the dimension of a character. This is done only for a single character and it is supposed that all the other characters in the alphabet have the same size.\\
+
+	Than, an array storing all the frames one after another is created with a size that is equal to $ n_{chars} \cdot Area_{char} $. A loop on the alphabet will fill this array with all the character' frames. The code to implement this is the following:
+
+	\begin{lstlisting}[style=CStyle]
+#define CHARS_STR "0123456789BFPSWbkps :"
+
+auto txtsz = cv::getTextSize("A", cv::FONT_HERSHEY_PLAIN, 3, 2, 0);
+int fullArea = 3 * txtsz.area();
+	
+uint8_t *charsPx = new uint8_t[(sizeof(CHARS_STR) - 1) * fullArea];
+memset(charsPx, 0x0, (sizeof(CHARS_STR) - 1) * fullArea);
+for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
+	Mat pxBaseMat(txtsz.height, txtsz.width, base.type(), charsPx+i*fullArea);
+	cv::putText(pxBaseMat, std::string(CHARS_STR).substr(i, 1),
+			cv::Point(0, txtsz.height+1), cv::FONT_HERSHEY_PLAIN, 3,
+			cv::Scalar(0, 255, 0), 2, cv::LINE_AA);
+}\end{lstlisting}
+
+When the array is finally full filled, it's ready to be copied onto the GPU memory. This operation is done only at the beginning, so it's ininfluent from the point of view of the performances:
+
+	\begin{lstlisting}[style=CStyle]
+uint8_t *d_charsPx;
+int totcpy = fullArea * sizeof *d_charsPx * (sizeof(CHARS_STR) - 1);
+cudaMalloc((void **)&d_charsPx, totcpy * sizeof *d_charsPx);
+cudaMemcpy(d_charsPx,charsPx,totcpy*sizeof*d_charsPx,cudaMemcpyHostToDev);
+\end{lstlisting}
+
+\subsection{GPU Implementation}
+After the initialization phase, is now time to give a look at how each character frame is placed onto the image. It's a replacement of the pixels of the frame under analysis with the one of the corresponding character.\\
+
+The first thing to do is to decide how many kernel to launch and how many pixel each kernel needs to manage. By deciding to assign to each kernel a certain number of pixel in a row-major fashion, and by considering the fact that the frame size of each character is fixed but can change if the font is changed, a portion of the code is used to decide in a dynamic way the two values: number of kernels and pixels for each kernel. It's decided by dividing the total number of bytes of a character frame by the number of frame and if it's a multiple of the size of \texttt{chunk\_t} type that for a first analysis will be a \texttt{uint8\_t}, then the number of threads found is the right one. The code is the following:
+
+	\begin{lstlisting}[style=CStyle]
+typedef uint8_t chunk_t;
+
+int nThreadsToUse = nMaxThreads;
+int eachThreadDoes = 1;
+for (int i = nMaxThreads; i > 0; i--) {
+	float frac = fullArea / (i * 1.0);
+	int frac_int = fullArea / i;
+	if ((int)ceil(frac) == frac_int && frac_int % sizeof(chunk_t) == 0) {
+		nThreadsToUse = i;
+		eachThreadDoes = frac_int / sizeof(chunk_t);
+		break;
+	}
+}
+\end{lstlisting}
+
+Now, during the computation step, each character of the string to print is analyzed. This is done on the host side and not on the device side in order to avoid the copy HtoD of the string. The advantage is given by the usage of async operations, so while the frame is copied on the GPU, the host scans each character and a new kernel is fired in an async way in order to print each character one after the another.
+
+	\begin{lstlisting}[style=CStyle]
+// Copy in the current pointer and run 
+cudaMemcpyAsync(d_current,pready->pframe->data,total,cudaMemcpyHostToDev);
+
+for (int offset = 0, j = 0; j < text.length(); j++, offset+=txtsz.width*3) {
+	int idx;
+	for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
+		if (CHARS_STR[i] == text.at(j)) {
+			idx = i;
+			break;
+		}
+	}
+
+	kernel_char<<<1, nThreadsToUse>>>(d_current, d_charsPx + idx * fullArea,
+			eachThreadDoes, offset, 3 * txtsz.width, 3 * pready->pframe->cols);
+}
+\end{lstlisting}
+
+The basic implementation of the kernel is the following:
+
+	\begin{lstlisting}[style=CStyle]
+__global__ void kernel_char(
+uint8_t *current, uint8_t *matrix, int N, int offset, 
+int matrixWidth, int currWidth) {
+    int thid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    int start = thid * N;
+    int max = start + N;
+
+    for (int i = start; i < max; i++) {
+        int x = offset + i % matrixWidth;
+        int y = i / matrixWidth;
+        current[y * currWidth + x] = matrix[i];
+    } 
+	\end{lstlisting}
+
+	By running the profiler for a fixed time of 30 seconds, the kernel takes an average time of 2.981 us so it occupies the 1.53\% of the total time.
+
+	
+	By running the profiler for a fixed time of 30 seconds, the kernel takes an average time of 3.778 us so it occupies the 1.91\% of the total time.
+
+	By running the profiler for a fixed time of 30 seconds, the kernel takes an average time of 1.868 us so it occupies the 1.01\% of the total time.
 
 \end{document}

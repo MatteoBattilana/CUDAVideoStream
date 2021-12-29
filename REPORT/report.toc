@@ -7,4 +7,6 @@
 \contentsline {subsubsection}{\numberline {2.2.2}Asynchronous APIs and removal of useless operations}{7}{subsubsection.2.2.2}%
 \contentsline {subsubsection}{\numberline {2.2.3}Pinned or page-locked memory}{9}{subsubsection.2.2.3}%
 \contentsline {subsubsection}{\numberline {2.2.4}Kernel global memory access: the cherry on the cake}{10}{subsubsection.2.2.4}%
+\contentsline {section}{\numberline {3}Image Text Overlay}{16}{section.3}%
+\contentsline {subsection}{\numberline {3.1}GPU Implementation}{17}{subsection.3.1}%
 \providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 
