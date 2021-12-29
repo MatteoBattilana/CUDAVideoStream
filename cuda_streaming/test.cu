@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <iomanip>
 #include <fcntl.h>    /* For O_RDWR */
@@ -19,7 +18,7 @@
 #include <pthread.h>
 #include "v4l.h"
 
-#define CHARS_STR "0123456789BFPSW :"
+#define CHARS_STR "0123456789BFPSWbkps :"
 #define LR_THRESHOLDS 20
 #define NSTREAMS 1
 #define GPU
@@ -52,7 +51,7 @@ struct ctxs {
 
 #ifdef GPU
 
-// __constant__ uint8_t c_matrix[(sizeof(CHARS_STR) - 1) * 32 * 28];
+// __constant__ uint8_t c_matrix[(sizeof(CHARS_STR) - 1) * 3 * 32 * 28];
 
 /*
 Optimizations done:
@@ -166,26 +165,27 @@ __global__ void kernel_char(uint8_t *current, uint8_t *matrix, int N, int offset
 // access chunk_t by chunk_t
 __global__ void kernel2_char(uint8_t *current, uint8_t *matrix, int N, int offset, int matrixWidth, int currWidth) {
     int thid = threadIdx.x + blockIdx.x * blockDim.x;
-    chunk_t cc;
+    // chunk_t cc;
 
     int start = thid * N;
     int max = start + N;
 
     for (int i = start; i < max; i++) {
 
-        int reali = i * sizeof cc;
+        int reali = i * sizeof(chunk_t);
         int x = offset + reali % matrixWidth;
         int y = reali / matrixWidth;
 
-        int idx = (y * currWidth + x) / sizeof cc;
-        cc = ((chunk_t *)current)[idx];
+        int idx = (y * currWidth + x) / sizeof(chunk_t);
+        // cc = ((chunk_t *)current)[idx];
 
-        #pragma unroll
-        for (int j = 0; j < sizeof cc; j++) {
-            ((uint8_t *)&cc)[j] = matrix[reali + j];
-        }
+        // #pragma unroll
+        // for (int j = 0; j < sizeof cc; j++) {
+        //     ((uint8_t *)&cc)[j] = matrix[reali + j];
+        // }
 
-        ((chunk_t *)current)[idx] = cc;
+        ((chunk_t *)current)[idx] = ((chunk_t *)matrix)[i];
+        // ((chunk_t *)current)[idx] = cc;
     } 
 
 }
@@ -295,7 +295,7 @@ int main() {
     int fullArea = 3 * txtsz.area();
 
     uint8_t *charsPx = new uint8_t[(sizeof(CHARS_STR) - 1) * fullArea];
-    memset(charsPx, 0x0, (sizeof(CHARS_STR) - 1) * fullArea);
+    memset(charsPx, 0x00, (sizeof(CHARS_STR) - 1) * fullArea);
 
     for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
         Mat pxBaseMat(txtsz.height, txtsz.width, base.type(), charsPx + i * fullArea);
@@ -307,7 +307,11 @@ int main() {
     int totcpy = fullArea * sizeof *d_charsPx * (sizeof(CHARS_STR) - 1);
     cudaMalloc((void **)&d_charsPx, totcpy);
     cudaMemcpy(d_charsPx, charsPx, totcpy, cudaMemcpyHostToDevice);
-    // cudaMemcpyToSymbol(c_matrix, charsPx, totcpy);
+
+    // uint8_t *c_matrixPtr;
+    // auto x = cudaMemcpyToSymbol(c_matrix, charsPx, totcpy);
+    // cudaGetSymbolAddress((void **)&c_matrixPtr, c_matrix);
+
 #endif
 
     int cap_pipe[2];
@@ -397,13 +401,12 @@ int main() {
         }
     }
 
-    char *d_text;
-    cudaMalloc((void **)&d_text, 1920 * sizeof *d_text);
-
 #endif
 
     Mat previous = ctx.sampleMat->clone();
     std::string overImageText;
+
+    std::cout << "Ready to rock!" << std::endl;
 
     auto begin0 = std::chrono::high_resolution_clock::now();
     while (1) {
@@ -415,23 +418,6 @@ int main() {
 
         auto begin3 = std::chrono::high_resolution_clock::now();
 #ifdef CPU
-
-        const std::string welcomestr = "WELCOME";
-        for (int offset = 0, j = 0; j < welcomestr.length(); j++, offset += txtsz.width*3) {
-            int idx;
-            for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
-                if (CHARS_STR[i] == welcomestr.at(j)) {
-                    idx = i;
-                }
-            }
-
-            for (int i = 0; i < 3 * txtsz.area(); i++) {
-                int x = offset + i % (txtsz.width * 3);
-                int y = 10 + i / (txtsz.width * 3);
-                pready->pframe->data[y * 3 * pready->pframe->cols + x] = charsPx[idx * fullArea + i];
-            }
-        }
-
 
         Mat pvs = pready->pframe->clone();
 
