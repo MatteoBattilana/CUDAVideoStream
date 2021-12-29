@@ -1,0 +1,15 @@
+\babel@toc {english}{}\relax 
+\contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
+\contentsline {section}{\numberline {2}Video Streaming}{1}{section.2}%
+\contentsline {subsection}{\numberline {2.1}CPU Implementation}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}GPU Implementation}{3}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}Naif version}{4}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}Asynchronous APIs and removal of useless operations}{7}{subsubsection.2.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.3}Pinned or page-locked memory}{9}{subsubsection.2.2.3}%
+\contentsline {subsubsection}{\numberline {2.2.4}Kernel global memory access: the cherry on the cake}{10}{subsubsection.2.2.4}%
+\contentsline {section}{\numberline {3}Image Text Overlay}{16}{section.3}%
+\contentsline {subsection}{\numberline {3.1}GPU Implementation}{17}{subsection.3.1}%
+\contentsline {subsubsection}{\numberline {3.1.1}Naif version}{17}{subsubsection.3.1.1}%
+\contentsline {subsubsection}{\numberline {3.1.2}Exploiting the global memory access optimization}{18}{subsubsection.3.1.2}%
+\contentsline {subsubsection}{\numberline {3.1.3}Constant Memory instead of Global Memory: is it worth?}{20}{subsubsection.3.1.3}%
+\providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

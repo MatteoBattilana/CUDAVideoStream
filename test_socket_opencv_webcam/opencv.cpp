@@ -25,7 +25,7 @@ int main() {
     int* xs = new int[3 * rows * cols];
     unsigned int pos;
 
-    getaddrinfo("127.0.0.1", "2734", NULL, &result);
+    getaddrinfo("192.168.55.1", "2734", NULL, &result);
     for (rp = result; rp != NULL; rp = rp->ai_next) {
         if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
             continue;
