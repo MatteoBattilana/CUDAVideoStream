@@ -26,27 +26,28 @@ using namespace cv;
 
 typedef int4 chunk_t;
 
-__global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect) {
+__global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect){
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int start = x * maxSect;
     int max = start + maxSect;
     chunk_t cc, pc;
-
+    int df;
+    int size = sizeof(chunk_t);
     bool toUpdate = false;
-    int8_t df;
-    for (int i = start; i < max; i++) {
 
+    for (int i = start; i < max; i++) {
         cc = ((chunk_t *)current)[i];
         pc = ((chunk_t *)previous)[i];
-        for (int j = 0; j < sizeof cc; j++) {
+
+        for (int j = 0; j < size; j++) {
             df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
 
-            if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+            if ((df < -LR_THRESHOLDS || df > LR_THRESHOLDS)){
                 toUpdate = true;
             }
             
-            if(toUpdate && (i*(sizeof cc)+j) % 3 == 2){
-                previous[i*(sizeof cc)+j] = 255;
+            if(toUpdate && ((i*size)+ j ) % 3 == 2){
+                previous[(i*size)+j] = 255;
                 toUpdate = false;
             }
         }

@@ -42,6 +42,7 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
 		d_heat_pixels[i+2] = r;
     }
 }
+   
 
 int main(int argc, char *argv[]) {
     int threads = 1024;
@@ -78,13 +79,11 @@ int main(int argc, char *argv[]) {
         if (waitKey(10) == 27) {
             break;  // stop capturing by pressing ESC
         }
-        
-        uint8_t* tmp = d_current;
-        d_current = d_previous;
-        d_previous = tmp;
+
 
         start = std::chrono::high_resolution_clock::now();
-        
+
+        cudaMemcpy(d_current, image1.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
         cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
         kernel<<<1, threads>>>(d_current, d_previous, ((W*H*C)/threads), d_heat_pixels);
         cudaMemcpy(res.data, d_heat_pixels, W*H*C * sizeof *res.data, cudaMemcpyDeviceToHost);

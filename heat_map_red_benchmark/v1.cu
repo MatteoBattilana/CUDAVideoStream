@@ -39,32 +39,34 @@ void onTrackbar_changed(int, void*)
 #define W 1920
 #define LR_THRESHOLDS 20
 
-typedef int4 chunk_t;
+typedef long4 chunk_t;
 
-__global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t* d_heat_pixels) {
+
+__global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t *noise_visualization){
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int start = x * maxSect;
     int max = start + maxSect;
     chunk_t cc, pc;
-
     uint8_t redColor = 0;
-    int8_t df;
-    for (int i = start; i < max; i++) {
+    int df;
+    int size = sizeof(chunk_t);
 
+    for (int i = start; i < max; i++) {
         cc = ((chunk_t *)current)[i];
         pc = ((chunk_t *)previous)[i];
-        for (int j = 0; j < sizeof cc; j++) {
+
+        for (int j = 0; j < size; j++) {
             df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
 
-            if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+            if ((df < -LR_THRESHOLDS || df > LR_THRESHOLDS)){
                 redColor = 255;
             }
             
-            if((i*(sizeof cc)+j) % 3 == 2){
-                d_heat_pixels[i*(sizeof cc)+j] = redColor;
+            if(((i*size)+ j ) % 3 == 2){
+                noise_visualization[(i*size)+j] = redColor;
                 redColor = 0;
             } else {
-                d_heat_pixels[i*(sizeof cc)+j] = 0;
+                noise_visualization[(i*size)+j] = 0;
             }
         }
     }

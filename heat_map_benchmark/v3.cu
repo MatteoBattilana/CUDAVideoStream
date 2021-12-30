@@ -23,26 +23,29 @@ using namespace cv;
 #define W 1920
 #define C 3
 
+typedef long4 chunk_t;
+
 __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t* d_heat_pixels) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int start = x * maxSect;
     int max = start + maxSect;
-    int cc, pc;
+    chunk_t cc, pc;
+    int size = sizeof(chunk_t);
     for (int i = start; i < max; i++) {
 
-        cc = ((int *)current)[i];
-        pc = ((int *)previous)[i];
-        for (int j = 0; j < 4; j++) {
+        cc = ((chunk_t *)current)[i];
+        pc = ((chunk_t *)previous)[i];
+        for (int j = 0; j < size; j++) {
             
-            if((i*4+j) % 3 == 0){
+            if((i*size+j) % 3 == 0){
                 int pixelDiff = fabsf(((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j]) + fabsf(((uint8_t *)&cc)[j+1] - ((uint8_t *)&pc)[j+1]) + fabsf(((uint8_t *)&cc)[j+2] - ((uint8_t *)&pc)[j+2]);
-                float diff1 = pixelDiff/(255*2.0);
-                int r = fminf(fmaxf(__sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
-                int g = fminf(fmaxf(__sinf(M_PI*diff1)*255.0, 0.0),255.0);
-                int b = fminf(fmaxf(__sinf(M_PI*diff1 + M_PI/2.0)*255.0, 0.0),255.0);
-                d_heat_pixels[i*4+j] = b;
-                d_heat_pixels[i*4+j+1] = g;
-                d_heat_pixels[i*4+j+2] = r;
+                float diff1 = pixelDiff/(255*3.0);
+                int r = fminf(fmaxf(sinf(M_PI*diff1 - M_PI/2.0)*255.0, 0.0),255.0);
+                int g = fminf(fmaxf(sinf(M_PI*diff1)*255.0, 0.0),255.0);
+                int b = fminf(fmaxf(sinf(M_PI*diff1 + M_PI/2.0)*255.0, 0.0),255.0);
+                d_heat_pixels[i*size+j] = b;
+                d_heat_pixels[i*size+j+1] = g;
+                d_heat_pixels[i*size+j+2] = r;
             }
         }
     }
@@ -92,7 +95,7 @@ int main(int argc, char *argv[]) {
         start = std::chrono::high_resolution_clock::now();
         
         cudaMemcpy(d_current, image2.data,  W*H*C * sizeof *image2.data, cudaMemcpyHostToDevice);
-        kernel<<<1, threads>>>(d_current, d_previous, (((W*H*C)/threads)/4), d_heat_pixels);
+        kernel<<<1, threads>>>(d_current, d_previous, (((W*H*C)/threads)/sizeof(chunk_t)), d_heat_pixels);
         cudaMemcpy(res.data, d_heat_pixels, W*H*C * sizeof *res.data, cudaMemcpyDeviceToHost);
 
         end = std::chrono::high_resolution_clock::now();
