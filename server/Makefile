@@ -9,37 +9,46 @@ CCNV = /usr/local/cuda/bin/nvcc
 CCPP = g++
 PROFILER = /usr/local/cuda/bin/nvprof
 
+LFLAGS += 
+CFLAGS += -std=c++11 -g -MMD
+INCLUDES += 
+
 NVLFLAGS +=  
-NVCFLAGS += -std=c++11 -g -lineinfo --use_fast_math
+NVCFLAGS += $(CFLAGS) -lineinfo --use_fast_math 
 NVCFLAGS += -Xcudafe "--diag_suppress=partial_override"
 NVINCLUDES += 
 
 CVLFLAGS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio -lpthread -L/usr/local/lib
-CVCFLAGS += -std=c++11 -g 
+CVCFLAGS += $(CFLAGS) 
 CVINCLUDES += -I/usr/include/opencv4
 
+SOURCES := $(wildcard src/*.c*)
+SOURCES := $(shell echo $(SOURCES) | sed -E "s/src\///g")
+OBJECTS := $(shell echo $(SOURCES) | sed -E "s/(cpp|cu)/o/g")
 EXEC_FILE = server
 
 all: run
 
-$(EXEC_FILE): kernels.o threads.o $(EXEC_FILE).o 
-	$(info [L] $^)
-	@$(CCNV) $^ $(CVFLAGS) $(CVLFLAGS) $(CVINCLUDES) -o $@
-
-server.o: src/server.cu
-	$(info [C] (nvcc) $^)
-	@$(CCNV) -c $^ $(NVCFLAGS) $(NVLFLAGS) $(NVINCLUDES) $(CVCFLAGS) $(CVLFLAGS) $(CVINCLUDES)
+$(EXEC_FILE): $(OBJECTS) 
+	$(info [L] nvcc $^)
+	@$(CCNV) $^ $(NVLFLAGS) $(NVINCLUDES) $(CVLFLAGS) $(CVINCLUDES) -o $@
 
 %.o: src/%.cu
-	$(info [C] (nvcc) $^)
-	@$(CCNV) -c $^ $(NVCFLAGS) $(NVLFLAGS) $(NVINCLUDES)
+	$(info [C] nvcc $<)
+	@$(CCNV) -c $< $(NVCFLAGS) $(NVINCLUDES)
+
+threads.o: src/threads.cpp
+	$(info [C]  g++ $<)
+	@$(CCPP) -c $< $(CVCFLAGS) $(CVINCLUDES)
 
 %.o: src/%.cpp
-	$(info [C] (nvcc) $^)
-	@$(CCNV) -c $^ $(CVCFLAGS) $(CVLFLAGS) $(CVINCLUDES)
+	$(info [C]  g++ $<)
+	@$(CCPP) -c $< $(CFLAGS) $(INCLUDES)
+
+-include $(OBJECTS:.o=.d)
 
 clean:
-	rm -f *.o $(EXEC_FILE)
+	rm -f *.o *.d $(EXEC_FILE)
 
 build: $(EXEC_FILE)
 

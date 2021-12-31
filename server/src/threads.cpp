@@ -143,6 +143,7 @@ void ThreadsCore::writeShow(struct preadymin& minready) {
 
 static void *th_noise_hdl(void *args) {
 
+#ifdef NOISE_VISUALIZER
     struct diff::threads::mat_show *show_ready;
     struct diff::threads::ctxs *pctx = (struct diff::threads::ctxs *)args;
 
@@ -154,6 +155,7 @@ static void *th_noise_hdl(void *args) {
             exit(1);  // stop capturing by pressing ESC
         }
     }
+#endif
 
     return NULL;
 }

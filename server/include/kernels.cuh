@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string>
-#include <cuda_runtime.h>
 #include "../include/utils.hpp"
 
 namespace diff {
@@ -24,7 +23,7 @@ namespace diff {
             int maxAtTime;
             int max4;
             int total;
-            dim3 blockSize, gridSize;
+            void *pblockSize, *pgridSize;
             int nThreadsToUse;
             int eachThreadDoes;
             diff::utils::matsz charsSz;

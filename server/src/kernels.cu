@@ -4,6 +4,8 @@
 #include "../include/common.h"
 #include "../include/kernels.cuh"
 
+#define CDIM3(__pdim) (*((dim3 *)__pdim))
+
 using namespace diff::cuda;
 using namespace diff::utils;
 
@@ -247,10 +249,14 @@ diff::cuda::CUDACore::CUDACore(uint8_t *charsPx, matsz& charsSz, float *k, int t
 
     max4 = ceil(1.0 * maxAtTime / sizeof(chunk_t));
 
+    dim3 blockSize, gridSize;
     blockSize.x = BLOCK_SIZE, blockSize.y = BLOCK_SIZE, blockSize.z = 1;
     gridSize.x = ceil((float)1920/TILE_SIZE),
     gridSize.y = ceil((float)1080/TILE_SIZE),
     gridSize.z = 1;
+
+    this->pblockSize = new dim3(blockSize);
+    this->pgridSize = new dim3(gridSize);
 
     for (int i = nMaxThreads; i > 0; i--) {
         float frac = fullArea / (i * 1.0);
@@ -298,9 +304,9 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
 
     #ifdef NOISE_FILTER
     cudaMemcpyAsync(d_filtered, frameData, total, cudaMemcpyHostToDevice);
-    convolution_kernel<<<gridSize, blockSize>>>(d_filtered, d_current);
+    convolution_kernel<<<CDIM3(pgridSize), CDIM3(pblockSize)>>>(d_filtered, d_current);
     #else
-    cudaMemcpyAsync(d_current, pready->pframe->data, total, cudaMemcpyHostToDevice);
+    cudaMemcpyAsync(d_current, frameData, total, cudaMemcpyHostToDevice);
     #endif
 
 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cmath>
 #include <stdint.h>
 #include <signal.h>
 #include <string>
@@ -43,10 +44,6 @@ int main() {
     int total = 3 * threadsCore.getFrameSize().height * threadsCore.getFrameSize().width;
 
 #ifdef GPU
-
-    // struct cb_args *pargs = new struct cb_args;
-    // pargs->d_pos = d_pos;
-    // pargs->show_w_fd = show_pipe[1];
 
     diff::utils::matsz charsSz = threadsCore.getCharSize();
     diff::utils::matsz frameSz = threadsCore.getFrameSize();
