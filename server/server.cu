@@ -16,7 +16,6 @@
 #include <stdint.h>
 #include "opencv2/opencv.hpp"
 #include <pthread.h>
-#include "v4l.h"
 
 // 1 for heat map, 2 for red-black, 0 nothing
 #define NOISE_FILTER
@@ -25,7 +24,7 @@
 #define BLOCK_SIZE (TILE_SIZE + K - 1)
 
 // Noise visualizer: 1 heatmap, 2 red-black, 3 red-black overlap
-#define NOISE_VISUALIZER 3
+#define NOISE_VISUALIZER 1
 
 #define CHARS_STR "0123456789BFPSWbkps :"
 #define LR_THRESHOLDS 20
