@@ -1,6 +1,0 @@
-==13402== NVPROF is profiling process 13402, command: ./heatMap 2
-==13402== Warning: ERR_NVGPUCTRPERM - The user does not have permission to profile on the target device. See the following link for instructions to enable permissions and get more information: https://developer.nvidia.com/ERR_NVGPUCTRPERM 
-==13402== Profiling application: ./heatMap 2
-==13402== Profiling result:
-No kernels were profiled.
-No API activities were profiled.
