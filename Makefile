@@ -1,6 +1,12 @@
 
-run_server:
-	$(MAKE) -C server build run
+.PHONY: server client
 
-run_client:
-	$(MAKE) -C client build run
+server: 
+	@$(MAKE) -C server run
+
+client:
+	@$(MAKE) -C client run
+
+clean:
+	@$(MAKE) -C server clean
+	@$(MAKE) -C client clean
