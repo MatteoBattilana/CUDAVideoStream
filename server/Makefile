@@ -3,31 +3,45 @@
 #
 
 
-.PHONY: run prof
+.PHONY: run prof build
 
-CC = /usr/local/cuda/bin/nvcc
+CCNV = /usr/local/cuda/bin/nvcc
+CCPP = g++
 PROFILER = /usr/local/cuda/bin/nvprof
 
-LFLAGS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio -lpthread -L/usr/local/lib
-LFLAGS += -lv4l2 
-CFLAGS += -std=c++11 -g -lineinfo --use_fast_math
-CFLAGS += -Xcudafe "--diag_suppress=partial_override"
-INCLUDES += -I/usr/include/opencv4
+NVLFLAGS +=  
+NVCFLAGS += -std=c++11 -g -lineinfo --use_fast_math
+NVCFLAGS += -Xcudafe "--diag_suppress=partial_override"
+NVINCLUDES += 
+
+CVLFLAGS += -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio -lpthread -L/usr/local/lib
+CVCFLAGS += -std=c++11 -g 
+CVINCLUDES += -I/usr/include/opencv4
 
 EXEC_FILE = server
 
 all: run
 
-$(EXEC_FILE): kernels.o $(EXEC_FILE).o 
+$(EXEC_FILE): kernels.o threads.o $(EXEC_FILE).o 
 	$(info [L] $^)
-	@$(CC) $^ $(CFLAGS) $(LFLAGS) $(INCLUDES) -o $@
+	@$(CCNV) $^ $(CVFLAGS) $(CVLFLAGS) $(CVINCLUDES) -o $@
+
+server.o: src/server.cu
+	$(info [C] (nvcc) $^)
+	@$(CCNV) -c $^ $(NVCFLAGS) $(NVLFLAGS) $(NVINCLUDES) $(CVCFLAGS) $(CVLFLAGS) $(CVINCLUDES)
 
 %.o: src/%.cu
-	$(info [C] $^)
-	@$(CC) -c $^ $(CFLAGS) $(LFLAGS) $(INCLUDES)
+	$(info [C] (nvcc) $^)
+	@$(CCNV) -c $^ $(NVCFLAGS) $(NVLFLAGS) $(NVINCLUDES)
+
+%.o: src/%.cpp
+	$(info [C] (nvcc) $^)
+	@$(CCNV) -c $^ $(CVCFLAGS) $(CVLFLAGS) $(CVINCLUDES)
 
 clean:
 	rm -f *.o $(EXEC_FILE)
+
+build: $(EXEC_FILE)
 
 run: $(EXEC_FILE)
 	./$(EXEC_FILE)

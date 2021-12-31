@@ -1,9 +1,13 @@
-#include "../include/kernels.cuh"
 #include <stdint.h>
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 #include "../include/common.h"
+#include "../include/kernels.cuh"
 
 using namespace diff::cuda;
 using namespace diff::utils;
+
+typedef long4 chunk_t;
 
 __constant__ float dev_k[K*K];
 
@@ -221,6 +225,7 @@ diff::cuda::CUDACore::CUDACore(uint8_t *charsPx, matsz& charsSz, float *k, int t
     cudaMalloc((void **)&this->d_charsPx, totcpy);
     cudaMemcpy(this->d_charsPx, charsPx, totcpy, cudaMemcpyHostToDevice);
 
+    struct cudaDeviceProp prop;
     cudaGetDeviceProperties(&prop, 0);
     this->total = total;
     this->charsSz = charsSz;
@@ -338,6 +343,10 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     cudaMemcpyAsync(h_xs, d_xs, *h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
 
+}
+
+size_t diff::cuda::CUDACore::chunkt_size() {
+    return sizeof(chunk_t);
 }
 
 void diff::cuda::CUDACore::alloc_arrays(uint8_t **h_frame, uint8_t **n_frame, uint8_t **o_frame, int **h_xs, int r, int c) {
