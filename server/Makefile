@@ -18,11 +18,11 @@ EXEC_FILE = server
 
 all: run
 
-$(EXEC_FILE): $(EXEC_FILE).o
+$(EXEC_FILE): kernels.o $(EXEC_FILE).o 
 	$(info [L] $^)
 	@$(CC) $^ $(CFLAGS) $(LFLAGS) $(INCLUDES) -o $@
 
-%.o: %.cu
+%.o: src/%.cu
 	$(info [C] $^)
 	@$(CC) -c $^ $(CFLAGS) $(LFLAGS) $(INCLUDES)
 
