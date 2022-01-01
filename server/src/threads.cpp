@@ -145,8 +145,8 @@ void ThreadsCore::writeShow(struct preadymin& minready) {
 static void *th_noise_hdl(void *args) {
 
 #ifdef NOISE_VISUALIZER
-    struct diff::threads::mat_show *show_ready;
-    struct diff::threads::ctxs *pctx = (struct diff::threads::ctxs *)args;
+    struct diff::threads::defs::mat_show *show_ready;
+    struct diff::threads::defs::ctxs *pctx = (struct diff::threads::defs::ctxs *)args;
 
     while(1) {
         read(pctx->noise_r_fd, &show_ready, sizeof show_ready);
