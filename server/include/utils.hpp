@@ -11,12 +11,18 @@ namespace diff {
 
             matsz(int h, int w) : height(h), width(w) {}
             matsz(): matsz(0, 0) {}
-
-            int area() {
-                return width*height;
-            }
+            int area();
 
         } matsz;
+
+        template <class T> 
+        static inline void swap(T& a, T& b) {
+            T tmp;
+
+            tmp = a;
+            a = b;
+            b = tmp;
+        }
 
     };
 }

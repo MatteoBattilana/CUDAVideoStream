@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <cstring>
 #include <cmath>
 #include <stdint.h>
 #include <signal.h>
@@ -10,6 +11,7 @@
 #include "../include/kernels.cuh"
 #include "../include/common.h"
 #include "../include/threads.hpp"
+#include "../include/utils.hpp"
 
 void sigpipe_hdl(int sig) {
     exit(1);
@@ -43,11 +45,18 @@ int main() {
     diff::threads::ThreadsCore threadsCore;
     int total = 3 * threadsCore.getFrameSize().height * threadsCore.getFrameSize().width;
 
+    diff::utils::matsz frameSz = threadsCore.getFrameSize();
+
 #ifdef GPU
 
     diff::utils::matsz charsSz = threadsCore.getCharSize();
-    diff::utils::matsz frameSz = threadsCore.getFrameSize();
     diff::cuda::CUDACore cudaCore(threadsCore.getCharsPx(), charsSz, k, total, threadsCore.getBaseFrameData(), frameSz);
+
+#elif defined(CPU)
+
+    uint8_t *pvs_data = new uint8_t[3 * frameSz.area()];
+    uint8_t *pvs = new uint8_t[3 * frameSz.area()];
+    std::memcpy(pvs_data, threadsCore.getBaseFrameData(), 3 * frameSz.area());
 
 #endif
 
@@ -68,21 +77,21 @@ int main() {
         auto begin3 = std::chrono::high_resolution_clock::now();
 #ifdef CPU
 
-        Mat pvs = pready->pframe->clone();
+        std::memcpy(pvs_data, ready.data, 3 * frameSz.area());
 
-        pready->h_pos = 0;
+        *ready.h_pos = 0;
         for (int i = 0; i < total; i++) {
-            int df = pready->pframe->data[i] - previous.data[i];
+            int df = ready.data[i] - pvs_data[i];
             if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
-                pready->pframe->data[pready->h_pos] = df;
-                pready->h_xs[pready->h_pos] = i;
-                pready->h_pos++;
+                ready.data[*ready.h_pos] = df;
+                ready.h_xs[*ready.h_pos] = i;
+                (*ready.h_pos)++;
             } else {
-                pvs.data[i] -= df;
+                // pvs_data[i] -= df;
             }
         }
 
-        previous = pvs;
+        diff::utils::swap(pvs, pvs_data);
 
 #elif defined(GPU)
 

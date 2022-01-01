@@ -3,6 +3,7 @@
 #include <device_launch_parameters.h>
 #include "../include/common.h"
 #include "../include/kernels.cuh"
+#include "../include/utils.hpp"
 
 #define CDIM3(__pdim) (*((dim3 *)__pdim))
 
@@ -294,9 +295,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     /******************** ********************/
 
     // current-previous swap
-    uint8_t *d_prev = d_current;
-    d_current = d_previous;
-    d_previous = d_prev;
+    diff::utils::swap(d_current, d_previous);
 
     // cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
 

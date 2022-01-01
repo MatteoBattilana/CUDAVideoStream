@@ -1,6 +1,6 @@
 CC = g++
 
-LFLAGS += -g -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio
+LFLAGS += -g -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs -lopencv_videoio -lpthread
 INCLUDES += -I/usr/include/opencv4
 
 EXEC_FILE = opencv

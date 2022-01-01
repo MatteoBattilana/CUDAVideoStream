@@ -21,6 +21,7 @@
 #define CSHOWNDATA(__pshowready) ((struct mat_show *)__pshowready)
 
 using namespace diff::threads;
+using namespace diff::threads::defs;
 
 static void *th_noise_hdl(void *args);
 static void *th_cap_hdl(void *args);
@@ -162,14 +163,14 @@ static void *th_noise_hdl(void *args) {
 
 static void *th_cap_hdl(void *args) {
 
-    struct diff::threads::mat_ready *pready;
-    struct diff::threads::ctxs *pctx = (struct diff::threads::ctxs *)args;
+    struct diff::threads::defs::mat_ready *pready;
+    struct diff::threads::defs::ctxs *pctx = (struct diff::threads::defs::ctxs *)args;
 
+    read(pctx->ptr_r_fd, &pready, sizeof pready);
     while(1) {
-        read(pctx->ptr_r_fd, &pready, sizeof pready);
         *pctx->cap >> *(pready->pframe);
-
         write(pctx->cap_w_fd, &pready, sizeof pready);
+        read(pctx->ptr_r_fd, &pready, sizeof pready);
     }
 
     return NULL;
@@ -179,7 +180,7 @@ static void *th_show_hdl(void *args) {
     struct epoll_event ev, events[10];
     struct addrinfo *result, *rp;
     int sfd, epollfd, nfds, sfd2;
-    struct diff::threads::mat_ready *pready;
+    struct diff::threads::defs::mat_ready *pready;
 
     getaddrinfo("127.0.0.1", "2734", NULL, &result);
     for (rp = result; rp != NULL; rp = rp->ai_next) {
@@ -214,7 +215,7 @@ static void *th_show_hdl(void *args) {
         }
     }
 
-    struct diff::threads::ctxs *pctx = (struct diff::threads::ctxs *)args;
+    struct diff::threads::defs::ctxs *pctx = (struct diff::threads::defs::ctxs *)args;
     int tot = 3 * pctx->sampleMat->cols * pctx->sampleMat->rows;
 
     // sending the base frame at the beginning

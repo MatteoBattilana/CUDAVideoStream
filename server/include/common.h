@@ -12,7 +12,6 @@
 
 #define CHARS_STR "0123456789BFPSWbkps :"
 #define LR_THRESHOLDS 20
-#define NSTREAMS 1
 #define GPU
 #define KERNEL2_NEGFEED_OPT
 

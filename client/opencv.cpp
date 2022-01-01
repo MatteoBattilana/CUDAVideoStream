@@ -13,11 +13,6 @@ using namespace cv;
 #define cols 1920
 #define rows 1080
 
-struct px_df {
-    int x;
-    uint8_t diff;
-};
-
 int main() {
     struct addrinfo *result, *rp;
     int sfd;
@@ -38,7 +33,6 @@ int main() {
         close(sfd);
     }
 
-    int iteration = -1;
     Mat frame2 = imread("image.bmp", IMREAD_ANYCOLOR);
 
     printf("reading base\n");
@@ -52,10 +46,9 @@ int main() {
         frame2.data[k] = buffer[k];
     }
 
-
+    namedWindow("hi", WINDOW_GUI_NORMAL);
     while (1) {
 
-        // printf("recving.\n");
         read(sfd, &pos, sizeof pos);
 
         btot = 0;
@@ -68,21 +61,14 @@ int main() {
             btot += read(sfd, (uint8_t *)buffer + btot, pos * sizeof *buffer - btot);
         }
 
-        int total = 3 * rows * cols;
         for (int i = 0; i < pos; i++) {
-            // if (xs[i] != 0) {
-            //     printf("RECV xs[%d]=%d, b[%d]=%d\n", i, xs[i], i, buffer[i]);
-            // }
             frame2.data[xs[i]] += buffer[i];
         }
         
-
-        namedWindow("hi", WINDOW_GUI_NORMAL);
         imshow("hi", frame2);
         if (waitKey(1) == 27) break;  // stop capturing by pressing ESC
-        // iteration++;
-        // iteration %= 2;
     }
+
     freeaddrinfo(result);
     return 0;
 }
