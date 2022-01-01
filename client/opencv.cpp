@@ -79,7 +79,7 @@ int main() {
 
         namedWindow("hi", WINDOW_GUI_NORMAL);
         imshow("hi", frame2);
-        if (waitKey(10) == 27) break;  // stop capturing by pressing ESC
+        if (waitKey(1) == 27) break;  // stop capturing by pressing ESC
         // iteration++;
         // iteration %= 2;
     }

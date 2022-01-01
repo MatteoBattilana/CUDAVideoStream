@@ -3,7 +3,7 @@
 #
 
 
-.PHONY: run prof build
+.PHONY: run prof build debug
 
 CCNV = /usr/local/cuda/bin/nvcc
 CCPP = g++
@@ -52,8 +52,11 @@ clean:
 
 build: $(EXEC_FILE)
 
-run: $(EXEC_FILE)
+run: build
 	./$(EXEC_FILE)
 
-prof: $(EXEC_FILE)
+prof: build
 	sudo $(PROFILER) ./$(EXEC_FILE)
+
+debug: build
+	gdb ./$(EXEC_FILE)
