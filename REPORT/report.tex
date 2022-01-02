@@ -956,7 +956,7 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 		\item At the memory controller level, a vector sized transaction request from a warp results in a larger net memory throughput per transaction, so the bytes per transaction ratio is higher. Fewer transaction requests reduces memory controller contention and can produce higher overall memory bandwidth utilization.
 	\end{enumerate}
 
-	\subsection{Using of shared memory for frequent accesses: is it avoidable?}
+	\subsubsection{Using of shared memory for frequent accesses: is it avoidable?}
 
 	Unfortunately, the algorithm and the relative CUDA kernel implementation doesn't show up any pattern of frequent access of the same data over the time, this is because the kernel works everytime on two frames and they differs continuously with respect to the previous kernel execution. \\
 
