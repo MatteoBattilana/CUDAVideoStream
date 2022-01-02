@@ -1,5 +1,5 @@
 
-.PHONY: server client
+.PHONY: server client clean
 
 server: 
 	@$(MAKE) -C server run
