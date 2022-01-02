@@ -79,7 +79,10 @@ int main() {
     createTrackbar("B", "Trackbar", &b_threshold, 255);
 
     int cnt = 0;
+    previous = frame.clone();
     while (cap.isOpened()) {
+        cnt++;
+        imshow("Previous", previous);
         cap >> frame;
         if (frame.empty()) {
             break; // end of video stream
@@ -121,77 +124,79 @@ int main() {
         }
 
         int curr_sum;
+        Point start_x, end_x, start_y, end_y;
+        Point x1(0, 0), x2(10, 10);
         uint8_t row_sum[diffImage.rows];
-        for (int j = 0; j < diffImage.rows; ++j) {
+        for (int j = 0; j < foregroundMask.rows; ++j) {
             curr_sum = 0;
-            for (int i = 0; i < diffImage.cols; ++i) {
+            for (int i = 0; i < foregroundMask.cols; ++i) {
                 curr_sum += foregroundMask.at<unsigned char>(j, i);
             }
-            row_sum[j] = curr_sum / diffImage.rows;
+            row_sum[j] = curr_sum / foregroundMask.rows;
         }
 
         uint8_t col_sum[diffImage.cols];
-        for (int j = 0; j < diffImage.cols; ++j) {
+        for (int j = 0; j < foregroundMask.cols; ++j) {
             curr_sum = 0;
             for (int i = 0; i < diffImage.rows; ++i) {
-                curr_sum += foregroundMask.at<unsigned char>(j, i);
+                curr_sum += foregroundMask.at<unsigned char>(i, j);
             }
             col_sum[j] = curr_sum / diffImage.cols;
         }
 
-        // for (int i = 0; i < diffImage.rows; i++) {
-        //     printf("%d", row_sum[i]);
-        // }
-        // for (int i = 0; i < diffImage.cols; i++) {
-        //     printf("%d", col_sum[i]);
-        // }
-
-
         Mat frame_with_lines = frame.clone();
+        int heigth = 0;
         for (int i = 0; i < diffImage.rows; i++) {
-            if (row_sum[i] > 15) {
-                cv::Point pt1(0, i);
-                cv::Point pt2(frame_width, i);
-                line(frame_with_lines, pt1, pt2, (255, 255, 255));
+            if (row_sum[i] > 35) {
+                if (heigth == 0) {
+                    start_y.x = 0;
+                    start_y.y = i;
+                }
+
+                heigth++;
+
+                // cv::Point pt1(0, i);
+                // cv::Point pt2(diffImage.cols, i);
+                // line(frame_with_lines, pt1, pt2, (255, 255, 255));
+            } else {
+                end_y.x = diffImage.cols;
+                end_y.y = i;
+                if (heigth > 15) {
+                    rectangle(frame_with_lines, start_y, end_y, (255, 255, 255), 3);
+                }
+                heigth = 0;
             }
         }
 
+        int length = 0;
         for (int i = 0; i < diffImage.cols; i++) {
-            if (col_sum[i] > 15) {
-                cv::Point pt1(i, 0);
-                cv::Point pt2(i, frame_height);
-                line(frame_with_lines, pt1, pt2, (255, 255, 255));
+            if (col_sum[i] > 35) {
+                if (length == 0) {
+                    start_x.x = i;
+                    start_x.y = 0;
+                }
+                length++;
+                // cv::Point pt1(i, 0);
+                // cv::Point pt2(i, diffImage.rows);
+                // line(frame_with_lines, pt1, pt2, (255, 255, 255));
+            } else {
+                end_x.x = i;
+                end_x.y = diffImage.rows;
+                if (length > 15) {
+                    rectangle(frame_with_lines, start_x, end_x, (255, 255, 255), 3);
+                }
+                length = 0;
             }
         }
+        rectangle(frame_with_lines, x1, x2, (255, 255, 255), 3);
+
+        Point top_left(start_x.x, start_y.y);
+        Point bottom_right(end_x.x, end_y.y);
 
         imshow("Diff Image Black and White", foregroundMask);
         imshow("Input", frame_with_lines);
-
-        // if (!previous.empty()) {
-        //     for (int i = 0; i < frame_width; i++) {
-        //         for (int j = 0; j < frame_height; j++) {
-        //             output.at<cv::Vec3b>(j, i)[0] = abs(previous.at<cv::Vec3b>(j, i)[0] -
-        //                                                 frame.at<cv::Vec3b>(j, i)[0]) > r_threshold
-        //                                                 ? 255
-        //                                                 : 0;
-
-        //                 output.at<cv::Vec3b>(j, i)[1] = abs(previous.at<cv::Vec3b>(j, i)[1] -
-        //                                                     frame.at<cv::Vec3b>(j, i)[1]) > g_threshold
-        //                                                       ? 255
-        //                                                       : 0;
-        //             output.at<cv::Vec3b>(j, i)[2] = abs(previous.at<cv::Vec3b>(j, i)[2] -
-        //                                                 frame.at<cv::Vec3b>(j, i)[2]) > b_threshold
-        //                                                 ? 255
-        //                                                 : 0;
-        //         }
-        //     }
-        // } else {
-        //     output = frame.clone();
-        // }
-
-        if (cnt % 600 == 0)
+        if (cnt % 2 == 0)
             previous = frame.clone();
-        // imshow("Difference", output);
     }
     return 0;
 }

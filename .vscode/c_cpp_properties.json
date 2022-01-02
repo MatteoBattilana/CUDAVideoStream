@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "/usr/include/opencv4",
                 "/usr/include/opencv4",
-                "/usr/include/python2.7"
+                "/usr/include/python2.7",
+                "${workspaceFolder}/object_detection"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

@@ -51,6 +51,8 @@ int main(int argc, char *argv[]) {
         imshow("Frame", frame);
 
         int curr_sum;
+        Point start_x, end_x, start_y, end_y;
+        Point x1(0, 0), x2(10, 10);
         uint8_t row_sum[diffImage.rows];
         for (int j = 0; j < diffImage.rows; ++j) {
             curr_sum = 0;
@@ -70,26 +72,58 @@ int main(int argc, char *argv[]) {
         }
 
         Mat frame_with_lines = frame.clone();
+        int heigth = 0;
         for (int i = 0; i < diffImage.rows; i++) {
             if (row_sum[i] > 10) {
-                cv::Point pt1(0, i);
-                cv::Point pt2(diffImage.cols, i);
-                line(frame_with_lines, pt1, pt2, (255, 255, 255));
+                if (heigth == 0) {
+                    start_y.x = 0;
+                    start_y.y = i;
+                }
+
+                heigth++;
+
+                // cv::Point pt1(0, i);
+                // cv::Point pt2(diffImage.cols, i);
+                // line(frame_with_lines, pt1, pt2, (255, 255, 255));
+            } else {
+                end_y.x = diffImage.cols;
+                end_y.y = i;
+                if (heigth > 15) {
+                    rectangle(frame_with_lines, start_y, end_y, (255, 255, 255), 3);
+                }
+                heigth = 0;
             }
         }
 
+        int length = 0;
         for (int i = 0; i < diffImage.cols; i++) {
             if (col_sum[i] > 10) {
-                cv::Point pt1(i, 0);
-                cv::Point pt2(i, diffImage.rows);
-                line(frame_with_lines, pt1, pt2, (255, 255, 255));
+                if (length == 0) {
+                    start_x.x = i;
+                    start_x.y = 0;
+                }
+                length++;
+                // cv::Point pt1(i, 0);
+                // cv::Point pt2(i, diffImage.rows);
+                // line(frame_with_lines, pt1, pt2, (255, 255, 255));
+            } else {
+                end_x.x = i;
+                end_x.y = diffImage.rows;
+                if (length > 15) {
+                    rectangle(frame_with_lines, start_x, end_x, (255, 255, 255), 3);
+                }
+                length = 0;
             }
         }
+        rectangle(frame_with_lines, x1, x2, (255, 255, 255), 3);
 
+        Point top_left(start_x.x, start_y.y);
+        Point bottom_right(end_x.x, end_y.y);
         imshow("Frame With Lines", frame_with_lines);
         imshow("Diff Image", diffImage);
 
         // get the input from the keyboard
+        waitKey(0);
         int keyboard = waitKey(30);
         if (keyboard == 'q' || keyboard == 27)
             break;
