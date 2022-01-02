@@ -754,7 +754,7 @@ int maxSect, unsigned int *pos, int *xs) {
 
 	The host code changes a little bit because maxAtTime now needs to be divided by the size of the \texttt{chunk\_t} type. Because it's highly probable that the division results in a non integer value, it must be rounded to the nearest greater integer. \\
 	
-	This means that by rounding up, each thread will overlap with the next thread of a few bytes. Actually it's not a problem because the probability that while the thread \textit{i} writes at the very last bytes of its chunk the thread \textit{i+1} writes at the very beginning of its chunk is very low because each thread is executed in parallel. The only thing that happens is that the computations on a certain amount of bytes is done two times but each time it's done on the same inputs and the result is always the same. In the case of a low probability of two writes at the same time, as discussed, the overhead in managing the concurrent write is lower than the one of adding instructions to check if the thread is writing outside its chunk (about 1 ms of difference in execution time).\\
+	This means that by rounding up, each thread will overlap with the next thread of a few bytes. Actually it's not a problem because the probability that while the thread \textit{i} writes at the very last bytes of its chunk the thread \textit{i+1} writes at the very beginning of its chunk is very low because each thread is executed in parallel. The only thing that happens is that the computations on a certain amount of bytes is done two times but each time it's done on the same inputs and the result is always the same. In a low probability case where two writes at the same time happens, as discussed, the overhead in managing the concurrent write is lower than the one of adding instructions to check if the thread is writing outside its chunk (about 1 ms of difference in execution time).\\
 
 	\begin{lstlisting}[style=CStyle]
 int max4 = ceil(1.0 * maxAtTime / sizeof(chunk_t));
@@ -956,12 +956,73 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 		\item At the memory controller level, a vector sized transaction request from a warp results in a larger net memory throughput per transaction, so the bytes per transaction ratio is higher. Fewer transaction requests reduces memory controller contention and can produce higher overall memory bandwidth utilization.
 	\end{enumerate}
 
-	% At this point a question could rise: if \texttt{sizeof(int) = 4}, how the correctness of the algorithm is assured even if $ 6075 / 4 $ is not an integer number? 
-	
-	% TODO: 6075 / 4 is not an int value, what happens?
+	\subsection{Using of shared memory for frequent accesses: is it avoidable?}
 
+	Unfortunately, the algorithm and the relative CUDA kernel implementation doesn't show up any pattern of frequent access of the same data over the time, this is because the kernel works everytime on two frames and they differs continuously with respect to the previous kernel execution. \\
 
+	Looking at the last and very optimal kernel implementation, the only frequent global memory access where the same data is read and maybe updated is the one regarding the count of pixel changed or \texttt{h\_pos}. This means that it's reasonable to think to execute the increment operation \texttt{atomicInc()} in the shared memory and then tranfer the final result in the global memory in order to have only one access in global memory per thread with respect to the pixel count variable.\\
 
+	A possible implementation can be the following one:
+	\begin{lstlisting}[style=CStyle]
+typedef long4 chunk_t;
+
+__global__ void kernel2(
+uint8_t *current, uint8_t *previous, uint8_t *diff, 
+int maxSect, unsigned int *pos, int *xs) {
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    unsigned int npos;
+    int df;
+    chunk_t cc, pc; // registers storing current copy, previous copy
+    __shared__ unsigned int s_pos[1];
+
+    if (!x) *s_pos = 0;
+    __syncthreads();
+
+    int start = x * maxSect;
+    int max = start + maxSect;
+
+    #pragma unroll
+    for (int i = start; i < max; i++) {
+
+        cc = ((chunk_t *)current)[i];
+        pc = ((chunk_t *)previous)[i];
+
+        #pragma unroll
+        for (int j = 0; j < sizeof cc; j++) {
+            df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
+
+            if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+                npos = atomicInc(s_pos, 6220801);
+                diff[npos] = df;
+                xs[npos] = (i*sizeof cc) + j;
+            } else {
+                current[(i*sizeof cc) + j] -= df;
+            }
+
+        }
+
+    }
+
+    __syncthreads();
+    if (!x) *pos = *s_pos;
+
+}
+	\end{lstlisting}
+
+	Notice the use of the function \texttt{\_\_syncthreads()} at the end. It is used to wait for all threads to finish in order to be sure that all the \texttt{atomicInc()} instructions have been executed. After this operation, the global memory variable \texttt{pos} is updated with the value stored in the shared memory variable \texttt{s\_pos} by the first thread, the one with $ id = 0 $.\\
+
+	Unfortunately the result is something unexpected: the performance are exactly the same or a bit worse than the previous implementation. This is mainly for two reasons:
+
+	\begin{enumerate}
+		\item As explained in section \ref{sec:cherry}, the part of code where the \texttt{atomicInc()} function is executed is the one with a lower execution frequency because it's supposed that between a frame and another only a bunch of pixels changes so it's not worth trying to improve it that requires adding other instructions (for example the one at the end of the kernel of synchronization) that only adds overhead.
+		\item Atomic instructions are very particular: they rely on the bottom hardware for executing memory operations in an atomic way.
+	\end{enumerate}
+
+	About the last point, atomic memory operations are very important in parallel programming, allowing concurrent threads to correctly perform read-modify-write operations on shared data. About the importance of how these kind of operations are implemented in CUDA architectures, as an example the Kepler architecture can be analyzed. It significantly increased the throughput of atomic operations to global memory compared to the earlier Fermi architecture; however, both Fermi and Kepler implemented shared memory atomics using an expensive lock/update/unlock pattern. So they were implemented totally in software.\\
+
+	However, Maxwell architecture (the GPU on the \textit{Jetson Nano} used for this projct is based on this architecture) improved this by implementing native hardware support for shared memory atomic operations for 32-bit integers, and native shared memory 32-bit and 64-bit compare-and-swap (CAS), which can be used to implement other atomic functions with reduced overhead (compared to the Fermi and Kepler methods which were implemented in software).\\
+
+	So atomic operations have not been an easy thing. They are very performant for working in the global memory and \textit{only recently} they have been optimized to work in the shared memory with near the same performance compared to the global memory.
 
 	% TODO:
 	% \begin{itemize}
@@ -975,10 +1036,9 @@ typedef __device_builtin__ struct int4 int4;\end{lstlisting}
 	% 	\item Why 512 kernels is best instead of 1024?
 	% \end{itemize}
 
-\newpage
 \section{Image Text Overlay}
 
-	Another part of the project under discussion is the ability to add a text overlay over an image. In this particular implementation, it supports ASCII characters over a single line of the image. In order to be send over internet, it's executed before applying the algorithm for sent the frame over a socket, according to Chapter \ref{sec:streaming}.\\
+	Another part of the project under discussion is the ability to add a text overlay over an image. In this particular implementation, it supports ASCII characters over a single line of the image. In order to be sent over internet, it's executed before applying the algorithm for sent the frame over a socket, according to Chapter \ref{sec:streaming}.\\
 
 	The final result can be seen in Figure \ref{fig:demo_chars}:
 

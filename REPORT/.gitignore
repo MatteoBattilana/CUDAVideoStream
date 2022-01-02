@@ -1,0 +1,7 @@
+*.out
+*.aux
+*.fdb_*
+*.fls
+*.log
+*.sync*
+*.toc
