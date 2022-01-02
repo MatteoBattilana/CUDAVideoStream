@@ -339,7 +339,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
         red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
         cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost);
         #elif NOISE_VISUALIZER == 3
-        red_black_map_overlap<<<1, nMaxThreads, 0>>>(d_pos, d_xs, pready->h_pos/nMaxThreads, d_previous);
+        red_black_map_overlap<<<1, nMaxThreads, 0>>>(d_pos, d_xs, (*h_pos)/nMaxThreads, d_previous);
         cudaMemcpyAsync(showReadyNData, d_previous, total, cudaMemcpyDeviceToHost);
         #endif
     #endif

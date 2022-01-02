@@ -40,7 +40,7 @@ int main() {
     signal(SIGPIPE, sigpipe_hdl);
 
     float* k = (float*)malloc(K*K*sizeof(float));
-    computeGaussianKernel(k, (1+K*K)/6.0);
+    computeGaussianKernel(k, (K*K)/6.0);
 
     diff::threads::ThreadsCore threadsCore;
     int total = 3 * threadsCore.getFrameSize().height * threadsCore.getFrameSize().width;
