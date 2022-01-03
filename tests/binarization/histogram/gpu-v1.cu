@@ -6,8 +6,34 @@ using namespace cv;
 
 #define NAIVE
 
-#define H 360
-#define W 620
+#define H 1080
+#define W 1920
+
+__global__ void generate_histogram(uint8_t *grayscale, int *histogram, int maxSect) {
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    int start = x * maxSect;
+    int max = start + maxSect;
+    int sum = 0;
+
+    for (int i = start; i < max; i++) {
+        atomicAdd(&histogram[grayscale[i]], 1);
+    }
+}
+
+
+
+// RACE CONDITION
+// it is very similar to the other one execpt for the fact that if we sum the value on grayscale we don't obtain W*H but a smaller number due to race condition
+__global__ void generate_histogram_racecond(uint8_t *grayscale, int *histogram, int maxSect) {
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    int start = x * maxSect;
+    int max = start + maxSect;
+    int sum = 0;
+
+    for (int i = start; i < max; i++) {
+        histogram[grayscale[i]]++;
+    }
+}
 
 int main(int argc, char const *argv[]) {
 
@@ -27,6 +53,24 @@ int main(int argc, char const *argv[]) {
     bw.create(H, W, CV_8UC1);
     binarize.create(H, W, CV_8UC1);
     int sum = 0;
+
+    // GPU
+
+    unsigned int *d_pos;
+
+    struct cudaDeviceProp prop;
+    cudaGetDeviceProperties(&prop, 0);
+    int total_grayscale = W * H;
+    int nMaxThreads = prop.maxThreadsPerBlock;
+    int maxAtTime = total_grayscale / nMaxThreads;
+    int *d_histogram;
+    uint8_t *d_grayscale;
+
+    cudaMalloc((void **)&d_grayscale, total_grayscale * sizeof *d_grayscale);
+    cudaMalloc((void **)&d_histogram, 256 * sizeof(int));
+
+    //
+
     while (1) {
         cap >> frame;
         if (frame.empty())
@@ -55,7 +99,11 @@ int main(int argc, char const *argv[]) {
         // find the histogram of the occurency of the values from 0 to 255
         // Naive implementation is a for loop from 0 to 255 and then a loop inside on the matrix
         int histogram[256] = {0};
+        int h_histogram[256] = {0};
+
 #ifdef NAIVE
+
+        // CPU
         auto start = std::chrono::high_resolution_clock::now();
         for (int row = 0; row < H; row++) {
             for (int col = 0; col < W; col++) {
@@ -64,26 +112,40 @@ int main(int argc, char const *argv[]) {
             }
         }
 
+        // GPU
+
+        cudaMemset(d_pos, 0, sizeof *d_pos);
+        cudaMemcpy(d_grayscale, bw.data, total_grayscale, cudaMemcpyHostToDevice);
+        cudaMemcpy(d_histogram, h_histogram, 256 * sizeof(int), cudaMemcpyHostToDevice);
+
+        // generate_histogram<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
+        generate_histogram_racecond<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
+
+        cudaMemcpy(h_histogram, d_histogram, 256 * sizeof(int), cudaMemcpyDeviceToHost);
+        cudaDeviceSynchronize();
+
+        //
+
         for (int i = 0; i < 256; i++) {
-            printf("%d \n", histogram[i]);
+            printf("%d \n", h_histogram[i]);
         }
         int trash;
         // scanf("%d", &trash);
         int max = -1, sec_max = -1;
         int index_max = -1, index_sec_max = -1;
         for (int i = 0; i < 256; i++) {
-            if (histogram[i] >= max) {
+            if (h_histogram[i] >= max) {
                 index_sec_max = index_max;
                 index_max = i;
-                max = histogram[i];
+                max = h_histogram[i];
                 sec_max = max;
-            } else if (histogram[i] > sec_max && histogram[i] < max) {
-                sec_max = histogram[i];
+            } else if (h_histogram[i] > sec_max && h_histogram[i] < max) {
+                sec_max = h_histogram[i];
                 index_sec_max = i;
             }
         }
         int threshold = (index_max + index_sec_max) / 2;
-        if(threshold < 20)
+        if (threshold < 20)
             threshold = 20;
         printf("%d %d", index_max, index_sec_max);
         // scanf("%d", &trash);
@@ -99,7 +161,6 @@ int main(int argc, char const *argv[]) {
         }
 
         imshow("binarize", binarize);
-
 
         auto end = std::chrono::high_resolution_clock::now();
         auto elaps = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
