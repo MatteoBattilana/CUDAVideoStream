@@ -16,15 +16,6 @@ build-v1:
 build-v2: 
 	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) gpu-v2.cu -o grayscale-average
 
-build-v3: 
-	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v3.cu -o heatMap
-
-build-v3-assembly: 
-	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) -ptx -o heatMap.ptx v3.cu
-
-build-v4: 
-	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v4.cu -o heatMap
-
 run:
 	./grayscale-average
 
