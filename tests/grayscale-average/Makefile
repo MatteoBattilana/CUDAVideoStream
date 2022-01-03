@@ -4,21 +4,17 @@ CFLAGS += -std=c++11 -g
 INCLUDES += -I/usr/include/opencv4
 
 all-cpu: build-cpu run
+all-v1: build-v1 run
+all-v2: build-v2 run
 
 build-cpu: 
 	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) cpu.cu -o grayscale-average
 
-build-v0: 
-	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v0.cu -o heatMap
-	
 build-v1: 
-	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v1.cu -o heatMap
-	
-build-v1-assembly: 
-	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) -ptx -o heatMap.ptx v1.cu
+	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) gpu-v1.cu -o grayscale-average
 
 build-v2: 
-	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v2.cu -o heatMap
+	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) gpu-v2.cu -o grayscale-average
 
 build-v3: 
 	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v3.cu -o heatMap
