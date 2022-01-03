@@ -62,7 +62,8 @@ int main() {
         }
 
         for (int i = 0; i < pos; i++) {
-            frame2.data[xs[i]] += buffer[i];
+            if (xs[i] < 3 * 1920 * 1080)
+                frame2.data[xs[i]] += buffer[i];
         }
         
         imshow("hi", frame2);

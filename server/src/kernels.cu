@@ -239,6 +239,7 @@ diff::cuda::CUDACore::CUDACore(uint8_t *charsPx, matsz& charsSz, float *k, int t
     cudaMalloc((void **)&d_xs, total * sizeof *d_xs);
     cudaMalloc((void **)&d_current, total * sizeof *d_current);
     cudaMalloc((void **)&d_previous, total * sizeof *d_previous);
+    cudaMalloc((void **)&d_prevmod, total * sizeof *d_prevmod);
     cudaMalloc((void **)&d_filtered, total * sizeof *d_filtered);
     cudaMalloc((void **)&d_noise_visualization, total * sizeof *d_noise_visualization);
 
@@ -247,6 +248,7 @@ diff::cuda::CUDACore::CUDACore(uint8_t *charsPx, matsz& charsSz, float *k, int t
 	nMaxThreads = prop.maxThreadsPerBlock;
     maxAtTime = total / nMaxThreads;
     cudaMemcpy(d_current, sampleMatData, total * sizeof *sampleMatData, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_noise_visualization, sampleMatData, total * sizeof *sampleMatData, cudaMemcpyHostToDevice);
 
     max4 = ceil(1.0 * maxAtTime / sizeof(chunk_t));
 
@@ -296,6 +298,9 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
 
     // current-previous swap
     diff::utils::swap(d_current, d_previous);
+#ifdef STREAM_FILTER
+    diff::utils::swap(d_noise_visualization, d_prevmod);
+#endif
 
     // cudaMemsetAsync(d_pos, 0, sizeof *d_pos);
 
@@ -308,21 +313,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     cudaMemcpyAsync(d_current, frameData, total, cudaMemcpyHostToDevice);
     #endif
 
-
-    // cudaMemcpy(d_text, overImageText.c_str(), overImageText.length(), cudaMemcpyHostToDevice);
-    // kernel3_char<<<1, nThreadsToUse, (sizeof(CHARS_STR) - 1) * fullArea>>>(d_current, d_charsPx, d_text, overImageText.length(), eachThreadDoes, 3 * txtsz.width, 3 * pready->pframe->cols, fullArea);
-
-    for (int offset = 0, j = 0; j < text.length(); j++, offset += charsSz.width*3) {
-        int idx;
-        for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
-            if (CHARS_STR[i] == text.at(j)) {
-                idx = i;
-                break;
-            }
-        }
-
-        kernel2_char<<<1, nThreadsToUse>>>(d_current, d_charsPx + idx * fullArea, eachThreadDoes, offset, 3 * charsSz.width, 3 * frameSz.width);
-    }
+    applyOverlay(text, d_current);
 
     // kernel<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, maxAtTime, d_pos, d_xs);
     kernel2<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, max4, d_pos, d_xs);
@@ -334,20 +325,47 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     #ifdef NOISE_VISUALIZER
         #if NOISE_VISUALIZER == 1         
         heat_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
+        #ifndef STREAM_FILTER
         cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost);
+        #endif
         #elif NOISE_VISUALIZER == 2
         red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
+        #ifndef STREAM_FILTER
         cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost);
+        #endif
         #elif NOISE_VISUALIZER == 3
         red_black_map_overlap<<<1, nMaxThreads, 0>>>(d_pos, d_xs, (*h_pos)/nMaxThreads, d_previous);
+        #ifndef STREAM_FILTER
         cudaMemcpyAsync(showReadyNData, d_previous, total, cudaMemcpyDeviceToHost);
         #endif
+        #endif
     #endif
+
+#ifdef STREAM_FILTER
+    applyOverlay(text, d_noise_visualization);
+    kernel2<<<1, nMaxThreads, 0>>>(d_noise_visualization, d_prevmod, d_diff, max4, d_pos, d_xs);
+    cudaMemcpyAsync(h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
+    cudaDeviceSynchronize();
+#endif
 
     cudaMemcpyAsync(frameData, d_diff, *h_pos, cudaMemcpyDeviceToHost);
     cudaMemcpyAsync(h_xs, d_xs, *h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
 
+}
+
+void diff::cuda::CUDACore::applyOverlay(std::string& text, uint8_t *d_frame) {
+    for (int offset = 0, j = 0; j < text.length(); j++, offset += charsSz.width*3) {
+        int idx;
+        for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {
+            if (CHARS_STR[i] == text.at(j)) {
+                idx = i;
+                break;
+            }
+        }
+
+        kernel2_char<<<1, nThreadsToUse>>>(d_frame, d_charsPx + idx * fullArea, eachThreadDoes, offset, 3 * charsSz.width, 3 * frameSz.width);
+    }
 }
 
 size_t diff::cuda::CUDACore::chunkt_size() {

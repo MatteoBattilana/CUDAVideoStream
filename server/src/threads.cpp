@@ -76,7 +76,10 @@ ThreadsCore::ThreadsCore() {
 
     pthread_create(&th_cap, NULL, th_cap_hdl, this->pctx);
     pthread_create(&th_show, NULL, th_show_hdl, this->pctx);
+
+#ifndef STREAM_FILTER  
     pthread_create(&th_noise, NULL, th_noise_hdl, this->pctx);
+#endif
 
     struct mat_ready *pready;
     struct mat_show *show_ready;

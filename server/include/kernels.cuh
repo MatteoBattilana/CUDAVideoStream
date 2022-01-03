@@ -14,7 +14,7 @@ namespace diff {
 
         private:
             uint8_t *d_charsPx;
-            uint8_t *d_current, *d_previous, *d_filtered;
+            uint8_t *d_current, *d_previous, *d_filtered, *d_prevmod;
             uint8_t *d_diff;
             uint8_t *d_noise_visualization;
             int *d_xs;
@@ -29,6 +29,8 @@ namespace diff {
             diff::utils::matsz charsSz;
             diff::utils::matsz frameSz;
             int fullArea;
+
+            void applyOverlay(std::string& text, uint8_t *d_frame);
 
         public:
             CUDACore(uint8_t *charsPx, diff::utils::matsz& charsSz, float *k, int total, uint8_t *sampleMatData, diff::utils::matsz& frameSz);
