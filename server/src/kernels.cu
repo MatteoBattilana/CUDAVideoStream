@@ -308,10 +308,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     cudaMemcpyAsync(d_current, frameData, total, cudaMemcpyHostToDevice);
     #endif
 
-
-    // cudaMemcpy(d_text, overImageText.c_str(), overImageText.length(), cudaMemcpyHostToDevice);
-    // kernel3_char<<<1, nThreadsToUse, (sizeof(CHARS_STR) - 1) * fullArea>>>(d_current, d_charsPx, d_text, overImageText.length(), eachThreadDoes, 3 * txtsz.width, 3 * pready->pframe->cols, fullArea);
-
+    // Applying text overlay
     for (int offset = 0, j = 0; j < text.length(); j++, offset += charsSz.width*3) {
         int idx;
         for (int i = 0; i < (sizeof(CHARS_STR) - 1); i++) {

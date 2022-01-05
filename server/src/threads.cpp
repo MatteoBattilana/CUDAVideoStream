@@ -76,7 +76,10 @@ ThreadsCore::ThreadsCore() {
 
     pthread_create(&th_cap, NULL, th_cap_hdl, this->pctx);
     pthread_create(&th_show, NULL, th_show_hdl, this->pctx);
+
+#ifdef SERVER_IMSHOW
     pthread_create(&th_noise, NULL, th_noise_hdl, this->pctx);
+#endif
 
     struct mat_ready *pready;
     struct mat_show *show_ready;
@@ -144,7 +147,6 @@ void ThreadsCore::writeShow(struct preadymin& minready) {
 
 static void *th_noise_hdl(void *args) {
 
-#ifdef NOISE_VISUALIZER
     struct diff::threads::defs::mat_show *show_ready;
     struct diff::threads::defs::ctxs *pctx = (struct diff::threads::defs::ctxs *)args;
 
@@ -156,7 +158,6 @@ static void *th_noise_hdl(void *args) {
             exit(1);  // stop capturing by pressing ESC
         }
     }
-#endif
 
     return NULL;
 }
