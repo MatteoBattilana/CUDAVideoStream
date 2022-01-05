@@ -96,9 +96,10 @@ int main() {
 #elif defined(GPU)
 
         cudaCore.exec_core(ready.data, threadsCore.getShowReadyNData(), overImageText, ready.h_pos, ready.h_xs);
-        threadsCore.writeNoise();
 
 #endif
+
+        threadsCore.writeNoise();
         auto end3 = std::chrono::high_resolution_clock::now();
 
         threadsCore.writeShow(ready);
