@@ -17,6 +17,7 @@ namespace diff {
             uint8_t *d_current, *d_previous, *d_filtered;
             uint8_t *d_diff;
             uint8_t *d_noise_visualization;
+            uint8_t *grayscale;
             int *d_xs;
             unsigned int *d_pos;
             int nMaxThreads;

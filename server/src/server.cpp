@@ -1,36 +1,36 @@
-#include <stdio.h>
-#include <cstring>
-#include <cmath>
-#include <stdint.h>
-#include <signal.h>
-#include <string>
-#include <iostream>
-#include <chrono>
-#include <iomanip>
-#include <sstream>
-#include "../include/kernels.cuh"
 #include "../include/common.h"
+#include "../include/kernels.cuh"
 #include "../include/threads.hpp"
 #include "../include/utils.hpp"
+#include <chrono>
+#include <cmath>
+#include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <signal.h>
+#include <sstream>
+#include <stdint.h>
+#include <stdio.h>
+#include <string>
 
 void sigpipe_hdl(int sig) {
     exit(1);
 }
 
-void computeGaussianKernel(float* k, float sigma){
+void computeGaussianKernel(float *k, float sigma) {
     float sum = 0;
-    for (int i = 0; i < K; i++){
-        for (int j = 0; j < K; j++){
+    for (int i = 0; i < K; i++) {
+        for (int j = 0; j < K; j++) {
             float x = i - (K - 1) / 2.0;
             float y = j - (K - 1) / 2.0;
-            k[i*K+j] = (1.0/(2.0*M_PI*sigma*sigma)) * exp(-((x*x + y*y)/(2.0*sigma*sigma)));
-            sum += k[i*K+j];
+            k[i * K + j] = (1.0 / (2.0 * M_PI * sigma * sigma)) * exp(-((x * x + y * y) / (2.0 * sigma * sigma)));
+            sum += k[i * K + j];
         }
     }
 
     for (int i = 0; i < K; i++) {
         for (int j = 0; j < K; j++) {
-            k[i*K+j] /= sum;
+            k[i * K + j] /= sum;
         }
     }
 }
@@ -39,8 +39,8 @@ int main() {
 
     signal(SIGPIPE, sigpipe_hdl);
 
-    float* k = (float*)malloc(K*K*sizeof(float));
-    computeGaussianKernel(k, (K*K)/6.0);
+    float *k = (float *)malloc(K * K * sizeof(float));
+    computeGaussianKernel(k, (K * K) / 6.0);
 
     diff::threads::ThreadsCore threadsCore;
     int total = 3 * threadsCore.getFrameSize().height * threadsCore.getFrameSize().width;
@@ -93,6 +93,15 @@ int main() {
 
         diff::utils::swap(pvs, pvs_data);
 
+#ifdef GRAYSCALE
+        for (int i = 0; i < total; i = i + 3) {
+            int sum = ready.data[i] +ready.data[i+1] + ready.data[i+2];
+            ready.data[i] = sum/3;
+            ready.data[i+1] = sum/3;
+            ready.data[i+2] = sum/3;
+        }
+#endif
+
 #elif defined(GPU)
 
         cudaCore.exec_core(ready.data, threadsCore.getShowReadyNData(), overImageText, ready.h_pos, ready.h_xs);
@@ -114,7 +123,7 @@ int main() {
             auto elaps3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end3 - begin3);
 
             float unit = 1 / ((float)elaps.count() * 1e-9);
-            int bw = static_cast<int>(((*ready.h_pos)<<4)*unit*1e-3);
+            int bw = static_cast<int>(((*ready.h_pos) << 4) * unit * 1e-3);
 
             std::stringstream strstream;
             strstream << std::setfill(' ') << std::setw(5) << static_cast<int>(unit);
@@ -127,7 +136,6 @@ int main() {
 
             fflush(stdout);
         }
-
     }
 
     return 0;
