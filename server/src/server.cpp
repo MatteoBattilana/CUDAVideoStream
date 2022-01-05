@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string>
 
+
 void sigpipe_hdl(int sig) {
     exit(1);
 }
@@ -93,14 +94,12 @@ int main() {
 
         diff::utils::swap(pvs, pvs_data);
 
-#ifdef GRAYSCALE
         for (int i = 0; i < total; i = i + 3) {
             int sum = ready.data[i] +ready.data[i+1] + ready.data[i+2];
             ready.data[i] = sum/3;
             ready.data[i+1] = sum/3;
             ready.data[i+2] = sum/3;
         }
-#endif
 
 #elif defined(GPU)
 
