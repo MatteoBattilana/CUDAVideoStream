@@ -87,7 +87,7 @@ int main() {
                 ready.h_xs[*ready.h_pos] = i;
                 (*ready.h_pos)++;
             } else {
-                // pvs_data[i] -= df;
+                pvs_data[i] -= df;
             }
         }
 
