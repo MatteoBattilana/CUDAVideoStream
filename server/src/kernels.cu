@@ -50,6 +50,61 @@ __global__ void grayscale_kernel_v2(uint8_t *color, uint8_t *grayscale, int maxS
     }
 }
 
+__global__ void grayscale_kernel_v3(uint8_t *color, uint8_t *grayscale, int maxSect) {
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    int start = x * maxSect;
+    int max = start + maxSect;
+    chunk_t cc;
+    int size = sizeof(chunk_t);
+    int sum = 0;
+
+    for (int i = start; i < max; i++) {
+        cc = ((chunk_t *)color)[i];
+        for (int j = 0; j < size; j++) {
+            // B
+            if ((j - 1) % 3 == 2 || j == 0) {
+                sum += 0.114 * ((uint8_t *)&cc)[j];
+            }
+            // G
+            if ((j - 1) % 3 == 0 || j == 1) {
+                sum += 0.587 * ((uint8_t *)&cc)[j];
+            }
+            // R
+            if ((j - 1) % 3 == 1 || j == 2) {
+                sum += 0.299 * ((uint8_t *)&cc)[j];
+            }
+            if (((i * size) + j) % 3 == 2) {
+                grayscale[(i * size) + j] = sum;
+                grayscale[(i * size) + j + 1] = sum;
+                grayscale[(i * size) + j + 2] = sum;
+                sum = 0;
+            }
+        }
+    }
+}
+
+__global__ void grayscale_kernel_v4(uint8_t *color, uint8_t *grayscale, int maxSect) {
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    int start = x * maxSect;
+    int max = start + maxSect;
+    chunk_t cc;
+    int size = sizeof(chunk_t);
+    int sum = 0;
+
+    for (int i = start; i < max; i++) {
+        cc = ((chunk_t *)color)[i];
+        for (int j = 0; j < size; j++) {
+            if (((i * size) + j) % 3 == 2) {
+                sum = 0.114 * ((uint8_t *)&cc)[j - 2] + 0.587 * ((uint8_t *)&cc)[j - 1] + 0.299 * ((uint8_t *)&cc)[j];
+                grayscale[(i * size) + j] = sum;
+                grayscale[(i * size) + j + 1] = sum;
+                grayscale[(i * size) + j + 2] = sum;
+                sum = 0;
+            }
+        }
+    }
+}
+
 __global__ void convolution_kernel(uint8_t *image, uint8_t *R) {
     __shared__ uint8_t N_ds[BLOCK_SIZE][BLOCK_SIZE * 3];
 
@@ -369,7 +424,9 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     cudaMemcpyAsync(showReadyNData, d_previous, total, cudaMemcpyDeviceToHost);
 #elif NOISE_VISUALIZER == 4
     // grayscale_kernel<<<1, nMaxThreads>>>(d_current, d_grayscale, maxAtTime);
-    grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
+    // grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
+    // grayscale_kernel_v3<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
+    // grayscale_kernel_v4<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
     cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
 #endif
 #endif
