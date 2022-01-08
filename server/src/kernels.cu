@@ -308,6 +308,16 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     cudaMemcpyAsync(d_current, frameData, total, cudaMemcpyHostToDevice);
     #endif
 
+    #ifdef NOISE_VISUALIZER
+        #if NOISE_VISUALIZER == 1         
+        heat_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
+        cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost);
+        #elif NOISE_VISUALIZER == 2
+        red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
+        cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost);
+        #endif
+    #endif
+
     // Applying text overlay
     for (int offset = 0, j = 0; j < text.length(); j++, offset += charsSz.width*3) {
         int idx;
@@ -329,13 +339,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
 
     // Noise visualization
     #ifdef NOISE_VISUALIZER
-        #if NOISE_VISUALIZER == 1         
-        heat_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
-        cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost);
-        #elif NOISE_VISUALIZER == 2
-        red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
-        cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost);
-        #elif NOISE_VISUALIZER == 3
+        #if NOISE_VISUALIZER == 3
         red_black_map_overlap<<<1, nMaxThreads, 0>>>(d_pos, d_xs, (*h_pos)/nMaxThreads, d_previous);
         cudaMemcpyAsync(showReadyNData, d_previous, total, cudaMemcpyDeviceToHost);
         #endif
