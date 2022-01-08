@@ -18,6 +18,9 @@ namespace diff {
             uint8_t *d_diff;
             uint8_t *d_noise_visualization;
             uint8_t *d_grayscale;
+            uint8_t *d_binarize;
+            int *d_histogram;
+            uint8_t *d_indexes_max;
             int *d_xs;
             unsigned int *d_pos;
             int nMaxThreads;

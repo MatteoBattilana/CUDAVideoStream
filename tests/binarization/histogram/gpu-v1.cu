@@ -118,8 +118,8 @@ int main(int argc, char const *argv[]) {
         cudaMemcpy(d_grayscale, bw.data, total_grayscale, cudaMemcpyHostToDevice);
         cudaMemcpy(d_histogram, h_histogram, 256 * sizeof(int), cudaMemcpyHostToDevice);
 
-        // generate_histogram<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
-        generate_histogram_racecond<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
+        generate_histogram<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
+        // generate_histogram_racecond<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
 
         cudaMemcpy(h_histogram, d_histogram, 256 * sizeof(int), cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
