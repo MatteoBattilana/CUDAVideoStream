@@ -314,6 +314,7 @@
 	\end{figure}
 
 	\subsection{GPU Implementation}
+	\label{sec:gpu-implementation}
 	The idea is now to port this in the GPU. The GPU can be seen as an accelerator for the CPU, an accelerator that is capable of a high degree of parallelism by executing a lot of simple threads all in parallel in a SIMD way.\\
 
 	In order to port this in CUDA and execute the computation on the GPU, a series of considerations needs to be done. First of all, it's not said that by executing this in GPU there is a direct improvement in performance. This is due to the fact that there is a big bottleneck between the CPU and the GPU and this is the bus that connects them. A GPU in order to do some work on some data needs to have them in its memory (so the GPU can't access directly the CPU's RAM).\\
@@ -2737,5 +2738,83 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	\end{figure}
 
 	So, due to the fact that the Median filter does not bring any advantage, it has not been optimized and even used. Beside this, the implementation allowed us to better understand the nature of the noise.
+
+	\section{Grayscale Filter}
+	In digital photography, computer-generated imagery, and colorimetry, a grayscale image is one in which the value of each pixel is a single sample representing only an amount of light; that is, it carries only intensity information. Grayscale images, a kind of black-and-white or gray monochrome, are composed exclusively of shades of gray. The contrast ranges from black at the weakest intensity to white at the strongest.
+	Grayscale images (such as photographs) intended for visual display (both on screen and printed) are commonly stored with 8 bits per sampled pixel. In fact the range of the single pixel goes from 0 (black), to 255 (white).
+	There are 2 different methods to convert an image from RGB to Grayscale. As it's widely known, an RGB image is made of three channels of 8 bits each. The algorithm need to convert the three channels into a signle one, and so the straightforeword implementation is based on the following mathematical formula:
+
+	\begin{equation*}
+		grayscale[i] = \frac{R[i] + G[i] + B[i]}{3}
+	\end{equation*}
+
+	where i represent the i-esim pixel of the image. This method, because is executing an average of three values, is called \texttt{Average Method}. 
+	However the average method is simple but doesn't work as well as expected. The reason being that human eyeballs react differently to RGB. Eyes are most sensitive to green light, less sensitive to red light, and the least sensitive to blue light. Therefore, the three colors should have different weights in the distribution. Knowing this we introduce the \texttt{Weighted Method}.
+	
+	The weighted method, also called luminosity method (which are used in standard color TV and video systems such as PAL, SECAM, and NTSC), weighs red, green and blue according to their wavelengths. The improved formula is as follows:
+
+	\begin{equation*}
+		grayscale[i] = 0.299 \cdot R[i] + 0.587 \cdot G[i] + 0.114 \cdot B[i]
+	\end{equation*}
+
+	\subsection{CPU Implementation}
+	In the project the algorithm is slightly modified. In fact there is the need of keeping the frame on 3 channels. However a single channel from 0 to 255 is the same as having three channels from 0 to 255 with the \textbf{same value}. 
+	Knowing the algorithm behid the filter, the implementation is pretty easy. In fact it is simply a for loop that iterates over all pixel of the matrix. The specific code is the following:
+
+	\begin{lstlisting}[style=CStyle]
+	for (int i = 0; i < total; i = i + 3) {
+		int sum = ready.data[i] +ready.data[i+1] + ready.data[i+2];
+		ready.data[i] = sum/3;
+		ready.data[i+1] = sum/3;
+		ready.data[i+2] = sum/3;
+	}
+	\end{lstlisting}
+
+	By viewing the code, it's easy to understand that the sum is computed and then the data is changed in all of the three channels. 
+	This implementation is the easiest and the most straightforeword, and for this reason it won't be the faster. 
+	\subsection{GPU First Version}
+	For the first version, threads are organized as explained in \autoref{sec:gpu-implementation}. For what concerns the memory allocation, obviously the CPU address space and the GPU one are two separated things, so a specific allocation on the device side must be done. This can be accomplished thanks to some CUDA's API as follows:
+
+	\begin{lstlisting}[style=CStyle]
+	uint8_t *d_current, *grayscale;
+
+	cudaMalloc((void **)&d_current, total * sizeof *d_current);
+	cudaMalloc((void **)&d_grayscale, total * sizeof *d_grayscale);
+	\end{lstlisting}
+
+	After this step is important to copy the data from the CPU (Host) to the GPU (Device). In fact the following operation is executed:
+
+	\begin{lstlisting}[style=CStyle]	
+	cudaMemcpy(d_current, frameData, total, cudaMemcpyHostToDevice);
+	\end{lstlisting}
+
+	After that the data are ready and so the kernel can be launched.
+
+	\begin{lstlisting}[style=CStyle]	
+	grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, maxAtTime);
+	\end{lstlisting}
+	
+	After that, the results can be copied back from the device to the host, in order to show them to the user. To achieve this goal, the following line of code is executed.
+	
+	\begin{lstlisting}[style=CStyle]	
+	cudaMemcpy(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
+	\end{lstlisting}
+
+	The current frame and the grayscale one can be seen in \autoref{fig:color-frame} and \autoref{fig:bw-frame}
+	
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.70\linewidth]{images/bw/color_frame.png}
+		\caption{\textit{Frame with colors}}
+		\label{fig:color-frame}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.70\linewidth]{images/bw/bw_frame.png}
+		\caption{\textit{Frame in black and white}}
+		\label{fig:bw-frame}
+	\end{figure}
 
 \end{document}
