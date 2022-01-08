@@ -42,8 +42,8 @@ __global__ void grayscale_kernel_v2(uint8_t *color, uint8_t *grayscale, int maxS
             sum += ((uint8_t *)&cc)[j];
             if (((i * size) + j) % 3 == 2) {
                 grayscale[(i * size) + j] = sum / 3;
-                grayscale[(i * size) + j + 1] = sum / 3;
-                grayscale[(i * size) + j + 2] = sum / 3;
+                grayscale[(i * size) + j - 1] = sum / 3;
+                grayscale[(i * size) + j - 2] = sum / 3;
                 sum = 0;
             }
         }
@@ -56,49 +56,24 @@ __global__ void grayscale_kernel_v3(uint8_t *color, uint8_t *grayscale, int maxS
     int max = start + maxSect;
     chunk_t cc;
     int size = sizeof(chunk_t);
-    int sum = 0;
+    float sum = 0;
 
     for (int i = start; i < max; i++) {
         cc = ((chunk_t *)color)[i];
         for (int j = 0; j < size; j++) {
             // B
-            if ((j - 1) % 3 == 2 || j == 0) {
+            if (((i * size) + j) % 3 == 0) {
                 sum += 0.114 * ((uint8_t *)&cc)[j];
             }
             // G
-            if ((j - 1) % 3 == 0 || j == 1) {
+            if (((i * size) + j) % 3 == 1) {
                 sum += 0.587 * ((uint8_t *)&cc)[j];
             }
-            // R
-            if ((j - 1) % 3 == 1 || j == 2) {
+            if (((i * size) + j) % 3 == 2) {
                 sum += 0.299 * ((uint8_t *)&cc)[j];
-            }
-            if (((i * size) + j) % 3 == 2) {
-                grayscale[(i * size) + j] = sum;
-                grayscale[(i * size) + j + 1] = sum;
-                grayscale[(i * size) + j + 2] = sum;
-                sum = 0;
-            }
-        }
-    }
-}
-
-__global__ void grayscale_kernel_v4(uint8_t *color, uint8_t *grayscale, int maxSect) {
-    int x = threadIdx.x + blockDim.x * blockIdx.x;
-    int start = x * maxSect;
-    int max = start + maxSect;
-    chunk_t cc;
-    int size = sizeof(chunk_t);
-    int sum = 0;
-
-    for (int i = start; i < max; i++) {
-        cc = ((chunk_t *)color)[i];
-        for (int j = 0; j < size; j++) {
-            if (((i * size) + j) % 3 == 2) {
-                sum = 0.114 * ((uint8_t *)&cc)[j - 2] + 0.587 * ((uint8_t *)&cc)[j - 1] + 0.299 * ((uint8_t *)&cc)[j];
-                grayscale[(i * size) + j] = sum;
-                grayscale[(i * size) + j + 1] = sum;
-                grayscale[(i * size) + j + 2] = sum;
+                grayscale[(i * size) + j] = (uint8_t)sum;
+                grayscale[(i * size) + j - 1] = (uint8_t)sum;
+                grayscale[(i * size) + j - 2] = (uint8_t)sum;
                 sum = 0;
             }
         }
@@ -405,10 +380,19 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
         kernel2_char<<<1, nThreadsToUse>>>(d_current, d_charsPx + idx * fullArea, eachThreadDoes, offset, 3 * charsSz.width, 3 * frameSz.width);
     }
 
+#ifdef NOISE_VISUALIZER
+#if NOISE_VISUALIZER == 4
+    // grayscale_kernel<<<1, nMaxThreads>>>(d_current, d_grayscale, maxAtTime);
+    grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
+    // grayscale_kernel_v3<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
+    cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
+#endif
+#endif
+
     // kernel<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, maxAtTime, d_pos, d_xs);
     kernel2<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, max4, d_pos, d_xs);
 
-    cudaMemcpyAsync(h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
+    // cudaMemcpyAsync(h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
 
 // Noise visualization
@@ -422,12 +406,6 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
 #elif NOISE_VISUALIZER == 3
     red_black_map_overlap<<<1, nMaxThreads, 0>>>(d_pos, d_xs, (*h_pos) / nMaxThreads, d_previous);
     cudaMemcpyAsync(showReadyNData, d_previous, total, cudaMemcpyDeviceToHost);
-#elif NOISE_VISUALIZER == 4
-    // grayscale_kernel<<<1, nMaxThreads>>>(d_current, d_grayscale, maxAtTime);
-    // grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
-    // grayscale_kernel_v3<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
-    // grayscale_kernel_v4<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
-    cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
 #endif
 #endif
 
