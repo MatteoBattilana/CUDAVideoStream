@@ -511,6 +511,7 @@ int maxSect, unsigned int *pos, int *xs) {
 	\end{table}
 
 	\subsubsection{Asynchronous APIs and removal of useless operations}
+	\label{sec:removal-of-useless-operations}
 
 	In the previous implementation, a big portion of the execution time is covered by the kernel execution but the two data transfers are not negligible. The total average time is about 46 ms means that the \textit{for} time is for the 60\% due to the GPU computation and the remaining part is related to host taks.\\
 
@@ -2739,7 +2740,10 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 
 	So, due to the fact that the Median filter does not bring any advantage, it has not been optimized and even used. Beside this, the implementation allowed us to better understand the nature of the noise.
 
+	\newpage
+
 	\section{Grayscale Filter}
+	\label{sec:grayscale-filter}
 	In digital photography, computer-generated imagery, and colorimetry, a grayscale image is one in which the value of each pixel is a single sample representing only an amount of light; that is, it carries only intensity information. Grayscale images, a kind of black-and-white or gray monochrome, are composed exclusively of shades of gray. The contrast ranges from black at the weakest intensity to white at the strongest.
 	Grayscale images (such as photographs) intended for visual display (both on screen and printed) are commonly stored with 8 bits per sampled pixel. In fact the range of the single pixel goes from 0 (black), to 255 (white).
 	There are 2 different methods to convert an image from RGB to Grayscale. As it's widely known, an RGB image is made of three channels of 8 bits each. The algorithm need to convert the three channels into a signle one, and so the straightforeword implementation is based on the following mathematical formula:
@@ -2817,4 +2821,168 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 		\label{fig:bw-frame}
 	\end{figure}
 
+	\subsection{GPU Improved Version}
+
+	As explained in \autoref{sec:removal-of-useless-operations} CUDA offers a variant of the APIs that are asynchronous with respect to the device execution. This means that when one of these APIs is called, the operation starts on the device side but the control returns immediately to the host despite the end of the operation on the GPU. 
+
+	The nice thing about this APIs, this solution is slightly more efficient because is possible to assign to the GPU all the jobs in a consecutive way then waiting instead of assign a job at a time.
+
+	The code becomes the following:
+
+	\begin{lstlisting}[style=CStyle]
+	cudaMemcpyAsync(d_current, frameData, total, cudaMemcpyHostToDevice);
+	grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, maxAtTime);
+	cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
+	\end{lstlisting}
+
+
+	\subsection{GPU Global Memory Acess }
+
+	A very big problem of the current version of the kernel is the very high number of access in the global memory. This causes a very high overhead, because accessing global memory is the real bottleneck. 
+	To improve performace, the idea is to increase the size of each read or write in memory. 
+	This concept is well explained in \autoref{sec:cherry}.
+
+	The kernel code now becomes the following:
+
+	\begin{lstlisting}[style=CStyle]
+	global void grayscale_kernel_v2(uint8_t *color, uint8_t *grayscale, int maxSect) {
+		int x = threadIdx.x + blockDim.x * blockIdx.x;
+		int start = x * maxSect;
+		int max = start + maxSect;
+		chunk_t cc;
+		int size = sizeof(chunk_t);
+		int sum = 0;
+	
+		for (int i = start; i < max; i++) {
+			cc = ((chunk_t *)color)[i];
+			for (int j = 0; j < size; j++) {
+				sum += ((uint8_t *)&cc)[j];
+				if (((i * size) + j) % 3 == 2) {
+					grayscale[(i * size) + j] = sum / 3;
+					grayscale[(i * size) + j - 1] = sum / 3;
+					grayscale[(i * size) + j - 2] = sum / 3;
+					sum = 0;
+				}
+			}
+		}
+	}
+	\end{lstlisting}
+
+
+	\subsection{GPU weighted average}
+
+	The last improvements is not performance but feature oriented. Before passing to the real code implementation is important to have a little bit of background of how the human eyes are made.
+
+	\subsubsection{Physiology of the eye}
+	\label{sec:eye}
+
+	
+	Eyes are organs of vision that detect light. Some eyes just detect whether the surroundings are light or dark while more complex eyes can distinguish shapes and colors. In humans and most other vertebrates, the eye allows light to enter and projects it onto the retina at the rear of the eye. The retina consists of photoreceptor cells called rods and cones. The cones are at the center of the retina, and the rods are at the outer edge of the retina. There are about seven million cones and a hundred million rods. At the retina, the light is detected and converted to electrical signals. These signals are then transferred to the brain through the optic nerve. The brain converts these signals into our view of the world.
+
+	The human eye detects visible light, part of the electromagnetic spectrum. Light is produced by rearranging electrons in atoms and molecules. The wavelengths of visible light range from about 400 nm to about 700 nm. Photopic vision is the scientific term for human vision under normal lighting conditions during the day. This allows for color perception. The cones in the retina help us to see the colors. There are three types of cones in the human eye. Each type of cone absorbs light waves of specific frequencies: long wavelengths (L), medium wavelengths (M), and short wavelengths (S). The peak wavelength of L is 564 nm, yellowish-green. The peak of M is 534 nm, bluish-green. The peak of S is 420 nm, bluish-violet. This is shown in \autoref{tab:table-cones}.
+
+	\begin{table}[H]
+		\centering
+		\begin{center}
+			\begin{tabular}{ |c|c|c|c| } 
+				\hline
+				\textbf{Type of cone} & \textbf{Name} & \textbf{Field} & \textbf{Peak of wavelength} \\ 
+				\hline
+				S & \(\beta\) & 400 nm - 500 nm & 420 nm - 440 nm \\
+				\hline
+				S & \(\gamma\) & 450 nm - 630 nm & 535 nm - 555 nm \\
+				\hline
+				S & \(\rho\) & 500 nm - 700 nm & 565 nm - 580 nm \\
+				\hline
+			\end{tabular}
+		\end{center}
+		\caption{\textit{Table of the wavelength of the cone of the retina}}
+		\label{tab:table-cones}
+	\end{table}
+	
+	Colors are perceived when the cones are stimulated. The color perceived depends on how much each type of cone is stimulated. Yellow is perceived when the yellow-green receptor is stimulated slightly more than the blue-green receptor. The eye is most sensitive to green light (555 nm) because green stimulates two of the three kinds of cones, L and M, almost equally. This is clearly visible in \autoref{fig:cone-response}.
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/eye/2880px-Cone-fundamentals-with-srgb-spectrum.svg.png}
+		\caption{\textit{Cone response}}
+		\label{fig:cone-response}
+	\end{figure}
+
+	\newpage
+
+	\subsubsection{GPU implementation}
+
+	Reading \autoref{sec:eye} it may seem very difficult to implement all this little details into a programming language code. However, as shown in the formula in \autoref{sec:grayscale-filter}, it simply is a weighted sum. The code of the kernel becomes the following:
+
+	\begin{lstlisting}[style=CStyle]
+	global void grayscale_kernel_v2(uint8_t *color, uint8_t *grayscale, 
+		int maxSect) {
+		int x = threadIdx.x + blockDim.x * blockIdx.x;
+		int start = x * maxSect;
+		int max = start + maxSect;
+		chunk_t cc;
+		int size = sizeof(chunk_t);
+		float sum = 0;
+	
+		for (int i = start; i < max; i++) {
+			cc = ((chunk_t *)color)[i];
+			for (int j = 0; j < size; j++) {
+				// B
+				if (((i * size) + j) % 3 == 0) {
+					sum += 0.114 * ((uint8_t *)&cc)[j];
+				}
+				// G
+				if (((i * size) + j) % 3 == 1) {
+					sum += 0.587 * ((uint8_t *)&cc)[j];
+				}
+				if (((i * size) + j) % 3 == 2) {
+					sum += 0.299 * ((uint8_t *)&cc)[j];
+					grayscale[(i * size) + j] = (uint8_t)sum;
+					grayscale[(i * size) + j - 1] = (uint8_t)sum;
+					grayscale[(i * size) + j - 2] = (uint8_t)sum;
+					sum = 0;
+				}
+			}
+		}
+	}
+	\end{lstlisting}
+
+	With this modification we don't obtain any kind of performance improvement, however there is an important scientific improvement. 
+	
+	\newpage
+	
+	\section{Binarization}
+
+	Image binarization is the process of taking a grayscale image and converting it to black-and-white, essentially reducing the information contained within the image from 256 shades of gray to 2: black and white, a binary image. It enhances the 
+	performance of document processing techniques like OCR and layout analysis. Another domain of application is the segmentation of an image into foreground and background. An example is shown in \autoref{fig:black-white} and \autoref{fig:binarized}.
+
+	\begin{figure}[H]
+		\begin{subfigure}{.5\textwidth}
+			\centering
+			\includegraphics[width=0.8\linewidth]{images/binarization/bw.jpeg}
+			\caption{\textit{Black and White Images}}
+			\label{fig:black-white}
+		\end{subfigure}
+		\begin{subfigure}{.5\textwidth}
+			\centering
+			\includegraphics[width=0.8\linewidth]{images/binarization/binarized.jpeg}
+			\caption{\textit{Binarized Images}}
+			\label{fig:binarized}
+		\end{subfigure}
+		\caption{A figure with two subfigures}
+		\label{fig:test}
+	\end{figure}
+
+	The key point is: \textbf{"How do we decide from which value the pixel become black (0) or white (255)}. So is important to select a threshold, like shown in \autoref{fig:grayscale-pixels-distribution}.
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.45\linewidth]{images/binarization/histogram.jpeg}
+		\caption{\textit{Distribution of the grayscale pixels}}
+		\label{fig:grayscale-pixels-distribution}
+	\end{figure}
+
 \end{document}
+
+
