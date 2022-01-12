@@ -511,6 +511,7 @@ int maxSect, unsigned int *pos, int *xs) {
 	\end{table}
 
 	\subsubsection{Asynchronous APIs and removal of useless operations}
+	\label{sec:removal-of-useless-operations}
 
 	In the previous implementation, a big portion of the execution time is covered by the kernel execution but the two data transfers are not negligible. The total average time is about 46 ms means that the \textit{for} time is for the 60\% due to the GPU computation and the remaining part is related to host taks.\\
 
@@ -2739,7 +2740,10 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 
 	So, due to the fact that the Median filter does not bring any advantage, it has not been optimized and even used. Beside this, the implementation allowed us to better understand the nature of the noise.
 
+	\newpage
+
 	\section{Grayscale Filter}
+	\label{sec:grayscale-filter}
 	In digital photography, computer-generated imagery, and colorimetry, a grayscale image is one in which the value of each pixel is a single sample representing only an amount of light; that is, it carries only intensity information. Grayscale images, a kind of black-and-white or gray monochrome, are composed exclusively of shades of gray. The contrast ranges from black at the weakest intensity to white at the strongest.
 	Grayscale images (such as photographs) intended for visual display (both on screen and printed) are commonly stored with 8 bits per sampled pixel. In fact the range of the single pixel goes from 0 (black), to 255 (white).
 	There are 2 different methods to convert an image from RGB to Grayscale. As it's widely known, an RGB image is made of three channels of 8 bits each. The algorithm need to convert the three channels into a signle one, and so the straightforeword implementation is based on the following mathematical formula:
@@ -2817,4 +2821,350 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 		\label{fig:bw-frame}
 	\end{figure}
 
+	\subsection{GPU Improved Version}
+
+	As explained in \autoref{sec:removal-of-useless-operations} CUDA offers a variant of the APIs that are asynchronous with respect to the device execution. This means that when one of these APIs is called, the operation starts on the device side but the control returns immediately to the host despite the end of the operation on the GPU. 
+
+	The nice thing about this APIs, this solution is slightly more efficient because is possible to assign to the GPU all the jobs in a consecutive way then waiting instead of assign a job at a time.
+
+	The code becomes the following:
+
+	\begin{lstlisting}[style=CStyle]
+	cudaMemcpyAsync(d_current, frameData, total, cudaMemcpyHostToDevice);
+	grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, maxAtTime);
+	cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
+	\end{lstlisting}
+
+
+	\subsection{GPU Global Memory Acess }
+
+	A very big problem of the current version of the kernel is the very high number of access in the global memory. This causes a very high overhead, because accessing global memory is the real bottleneck. 
+	To improve performace, the idea is to increase the size of each read or write in memory. 
+	This concept is well explained in \autoref{sec:cherry}.
+
+	The kernel code now becomes the following:
+
+	\begin{lstlisting}[style=CStyle]
+	global void grayscale_kernel_v2(uint8_t *color, uint8_t *grayscale, int maxSect) {
+		int x = threadIdx.x + blockDim.x * blockIdx.x;
+		int start = x * maxSect;
+		int max = start + maxSect;
+		chunk_t cc;
+		int size = sizeof(chunk_t);
+		int sum = 0;
+	
+		for (int i = start; i < max; i++) {
+			cc = ((chunk_t *)color)[i];
+			for (int j = 0; j < size; j++) {
+				sum += ((uint8_t *)&cc)[j];
+				if (((i * size) + j) % 3 == 2) {
+					grayscale[(i * size) + j] = sum / 3;
+					grayscale[(i * size) + j - 1] = sum / 3;
+					grayscale[(i * size) + j - 2] = sum / 3;
+					sum = 0;
+				}
+			}
+		}
+	}
+	\end{lstlisting}
+
+
+	\subsection{GPU weighted average}
+
+	The last improvements is not performance but feature oriented. Before passing to the real code implementation is important to have a little bit of background of how the human eyes are made.
+
+	\subsubsection{Physiology of the eye}
+	\label{sec:eye}
+
+	
+	Eyes are organs of vision that detect light. Some eyes just detect whether the surroundings are light or dark while more complex eyes can distinguish shapes and colors. In humans and most other vertebrates, the eye allows light to enter and projects it onto the retina at the rear of the eye. The retina consists of photoreceptor cells called rods and cones. The cones are at the center of the retina, and the rods are at the outer edge of the retina. There are about seven million cones and a hundred million rods. At the retina, the light is detected and converted to electrical signals. These signals are then transferred to the brain through the optic nerve. The brain converts these signals into our view of the world.
+
+	The human eye detects visible light, part of the electromagnetic spectrum. Light is produced by rearranging electrons in atoms and molecules. The wavelengths of visible light range from about 400 nm to about 700 nm. Photopic vision is the scientific term for human vision under normal lighting conditions during the day. This allows for color perception. The cones in the retina help us to see the colors. There are three types of cones in the human eye. Each type of cone absorbs light waves of specific frequencies: long wavelengths (L), medium wavelengths (M), and short wavelengths (S). The peak wavelength of L is 564 nm, yellowish-green. The peak of M is 534 nm, bluish-green. The peak of S is 420 nm, bluish-violet. This is shown in \autoref{tab:table-cones}.
+
+	\begin{table}[H]
+		\centering
+		\begin{center}
+			\begin{tabular}{ |c|c|c|c| } 
+				\hline
+				\textbf{Type of cone} & \textbf{Name} & \textbf{Field} & \textbf{Peak of wavelength} \\ 
+				\hline
+				S & \(\beta\) & 400 nm - 500 nm & 420 nm - 440 nm \\
+				\hline
+				S & \(\gamma\) & 450 nm - 630 nm & 535 nm - 555 nm \\
+				\hline
+				S & \(\rho\) & 500 nm - 700 nm & 565 nm - 580 nm \\
+				\hline
+			\end{tabular}
+		\end{center}
+		\caption{\textit{Table of the wavelength of the cone of the retina}}
+		\label{tab:table-cones}
+	\end{table}
+	
+	Colors are perceived when the cones are stimulated. The color perceived depends on how much each type of cone is stimulated. Yellow is perceived when the yellow-green receptor is stimulated slightly more than the blue-green receptor. The eye is most sensitive to green light (555 nm) because green stimulates two of the three kinds of cones, L and M, almost equally. This is clearly visible in \autoref{fig:cone-response}.
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/eye/2880px-Cone-fundamentals-with-srgb-spectrum.svg.png}
+		\caption{\textit{Cone response}}
+		\label{fig:cone-response}
+	\end{figure}
+
+	\newpage
+
+	\subsubsection{GPU implementation}
+
+	Reading \autoref{sec:eye} it may seem very difficult to implement all this little details into a programming language code. However, as shown in the formula in \autoref{sec:grayscale-filter}, it simply is a weighted sum. The code of the kernel becomes the following:
+
+	\begin{lstlisting}[style=CStyle]
+	global void grayscale_kernel_v2(uint8_t *color, uint8_t *grayscale, 
+		int maxSect) {
+		int x = threadIdx.x + blockDim.x * blockIdx.x;
+		int start = x * maxSect;
+		int max = start + maxSect;
+		chunk_t cc;
+		int size = sizeof(chunk_t);
+		float sum = 0;
+	
+		for (int i = start; i < max; i++) {
+			cc = ((chunk_t *)color)[i];
+			for (int j = 0; j < size; j++) {
+				// B
+				if (((i * size) + j) % 3 == 0) {
+					sum += 0.114 * ((uint8_t *)&cc)[j];
+				}
+				// G
+				if (((i * size) + j) % 3 == 1) {
+					sum += 0.587 * ((uint8_t *)&cc)[j];
+				}
+				if (((i * size) + j) % 3 == 2) {
+					sum += 0.299 * ((uint8_t *)&cc)[j];
+					grayscale[(i * size) + j] = (uint8_t)sum;
+					grayscale[(i * size) + j - 1] = (uint8_t)sum;
+					grayscale[(i * size) + j - 2] = (uint8_t)sum;
+					sum = 0;
+				}
+			}
+		}
+	}
+	\end{lstlisting}
+
+	With this modification we don't obtain any kind of performance improvement, however there is an important scientific improvement. 
+	
+	\newpage
+	
+	\section{Binarization}
+
+	Image binarization is the process of taking a grayscale image and converting it to black-and-white, essentially reducing the information contained within the image from 256 shades of gray to 2: black and white, a binary image. It enhances the 
+	performance of document processing techniques like OCR and layout analysis. Another domain of application is the segmentation of an image into foreground and background. An example is shown in \autoref{fig:black-white} and \autoref{fig:binarized}.
+
+	\begin{figure}[H]
+		\begin{subfigure}{.5\textwidth}
+			\centering
+			\includegraphics[width=0.8\linewidth]{images/binarization/bw.jpeg}
+			\caption{\textit{Black and White Images}}
+			\label{fig:black-white}
+		\end{subfigure}
+		\begin{subfigure}{.5\textwidth}
+			\centering
+			\includegraphics[width=0.8\linewidth]{images/binarization/binarized.jpeg}
+			\caption{\textit{Binarized Images}}
+			\label{fig:binarized}
+		\end{subfigure}
+		\caption{A figure with two subfigures}
+		\label{fig:test}
+	\end{figure}
+
+	The key point is: \textbf{"How do we decide from which value the pixel become black (0) or white (255)}. So is important to select a threshold, like shown in \autoref{fig:grayscale-pixels-distribution}.
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.45\linewidth]{images/binarization/histogram.jpeg}
+		\caption{\textit{Distribution of the grayscale pixels}}
+		\label{fig:grayscale-pixels-distribution}
+	\end{figure}
+
+	Let's go step by step and explain what are the main point to exploit in order to obtain a binarize picture. 
+
+	\begin{enumerate}
+		\item Convert color to grayscale
+		\item Generate histogram of the grayscale image
+		\item Compute the two max of the histogram
+		\item Compute the threshold starting from the two max of the histogram
+		\item Convert the grayscale to binary knowing the threshold
+	\end{enumerate}
+
+	\subsection{Convert color to grayscale}
+
+	This is the first step, but we won't go into details, because everything has alredy been explained in \autoref{sec:grayscale-filter}.
+
+	\subsection{Generate histogram of the grayscale image}
+
+	In this step the histogram of the grayscale image is generated. Wehn talking about histogram, the idea is to count the occurencies of the numbers from 0 to 255. In fact, after converting to grayscale, we know that the matrix belonging to the image will have value between 0 and 255, like shown in \autoref{tab:grayscale-image-representation}
+
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{|c|c|c|} 
+			\hline
+			\begin{tabular}{c:c:c}
+				0 & 0 & 0
+			\end{tabular} & 
+			\begin{tabular}{c:c:c}
+				255 & 255 & 255
+			\end{tabular} &
+			\begin{tabular}{c:c:c}
+				0 & 0 & 0
+			\end{tabular} \\
+			\hline
+			\begin{tabular}{c:c:c}
+				255 & 255 & 255
+			\end{tabular} & 
+			\begin{tabular}{c:c:c}
+				130 & 130 & 130
+			\end{tabular} &
+			\begin{tabular}{c:c:c}
+				255 & 255 & 255
+			\end{tabular} \\
+			\hline
+			\begin{tabular}{c:c:c}
+				255 & 255 & 255
+			\end{tabular} & 
+			\begin{tabular}{c:c:c}
+				10 & 10 & 10
+			\end{tabular} &
+			\begin{tabular}{c:c:c}
+				255 & 255 & 255
+			\end{tabular} \\
+			\hline
+		\end{tabular}
+	\caption{\textit{Matrix of a grayscale image}}
+	\label{tab:grayscale-image-representation}
+	\end{table}
+
+	The histogram has to count the number of occurency of the numbers between 0 and 255, like shown in 
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{ |c|c|c|c|c|c|c|c|c| } 
+			\hline
+			Position & 0 & \dots & 10 & \dots & \dots & 130 & \dots & 255 \\
+			\hline
+			Occurency & 2 & \dots & 1 & \dots & \dots & 1 & \dots & 5 \\
+			\hline
+		\end{tabular}
+		\caption{\textit{Histogram distribution}}
+		\label{tab:histogram-distribution}
+	\end{table}
+
+	In order to implement everything in code, the idea is to iterate over the full matrix (jumping from 0 to 3, to 6, to 9 etc, in order to exploit the three channels), and count the number of occurencies. 
+
+	\subsection{Compute the two max of the histogram}
+
+	After having computed the histogram is important to find a way to compute the threshold. There are two implementation, a simple one and a difficult one:
+
+	\begin{enumerate}
+		\item Find the two max: this is the easy way. In fact there is the need to find the two maximum value and make an average.
+		\item Find the two peak: this is the more complex version. In fact, it would be easy if the value would be fully increasing or fully deacrising. However, in out case, we may have a mix of ascending and descending value, so it gets very complicated.
+	\end{enumerate}
+
+	In this project a simple version is implemented. As a future work, the more difficult (and accurate) version may be implemented. 
+
+	The algorithm to compute two max of an array in CUDA is based on the reduction algorithm.
+
+	The schematic of the algorithm is shown in \autoref{fig:reduction-values} and \autoref{fig:reduction-indexes}.
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/binarization/values.pdf}
+		\caption{\textit{Reduction algorithm values}}
+		\label{fig:reduction-values}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/binarization/indexes.pdf}
+		\caption{\textit{Reduction algorithm indexes}}
+		\label{fig:reduction-indexes}
+	\end{figure}
+
+	The reduction algorithm needs a number of thread that is the same as the numbers of the vector, because initially is important to set the value inside the shared memory. The following code is the one used to declared the shared memory and initialized its values. After that, in order to be sure that all threads have initialized the shared memory, it is important to sync all threads. 
+
+	\begin{lstlisting}[style=CStyle]
+	__global__ void compute_max(int *histogram, uint8_t *indexes_max) {
+		int tid = threadIdx.x + blockDim.x * blockIdx.x;
+	
+		__shared__ int shared_histogram[256];
+		__shared__ int shared_indexes[256];
+	
+		shared_histogram[tid] = histogram[tid];
+		shared_indexes[tid] = tid;
+		__syncthreads();
+
+		// Other operations
+	}
+	\end{lstlisting}
+
+	Now let's analyse the core algorithm. Supposing we call the kernel with a single block that contains \textit{N\_values} number of threads, where \textit{N\_values} is the number of values inside the array, that in out case is 256 (because we go from 0 to 255). The logic behind the algorithm is that in the first iteration, threads needs to access index \textit{i} of the vector and index \textit{i + blockDim.x / 2}. The operation to execute is to check which value is greater, and then write it to the shared memory. The same is done for the index, in order to retrieve at which indexes are the max values. 
+	At the end of the iteration is important to sync all threads, in order to wait that the shared memory has correctly been written. For the following iteration, is necessary to divide by 2 the offset and continue like this until the offset is > 1. In fact, with this condition, the algorithm stops when the offset is equal to 2.
+
+	\begin{lstlisting}[style=CStyle]
+	for (unsigned int offset = blockDim.x / 2; offset > 1; offset >>= 1) {
+		if (threadIdx.x < offset) {
+			if (shared_histogram[threadIdx.x] < shared_histogram[threadIdx.x + 
+				offset]) {
+				shared_histogram[threadIdx.x] = shared_histogram[threadIdx.x + 
+				offset];
+				shared_indexes[threadIdx.x] = shared_indexes[threadIdx.x + offset];
+			}
+		}
+		// sync threads required to ensure all threads have finished writing
+		__syncthreads();
+	}
+	\end{lstlisting}
+
+	The last operation is copying back the data from the shared memory to the device data. Since is important to retrieve the two indexes of the two max values, they will be positioned at index 0 and 1 of the shared memory.
+
+	\begin{lstlisting}[style=CStyle]
+	if (tid == 0) {
+		indexes_max[tid] = shared_indexes[tid];
+	}
+	if (tid == 1) {
+		indexes_max[tid] = shared_indexes[tid];
+	}
+	\end{lstlisting}
+
+	\subsection{Compute the threshold}
+
+	After having computed the two max, the evaluation of the threshold is pretty straightforeword. The formula is the following:
+
+	\begin{equation*}
+		threshold = \frac{max1 + max2}{2}
+	\end{equation*}
+
+	An important detail is that if the threshold is too low it means that the the distribution is confined to small values. For this reason, if the threshold is smaller than 50, the threshold will be set manually to 50, in order to correctly detect the background. For the same reason, if the threshold if higher that 200 it will the set manually to 200.
+
+
+	\subsection{Convert the grayscale to binary}
+
+	Knowing the correct threshold, the conversion from grayscale to binary is very easy. The pseudocode is the following;
+
+	\begin{lstlisting}[style=CStyle]
+	for (int i = 0; i < total_pixels; i = i + 3) {
+		if(matrix[i] > threshold){
+			matrix[i] = 255;
+			matrix[i+1] = 255;
+			matrix[i+2] = 255;
+		} else {
+			matrix[i] = 0;
+			matrix[i+1] = 0;
+			matrix[i+2] = 0;
+		}
+	}
+	\end{lstlisting}
+
+	The loop is incremented 3 by 3, because as alredy explained, there are 3 channels but, because they all have the same value, there is not the need to check all 3 channles. However, when modifying the channels, all of them need to be changed. 
+	
+
+
+
 \end{document}
+
+
