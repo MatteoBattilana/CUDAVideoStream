@@ -485,8 +485,8 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
 #if NOISE_VISUALIZER == 4
 
     // grayscale_kernel<<<1, nMaxThreads>>>(d_current, d_grayscale, maxAtTime);
-    grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
-    // grayscale_kernel_v3<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
+    // grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
+    grayscale_kernel_v3<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
     cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
 
 #elif NOISE_VISUALIZER == 5
@@ -495,7 +495,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     int index_max = -1, index_sec_max = -1;
 
     cudaMemcpyAsync(d_histogram, h_histogram, 256 * sizeof(int), cudaMemcpyHostToDevice);
-    grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
+    grayscale_kernel_v3<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
     // generate_histogram<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
     generate_histogram_v2<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
     compute_max<<<1, 256>>>(d_histogram, d_indexes_max);

@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <string>
 
-
 void sigpipe_hdl(int sig) {
     exit(1);
 }
@@ -80,25 +79,59 @@ int main() {
 
         std::memcpy(pvs_data, ready.data, 3 * frameSz.area());
 
-        *ready.h_pos = 0;
-        for (int i = 0; i < total; i++) {
-            int df = ready.data[i] - pvs_data[i];
-            if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
-                ready.data[*ready.h_pos] = df;
-                ready.h_xs[*ready.h_pos] = i;
-                (*ready.h_pos)++;
-            } else {
-                pvs_data[i] -= df;
-            }
-        }
+        // *ready.h_pos = 0;
+        // for (int i = 0; i < total; i++) {
+        //     int df = ready.data[i] - pvs_data[i];
+        //     if (df < -LR_THRESHOLDS || df > LR_THRESHOLDS) {
+        //         ready.data[*ready.h_pos] = df;
+        //         ready.h_xs[*ready.h_pos] = i;
+        //         (*ready.h_pos)++;
+        //     } else {
+        //         pvs_data[i] -= df;
+        //     }
+        // }
 
-        diff::utils::swap(pvs, pvs_data);
+        // diff::utils::swap(pvs, pvs_data);
 
         for (int i = 0; i < total; i = i + 3) {
-            int sum = ready.data[i] +ready.data[i+1] + ready.data[i+2];
-            ready.data[i] = sum/3;
-            ready.data[i+1] = sum/3;
-            ready.data[i+2] = sum/3;
+            int sum = ready.data[i] + ready.data[i + 1] + ready.data[i + 2];
+            ready.data[i] = sum / 3;
+            ready.data[i + 1] = sum / 3;
+            ready.data[i + 2] = sum / 3;
+        }
+
+        int histogram[256] = {0};
+        for (int i = 0; i < total; i = i + 3) {
+            histogram[ready.data[i]]++;
+        }
+
+        int max = -1, sec_max = -1;
+        int index_max = -1, index_sec_max = -1;
+        for (int i = 0; i < 256; i++) {
+            if (histogram[i] >= max) {
+                index_sec_max = index_max;
+                index_max = i;
+                max = histogram[i];
+                sec_max = max;
+            } else if (histogram[i] > sec_max && histogram[i] < max) {
+                sec_max = histogram[i];
+                index_sec_max = i;
+            }
+        }
+        int threshold = (index_max + index_sec_max) / 2;
+        if (threshold < 50) {
+            threshold = 50;
+        }
+        if (threshold > 200) {
+            threshold = 200;
+        }
+
+        for (int i = 0; i < total; i++) {
+            if (ready.data[i] > threshold) {
+                ready.data[i] = 255;
+            } else {
+                ready.data[i] = 0;
+            }
         }
 
 #elif defined(GPU)
