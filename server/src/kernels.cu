@@ -71,9 +71,9 @@ __global__ void grayscale_kernel_v3(uint8_t *color, uint8_t *grayscale, int maxS
             }
             if (((i * size) + j) % 3 == 2) {
                 sum += 0.299 * ((uint8_t *)&cc)[j];
-                grayscale[(i * size) + j] = (uint8_t)sum;
-                grayscale[(i * size) + j - 1] = (uint8_t)sum;
-                grayscale[(i * size) + j - 2] = (uint8_t)sum;
+                grayscale[(i * size) + j] = sum;
+                grayscale[(i * size) + j - 1] = sum;
+                grayscale[(i * size) + j - 2] = sum;
                 sum = 0;
             }
         }
@@ -137,8 +137,8 @@ __global__ void generate_histogram_v2(uint8_t *grayscale, int *histogram, int ma
     int max = start + maxSect;
 
     __shared__ int shared_histogram[256];
-    
-    if (tid < 256){
+
+    if (tid < 256) {
         shared_histogram[tid] = 0;
     }
 
@@ -150,10 +150,9 @@ __global__ void generate_histogram_v2(uint8_t *grayscale, int *histogram, int ma
 
     __syncthreads();
 
-    if (tid < 256){
+    if (tid < 256) {
         atomicAdd(&histogram[tid], shared_histogram[tid]);
     }
-
 }
 
 __global__ void compute_max(int *histogram, uint8_t *indexes_max) {
@@ -190,15 +189,31 @@ __global__ void binarize_kernel(uint8_t *binarize, uint8_t *grayscale, int maxSe
     int start = x * maxSect;
     int max = start + maxSect;
 
-    for (int i = start; i < max; i = i + 3) {
+    for (int i = start; i < max; i++) {
         if (grayscale[i] > threshold) {
             binarize[i] = 255;
-            binarize[i + 1] = 255;
-            binarize[i + 2] = 255;
         } else {
             binarize[i] = 0;
-            binarize[i + 1] = 0;
-            binarize[i + 2] = 0;
+        }
+    }
+}
+
+__global__ void binarize_kernel_v2(uint8_t *binarize, uint8_t *grayscale, int maxSect, int threshold) {
+    int x = threadIdx.x + blockDim.x * blockIdx.x;
+    int start = x * maxSect;
+    int max = start + maxSect;
+    chunk_t gs, bi;
+    int size = sizeof(chunk_t);
+
+    for (int i = start; i < max; i++) {
+        gs = ((chunk_t *)grayscale)[i];
+        bi = ((chunk_t *)binarize)[i];
+        for (int j = 0; j < size; j++) {
+            if (((uint8_t *)&gs)[j] > threshold) {
+                ((uint8_t *)&bi)[j] = 255;
+            } else {
+                ((uint8_t *)&bi)[j] = 0;
+            }
         }
     }
 }
@@ -479,9 +494,9 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     int index_max = -1, index_sec_max = -1;
 
     cudaMemcpyAsync(d_histogram, h_histogram, 256 * sizeof(int), cudaMemcpyHostToDevice);
-    grayscale_kernel_v3<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
-    generate_histogram<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
-    // generate_histogram_v2<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
+    grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
+    // generate_histogram<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
+    generate_histogram_v2<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
     compute_max<<<1, 256>>>(d_histogram, d_indexes_max);
     // cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
     cudaMemcpyAsync(h_histogram, d_histogram, 256 * sizeof(int), cudaMemcpyDeviceToHost);
@@ -496,7 +511,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
 
     index_max = h_indexes[0];
     index_sec_max = h_indexes[1];
-    // printf("%d %d\n", index_max, index_sec_max);
+    // // printf("%d %d\n", index_max, index_sec_max);
     int threshold = (index_max + index_sec_max) / 2;
     if (threshold < 50) {
         threshold = 50;
@@ -505,7 +520,8 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
         threshold = 200;
     }
 
-    binarize_kernel<<<1, nMaxThreads>>>(d_binarize, d_grayscale, maxAtTime, threshold);
+    // binarize_kernel<<<1, nMaxThreads>>>(d_binarize, d_grayscale, maxAtTime, threshold);
+    binarize_kernel_v2<<<1, nMaxThreads>>>(d_binarize, d_grayscale, max4, threshold);
     cudaMemcpyAsync(showReadyNData, d_binarize, total, cudaMemcpyDeviceToHost);
 
 #endif
