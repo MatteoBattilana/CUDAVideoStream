@@ -215,6 +215,7 @@ __global__ void binarize_kernel_v2(uint8_t *binarize, uint8_t *grayscale, int ma
                 ((uint8_t *)&bi)[j] = 0;
             }
         }
+        ((chunk_t *)binarize)[i] = bi;
     }
 }
 
