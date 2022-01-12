@@ -2983,6 +2983,188 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 		\label{fig:grayscale-pixels-distribution}
 	\end{figure}
 
+	Let's go step by step and explain what are the main point to exploit in order to obtain a binarize picture. 
+
+	\begin{enumerate}
+		\item Convert color to grayscale
+		\item Generate histogram of the grayscale image
+		\item Compute the two max of the histogram
+		\item Compute the threshold starting from the two max of the histogram
+		\item Convert the grayscale to binary knowing the threshold
+	\end{enumerate}
+
+	\subsection{Convert color to grayscale}
+
+	This is the first step, but we won't go into details, because everything has alredy been explained in \autoref{sec:grayscale-filter}.
+
+	\subsection{Generate histogram of the grayscale image}
+
+	In this step the histogram of the grayscale image is generated. Wehn talking about histogram, the idea is to count the occurencies of the numbers from 0 to 255. In fact, after converting to grayscale, we know that the matrix belonging to the image will have value between 0 and 255, like shown in \autoref{tab:grayscale-image-representation}
+
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{|c|c|c|} 
+			\hline
+			\begin{tabular}{c:c:c}
+				0 & 0 & 0
+			\end{tabular} & 
+			\begin{tabular}{c:c:c}
+				255 & 255 & 255
+			\end{tabular} &
+			\begin{tabular}{c:c:c}
+				0 & 0 & 0
+			\end{tabular} \\
+			\hline
+			\begin{tabular}{c:c:c}
+				255 & 255 & 255
+			\end{tabular} & 
+			\begin{tabular}{c:c:c}
+				130 & 130 & 130
+			\end{tabular} &
+			\begin{tabular}{c:c:c}
+				255 & 255 & 255
+			\end{tabular} \\
+			\hline
+			\begin{tabular}{c:c:c}
+				255 & 255 & 255
+			\end{tabular} & 
+			\begin{tabular}{c:c:c}
+				10 & 10 & 10
+			\end{tabular} &
+			\begin{tabular}{c:c:c}
+				255 & 255 & 255
+			\end{tabular} \\
+			\hline
+		\end{tabular}
+	\caption{\textit{Matrix of a grayscale image}}
+	\label{tab:grayscale-image-representation}
+	\end{table}
+
+	The histogram has to count the number of occurency of the numbers between 0 and 255, like shown in 
+	\begin{table}[H]
+		\centering
+		\begin{tabular}{ |c|c|c|c|c|c|c|c|c| } 
+			\hline
+			Position & 0 & \dots & 10 & \dots & \dots & 130 & \dots & 255 \\
+			\hline
+			Occurency & 2 & \dots & 1 & \dots & \dots & 1 & \dots & 5 \\
+			\hline
+		\end{tabular}
+		\caption{\textit{Histogram distribution}}
+		\label{tab:histogram-distribution}
+	\end{table}
+
+	In order to implement everything in code, the idea is to iterate over the full matrix (jumping from 0 to 3, to 6, to 9 etc, in order to exploit the three channels), and count the number of occurencies. 
+
+	\subsection{Compute the two max of the histogram}
+
+	After having computed the histogram is important to find a way to compute the threshold. There are two implementation, a simple one and a difficult one:
+
+	\begin{enumerate}
+		\item Find the two max: this is the easy way. In fact there is the need to find the two maximum value and make an average.
+		\item Find the two peak: this is the more complex version. In fact, it would be easy if the value would be fully increasing or fully deacrising. However, in out case, we may have a mix of ascending and descending value, so it gets very complicated.
+	\end{enumerate}
+
+	In this project a simple version is implemented. As a future work, the more difficult (and accurate) version may be implemented. 
+
+	The algorithm to compute two max of an array in CUDA is based on the reduction algorithm.
+
+	The schematic of the algorithm is shown in \autoref{fig:reduction-values} and \autoref{fig:reduction-indexes}.
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/binarization/values.pdf}
+		\caption{\textit{Reduction algorithm values}}
+		\label{fig:reduction-values}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/binarization/indexes.pdf}
+		\caption{\textit{Reduction algorithm indexes}}
+		\label{fig:reduction-indexes}
+	\end{figure}
+
+	The reduction algorithm needs a number of thread that is the same as the numbers of the vector, because initially is important to set the value inside the shared memory. The following code is the one used to declared the shared memory and initialized its values. After that, in order to be sure that all threads have initialized the shared memory, it is important to sync all threads. 
+
+	\begin{lstlisting}[style=CStyle]
+	__global__ void compute_max(int *histogram, uint8_t *indexes_max) {
+		int tid = threadIdx.x + blockDim.x * blockIdx.x;
+	
+		__shared__ int shared_histogram[256];
+		__shared__ int shared_indexes[256];
+	
+		shared_histogram[tid] = histogram[tid];
+		shared_indexes[tid] = tid;
+		__syncthreads();
+
+		// Other operations
+	}
+	\end{lstlisting}
+
+	Now let's analyse the core algorithm. Supposing we call the kernel with a single block that contains \textit{N\_values} number of threads, where \textit{N\_values} is the number of values inside the array, that in out case is 256 (because we go from 0 to 255). The logic behind the algorithm is that in the first iteration, threads needs to access index \textit{i} of the vector and index \textit{i + blockDim.x / 2}. The operation to execute is to check which value is greater, and then write it to the shared memory. The same is done for the index, in order to retrieve at which indexes are the max values. 
+	At the end of the iteration is important to sync all threads, in order to wait that the shared memory has correctly been written. For the following iteration, is necessary to divide by 2 the offset and continue like this until the offset is > 1. In fact, with this condition, the algorithm stops when the offset is equal to 2.
+
+	\begin{lstlisting}[style=CStyle]
+	for (unsigned int offset = blockDim.x / 2; offset > 1; offset >>= 1) {
+		if (threadIdx.x < offset) {
+			if (shared_histogram[threadIdx.x] < shared_histogram[threadIdx.x + 
+				offset]) {
+				shared_histogram[threadIdx.x] = shared_histogram[threadIdx.x + 
+				offset];
+				shared_indexes[threadIdx.x] = shared_indexes[threadIdx.x + offset];
+			}
+		}
+		// sync threads required to ensure all threads have finished writing
+		__syncthreads();
+	}
+	\end{lstlisting}
+
+	The last operation is copying back the data from the shared memory to the device data. Since is important to retrieve the two indexes of the two max values, they will be positioned at index 0 and 1 of the shared memory.
+
+	\begin{lstlisting}[style=CStyle]
+	if (tid == 0) {
+		indexes_max[tid] = shared_indexes[tid];
+	}
+	if (tid == 1) {
+		indexes_max[tid] = shared_indexes[tid];
+	}
+	\end{lstlisting}
+
+	\subsection{Compute the threshold}
+
+	After having computed the two max, the evaluation of the threshold is pretty straightforeword. The formula is the following:
+
+	\begin{equation*}
+		threshold = \frac{max1 + max2}{2}
+	\end{equation*}
+
+	An important detail is that if the threshold is too low it means that the the distribution is confined to small values. For this reason, if the threshold is smaller than 50, the threshold will be set manually to 50, in order to correctly detect the background. For the same reason, if the threshold if higher that 200 it will the set manually to 200.
+
+
+	\subsection{Convert the grayscale to binary}
+
+	Knowing the correct threshold, the conversion from grayscale to binary is very easy. The pseudocode is the following;
+
+	\begin{lstlisting}[style=CStyle]
+	for (int i = 0; i < total_pixels; i = i + 3) {
+		if(matrix[i] > threshold){
+			matrix[i] = 255;
+			matrix[i+1] = 255;
+			matrix[i+2] = 255;
+		} else {
+			matrix[i] = 0;
+			matrix[i+1] = 0;
+			matrix[i+2] = 0;
+		}
+	}
+	\end{lstlisting}
+
+	The loop is incremented 3 by 3, because as alredy explained, there are 3 channels but, because they all have the same value, there is not the need to check all 3 channles. However, when modifying the channels, all of them need to be changed. 
+	
+
+
+
 \end{document}
 
 
