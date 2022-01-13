@@ -152,8 +152,8 @@ static void *th_noise_hdl(void *args) {
 
     while(1) {
         read(pctx->noise_r_fd, &show_ready, sizeof show_ready);
-        cv::namedWindow("Noise Visualizer", cv::WINDOW_GUI_NORMAL);
-        cv::imshow("Noise Visualizer", *(show_ready->nframe));
+        cv::namedWindow("Black And White Visualizer", cv::WINDOW_GUI_NORMAL);
+        cv::imshow("Black And White Visualizer", *(show_ready->nframe));
         if (cv::waitKey(10) == 27) {
             exit(1);  // stop capturing by pressing ESC
         }
