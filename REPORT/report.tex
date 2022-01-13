@@ -2738,4 +2738,32 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 
 	So, due to the fact that the Median filter does not bring any advantage, it has not been optimized and even used. Beside this, the implementation allowed us to better understand the nature of the noise.
 
+	\newpage
+	\section{How to build and run the project}
+
+	The project is splitted into two parts: a client and a server. In the project root folder there are two main directories named as the two parts mentioned. Thanks to the use of GNU Make utility, is possibile to build and run the project in an easy way. Please remember that OpenCV\footnote{OpenCV is needed in order to build and run the project. If apt is used as package manager, it's possible to install it with \texttt{sudo apt install libopencv-dev}. If this is not the case, is possible to compile and install opencv2 by referring to the \href{https://docs.opencv.org/4.x/d7/d9f/tutorial\_linux\_install.html}{official documentation}.} is needed \textit{(tested with OpenCV 4.1.1)}.\\
+	
+	The Makefiles are organized in order to compile only the changed files, in this way is possible to speed up the compilation time during the development by compiling only the modules that have been changed. Moreover, different compilers are used for different source files: the ones with extension \texttt{*.cu} are compiled used \texttt{nvcc} while the ones ending with \texttt{*.cpp} are compiled with \texttt{g++}. At the end, a link step is performed using \texttt{nvcc}.\\
+	
+	In particuar, in the root folder is possible to launch these two commands:
+
+	\begin{itemize}
+		\item \texttt{make server}: builds and execute the server
+		\item \texttt{make client}: builds and execute the client
+		\item \texttt{make clean}: cleans the build output files both for server and client
+	\end{itemize}
+
+	Launching the make command inside the \textit{server} directory is possible to use more make targets:
+
+	\begin{itemize}
+		\item \texttt{make build}: builds the server
+		\item \texttt{make run}: builds and run the server
+		\item \texttt{make prof}: builds and run the server with use of Nvidia profiler
+		\item \texttt{make debug}: builds and run the server using gdb to debug the host coderun
+		\item \texttt{make clean}: cleans the build output files
+	\end{itemize}
+
+	If a multi-core device is used, is possible to compile the \textit{server} in a parallel way, this allows to reduce the compilation time by almost an half of the sequantial time, for example (supposing to be inside the \textit{server} folder and 4 cores are available): \texttt{make -j 4 prof}.\\
+
+
 \end{document}
