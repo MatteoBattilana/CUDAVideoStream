@@ -2740,7 +2740,6 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 
 	So, due to the fact that the Median filter does not bring any advantage, it has not been optimized and even used. Beside this, the implementation allowed us to better understand the nature of the noise.
 
-	\newpage
 
 	\section{Grayscale Filter}
 	\label{sec:grayscale-filter}
@@ -2776,6 +2775,16 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 
 	By viewing the code, it's easy to understand that the sum is computed and then the data is changed in all of the three channels. 
 	This implementation is the easiest and the most straightforeword, and for this reason it won't be the faster. 
+
+	The results are shown in \autoref{fig:cpu-results}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.65\linewidth]{images/bw/Picture 1.png}
+		\caption{\textit{CPU results}}
+		\label{fig:cpu-results}
+	\end{figure}
+
 	\subsection{GPU First Version}
 	For the first version, threads are organized as explained in \autoref{sec:gpu-implementation}. For what concerns the memory allocation, obviously the CPU address space and the GPU one are two separated things, so a specific allocation on the device side must be done. This can be accomplished thanks to some CUDA's API as follows:
 
@@ -2835,6 +2844,15 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
 	\end{lstlisting}
 
+	By using the GPU, as it's represented in \autoref{fig:gpu-results}, the performance improve a lot. 
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.65\linewidth]{images/bw/Picture 2.png}
+		\caption{\textit{Frame with colors}}
+		\label{fig:gpu-results}
+	\end{figure}
+
 
 	\subsection{GPU Global Memory Acess }
 
@@ -2867,6 +2885,15 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 		}
 	}
 	\end{lstlisting}
+
+	The implementation of this feature improves performance a little bit, as shown in \autoref{fig:gpu2-results}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.65\linewidth]{images/bw/Picture 3.png}
+		\caption{\textit{Frame with colors}}
+		\label{fig:gpu2-results}
+	\end{figure}
 
 
 	\subsection{GPU weighted average}
@@ -2909,7 +2936,6 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 		\label{fig:cone-response}
 	\end{figure}
 
-	\newpage
 
 	\subsubsection{GPU implementation}
 
@@ -2948,9 +2974,14 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	}
 	\end{lstlisting}
 
-	With this modification we don't obtain any kind of performance improvement, however there is an important scientific improvement. 
+	With this modification we don't obtain any kind of performance improvement, however there is an important scientific improvement. We even expect a performance deterioration, because the code inside the kernel is made of more lines compared to the previous one. This is shown in \autoref{fig:gpu3-results}
 	
-	\newpage
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.65\linewidth]{images/bw/Picture 4.png}
+		\caption{\textit{GPU last version performance}}
+		\label{fig:gpu3-results}
+	\end{figure}
 	
 	\section{Binarization}
 
@@ -3055,6 +3086,90 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	\end{table}
 
 	In order to implement everything in code, the idea is to iterate over the full matrix (jumping from 0 to 3, to 6, to 9 etc, in order to exploit the three channels), and count the number of occurencies. 
+
+	\subsubsection{CPU implementation}
+
+	The CPU implementtion is as simply as it may look: a for loop that iterates over all pixels of the matrix and at the position \textit{histogram[index]} increments the value, where \textit{index} is the value, from 0 to 255, of the i-esim pixel of the image.
+	This is the code:
+	
+	\begin{lstlisting}[style=CStyle]
+	for (int row = 0; row < H; row++) {
+		for (int col = 0; col < W; col++) {
+			int index = bw.at<uchar>(row, col);
+			histogram[index]++;
+		}
+	}
+	\end{lstlisting}
+	
+	
+	\subsubsection{GPU Naive implementation}
+	
+	Going from the CPU to GPU is as simple as copying the same code to a GPU kernel and correctly position the thread index. This is the kernel:
+	
+	\begin{lstlisting}[style=CStyle]
+	__global__ void generate_histogram(uint8_t *grayscale, int *histogram, 
+		int maxSect) {
+		int x = threadIdx.x + blockDim.x * blockIdx.x;
+		int start = x * maxSect;
+		int max = start + maxSect;
+	
+		for (int i = start; i < max; i = i + 3) {
+			grayscale[i]++;
+		}
+	}
+	\end{lstlisting}
+
+	This code is \textbf{Completely Wrong}. In fact there is a race condition, where many thread try to access the same memory cell of grayscale, and for this reason the histogram get generated with less value that what is expected.
+
+	The problem is that the operation \textit{grayscale[i]++} is not atomic, so not executed in one clock cycle). To correct this code, the operation is changed to \textit{atomicAdd(\&histogram[grayscale[i]], 1)}. So the final code becomes:
+
+	\begin{lstlisting}[style=CStyle]
+	__global__ void generate_histogram(uint8_t *grayscale, int *histogram, 
+		int maxSect) {
+		int x = threadIdx.x + blockDim.x * blockIdx.x;
+		int start = x * maxSect;
+		int max = start + maxSect;
+	
+		for (int i = start; i < max; i = i + 3) {
+	        atomicAdd(&histogram[grayscale[i]], 1);
+		}
+	}
+	\end{lstlisting}
+
+	With the following correct, the histogram is generated correctly.
+
+	\subsubsection{GPU Shared Memory}
+
+	In order to improve performance, the idea is to use the shared memory. Every block will write to the shared memory and, only when all threads have finished, the data is added to the vector in the global memory. This is the code:
+
+	\begin{lstlisting}[style=CStyle]
+	__global__ void generate_histogram_v2(uint8_t *grayscale, int *histogram,
+		int maxSect) {
+		int tid = threadIdx.x + blockDim.x * blockIdx.x;
+		int start = tid * maxSect;
+		int max = start + maxSect;
+	
+		__shared__ int shared_histogram[256];
+		
+		if (tid < 256){
+			shared_histogram[tid] = 0;
+		}
+	
+		__syncthreads();
+	
+		for (int i = start; i < max; i = i + 3) {
+			atomicAdd(&shared_histogram[grayscale[i]], 1);
+		}
+	
+		__syncthreads();
+	
+		if (tid < 256){
+			atomicAdd(&histogram[tid], shared_histogram[tid]);
+		}
+	
+	}
+	\end{lstlisting}
+
 
 	\subsection{Compute the two max of the histogram}
 
