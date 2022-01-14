@@ -140,6 +140,10 @@ __global__ void generate_histogram(uint8_t *grayscale, int *histogram, int maxSe
     int start = tid * maxSect;
     int max = start + maxSect;
 
+    if (tid < 256) {
+        histogram[tid] = 0;
+    }
+
     for (int i = start; i < max; i = i + 3) {
         atomicAdd(&histogram[grayscale[i]], 1);
     }
@@ -169,7 +173,7 @@ __global__ void generate_histogram_v2(uint8_t *grayscale, int *histogram, int ma
     }
 }
 
-__global__ void compute_max(int *histogram, uint8_t *indexes_max) {
+__global__ void compute_max(int *histogram, uint8_t *threshold) {
     int tid = threadIdx.x + blockDim.x * blockIdx.x;
 
     __shared__ int shared_histogram[256];
@@ -191,10 +195,13 @@ __global__ void compute_max(int *histogram, uint8_t *indexes_max) {
         __syncthreads();
     }
     if (tid == 0) {
-        indexes_max[tid] = shared_indexes[tid];
-    }
-    if (tid == 1) {
-        indexes_max[tid] = shared_indexes[tid];
+        threshold[0] = (shared_indexes[0] + shared_indexes[1]) / 2;
+        if (threshold[0] < 50) {
+            threshold[0] = 50;
+        }
+        if (threshold[0] > 200) {
+            threshold[0] = 200;
+        }
     }
 }
 
@@ -212,7 +219,7 @@ __global__ void binarize_kernel(uint8_t *binarize, uint8_t *grayscale, int maxSe
     }
 }
 
-__global__ void binarize_kernel_v2(uint8_t *binarize, uint8_t *grayscale, int maxSect, int threshold) {
+__global__ void binarize_kernel_v2(uint8_t *binarize, uint8_t *grayscale, int maxSect, uint8_t *threshold) {
     int x = threadIdx.x + blockDim.x * blockIdx.x;
     int start = x * maxSect;
     int max = start + maxSect;
@@ -223,7 +230,7 @@ __global__ void binarize_kernel_v2(uint8_t *binarize, uint8_t *grayscale, int ma
         gs = ((chunk_t *)grayscale)[i];
         bi = ((chunk_t *)binarize)[i];
         for (int j = 0; j < size; j++) {
-            if (((uint8_t *)&gs)[j] > threshold) {
+            if (((uint8_t *)&gs)[j] > threshold[0]) {
                 ((uint8_t *)&bi)[j] = 255;
             } else {
                 ((uint8_t *)&bi)[j] = 0;
@@ -411,7 +418,7 @@ diff::cuda::CUDACore::CUDACore(uint8_t *charsPx, matsz &charsSz, float *k, int t
     CUDA_CHECK(cudaMalloc((void **)&d_grayscale, total * sizeof *d_grayscale));
     CUDA_CHECK(cudaMalloc((void **)&d_binarize, total * sizeof *d_binarize));
     CUDA_CHECK(cudaMalloc((void **)&d_histogram, 256 * sizeof *d_histogram));
-    CUDA_CHECK(cudaMalloc((void **)&d_indexes_max, 2 * sizeof *d_indexes_max));
+    CUDA_CHECK(cudaMalloc((void **)&d_threshold, sizeof *d_threshold));
     CUDA_CHECK(cudaMemcpyToSymbol(dev_k, k, K * K * sizeof(float)));
     CUDA_CHECK(cudaMalloc((void **)&d_diff, total * sizeof *d_diff));
     CUDA_CHECK(cudaMalloc((void **)&d_xs, total * sizeof *d_xs));
@@ -506,6 +513,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     }
 
 #ifdef NOISE_VISUALIZER
+// grayscale
 #if NOISE_VISUALIZER == 4
 
     // grayscale_kernel<<<1, nMaxThreads>>>(d_current, d_grayscale, maxAtTime);
@@ -513,32 +521,15 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     grayscale_kernel_v3<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
     CUDA_CHECK(cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost));
 
+// binarization
 #elif NOISE_VISUALIZER == 5
-    int h_histogram[256] = {0};
-    uint8_t h_indexes[2] = {0};
-    int index_max = -1, index_sec_max = -1;
 
-    CUDA_CHECK(cudaMemcpyAsync(d_histogram, h_histogram, 256 * sizeof(int), cudaMemcpyHostToDevice));
     grayscale_kernel_v3<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
-    // generate_histogram<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
-    generate_histogram_v2<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
-    compute_max<<<1, 256>>>(d_histogram, d_indexes_max);
-    // cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
-    CUDA_CHECK(cudaMemcpyAsync(h_histogram, d_histogram, 256 * sizeof(int), cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaMemcpyAsync(h_indexes, d_indexes_max, 2 * sizeof(uint8_t), cudaMemcpyDeviceToHost));
-
-    index_max = h_indexes[0];
-    index_sec_max = h_indexes[1];
-    int threshold = (index_max + index_sec_max) / 2;
-    if (threshold < 50) {
-        threshold = 50;
-    }
-    if (threshold > 200) {
-        threshold = 200;
-    }
-
+    generate_histogram<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
+    // generate_histogram_v2<<<1, nMaxThreads>>>(d_grayscale, d_histogram, maxAtTime);
+    compute_max<<<1, 256>>>(d_histogram, d_threshold);
     // binarize_kernel<<<1, nMaxThreads>>>(d_binarize, d_grayscale, maxAtTime, threshold);
-    binarize_kernel_v2<<<1, nMaxThreads>>>(d_binarize, d_grayscale, max4, threshold);
+    binarize_kernel_v2<<<1, nMaxThreads>>>(d_binarize, d_grayscale, max4, d_threshold);
     CUDA_CHECK(cudaMemcpyAsync(showReadyNData, d_binarize, total, cudaMemcpyDeviceToHost));
 
 #endif
@@ -561,7 +552,6 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     CUDA_CHECK(cudaMemcpyAsync(frameData, d_diff, *h_pos, cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaMemcpyAsync(h_xs, d_xs, *h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaDeviceSynchronize());
-
 }
 
 size_t diff::cuda::CUDACore::chunkt_size() {
