@@ -552,24 +552,6 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
 
 // Noise visualization
 #ifdef NOISE_VISUALIZER
-#if NOISE_VISUALIZER == 1
-    heat_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
-    cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost);
-#elif NOISE_VISUALIZER == 2
-    red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
-    cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost);
-#elif NOISE_VISUALIZER == 3
-    red_black_map_overlap<<<1, nMaxThreads, 0>>>(d_pos, d_xs, (*h_pos) / nMaxThreads, d_previous);
-    cudaMemcpyAsync(showReadyNData, d_previous, total, cudaMemcpyDeviceToHost);
-#endif
-#endif
-
-    cudaMemcpyAsync(frameData, d_diff, *h_pos, cudaMemcpyDeviceToHost);
-    cudaMemcpyAsync(h_xs, d_xs, *h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize();
-    
-// Noise visualization
-#ifdef NOISE_VISUALIZER
 #if NOISE_VISUALIZER == 3
     red_black_map_overlap<<<1, nMaxThreads, 0>>>(d_pos, d_xs, (*h_pos) / nMaxThreads, d_previous);
     CUDA_CHECK(cudaMemcpyAsync(showReadyNData, d_previous, total, cudaMemcpyDeviceToHost));
@@ -579,6 +561,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     CUDA_CHECK(cudaMemcpyAsync(frameData, d_diff, *h_pos, cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaMemcpyAsync(h_xs, d_xs, *h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaDeviceSynchronize());
+
 }
 
 size_t diff::cuda::CUDACore::chunkt_size() {
