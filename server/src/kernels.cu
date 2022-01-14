@@ -3,9 +3,23 @@
 #include "../include/utils.hpp"
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
+#include <iostream>
+#include <stdexcept>
 #include <stdint.h>
 
 #define CDIM3(__pdim) (*((dim3 *)__pdim))
+#define CUDA_CHECK(__ret)                                                                 \
+    {                                                                                     \
+        cudaError_t const status = (__ret);                                               \
+        if (status != cudaSuccess) {                                                      \
+            cudaGetLastError();                                                           \
+            std::cerr << "CUDA_CHECK() threw error "                                      \
+                      << cudaGetErrorName(status)                                         \
+                      << " (" << cudaGetErrorString(status)                               \
+                      << ") @ " << __FILE__ ":" << __LINE__ << " [" << __func__ << "]\n"; \
+            exit((int)status);                                                            \
+        }                                                                                 \
+    }
 
 using namespace diff::cuda;
 using namespace diff::utils;
@@ -385,11 +399,11 @@ diff::cuda::CUDACore::CUDACore(uint8_t *charsPx, matsz &charsSz, float *k, int t
 
     this->fullArea = 3 * charsSz.area();
     int totcpy = fullArea * sizeof *this->d_charsPx * (sizeof(CHARS_STR) - 1);
-    cudaMalloc((void **)&this->d_charsPx, totcpy);
-    cudaMemcpy(this->d_charsPx, charsPx, totcpy, cudaMemcpyHostToDevice);
+    CUDA_CHECK(cudaMalloc((void **)&this->d_charsPx, totcpy));
+    CUDA_CHECK(cudaMemcpy(this->d_charsPx, charsPx, totcpy, cudaMemcpyHostToDevice));
 
     struct cudaDeviceProp prop;
-    cudaGetDeviceProperties(&prop, 0);
+    CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
     this->total = total;
     this->charsSz = charsSz;
     this->frameSz = frameSz;
@@ -405,12 +419,19 @@ diff::cuda::CUDACore::CUDACore(uint8_t *charsPx, matsz &charsSz, float *k, int t
     cudaMalloc((void **)&d_binarize, total * sizeof *d_binarize);
     cudaMalloc((void **)&d_histogram, 256 * sizeof *d_histogram);
     cudaMalloc((void **)&d_indexes_max, 2 * sizeof *d_indexes_max);
+    CUDA_CHECK(cudaMemcpyToSymbol(dev_k, k, K * K * sizeof(float)));
+    CUDA_CHECK(cudaMalloc((void **)&d_diff, total * sizeof *d_diff));
+    CUDA_CHECK(cudaMalloc((void **)&d_xs, total * sizeof *d_xs));
+    CUDA_CHECK(cudaMalloc((void **)&d_current, total * sizeof *d_current));
+    CUDA_CHECK(cudaMalloc((void **)&d_previous, total * sizeof *d_previous));
+    CUDA_CHECK(cudaMalloc((void **)&d_filtered, total * sizeof *d_filtered));
+    CUDA_CHECK(cudaMalloc((void **)&d_noise_visualization, total * sizeof *d_noise_visualization));
 
-    cudaMalloc((void **)&d_pos, sizeof *d_pos);
+    CUDA_CHECK(cudaMalloc((void **)&d_pos, sizeof *d_pos));
 
     nMaxThreads = prop.maxThreadsPerBlock;
     maxAtTime = total / nMaxThreads;
-    cudaMemcpy(d_current, sampleMatData, total * sizeof *sampleMatData, cudaMemcpyHostToDevice);
+    CUDA_CHECK(cudaMemcpy(d_current, sampleMatData, total * sizeof *sampleMatData, cudaMemcpyHostToDevice));
 
     max4 = ceil(1.0 * maxAtTime / sizeof(chunk_t));
 
@@ -466,6 +487,22 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     convolution_kernel<<<CDIM3(pgridSize), CDIM3(pblockSize)>>>(d_filtered, d_current);
 #else
     cudaMemcpyAsync(d_current, frameData, total, cudaMemcpyHostToDevice);
+#endif
+#ifdef NOISE_FILTER
+    CUDA_CHECK(cudaMemcpyAsync(d_filtered, frameData, total, cudaMemcpyHostToDevice));
+    convolution_kernel<<<CDIM3(pgridSize), CDIM3(pblockSize)>>>(d_filtered, d_current);
+#else
+    CUDA_CHECK(cudaMemcpyAsync(d_current, frameData, total, cudaMemcpyHostToDevice));
+#endif
+
+#ifdef NOISE_VISUALIZER
+#if NOISE_VISUALIZER == 1
+    heat_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
+    CUDA_CHECK(cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost));
+#elif NOISE_VISUALIZER == 2
+    red_black_map<<<1, nMaxThreads, 0>>>(d_current, d_previous, max4, d_noise_visualization);
+    CUDA_CHECK(cudaMemcpyAsync(showReadyNData, d_noise_visualization, total, cudaMemcpyDeviceToHost));
+#endif
 #endif
 
     // Applying text overlay
@@ -531,8 +568,8 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     // kernel<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, maxAtTime, d_pos, d_xs);
     kernel2<<<1, nMaxThreads, 0>>>(d_current, d_previous, d_diff, max4, d_pos, d_xs);
 
-    cudaMemcpyAsync(h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost);
-    cudaDeviceSynchronize();
+    CUDA_CHECK(cudaMemcpyAsync(h_pos, d_pos, sizeof *d_pos, cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaDeviceSynchronize());
 
 // Noise visualization
 #ifdef NOISE_VISUALIZER
@@ -551,6 +588,18 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     cudaMemcpyAsync(frameData, d_diff, *h_pos, cudaMemcpyDeviceToHost);
     cudaMemcpyAsync(h_xs, d_xs, *h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost);
     cudaDeviceSynchronize();
+    
+// Noise visualization
+#ifdef NOISE_VISUALIZER
+#if NOISE_VISUALIZER == 3
+    red_black_map_overlap<<<1, nMaxThreads, 0>>>(d_pos, d_xs, (*h_pos) / nMaxThreads, d_previous);
+    CUDA_CHECK(cudaMemcpyAsync(showReadyNData, d_previous, total, cudaMemcpyDeviceToHost));
+#endif
+#endif
+
+    CUDA_CHECK(cudaMemcpyAsync(frameData, d_diff, *h_pos, cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpyAsync(h_xs, d_xs, *h_pos * sizeof *d_xs, cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaDeviceSynchronize());
 }
 
 size_t diff::cuda::CUDACore::chunkt_size() {
@@ -558,8 +607,8 @@ size_t diff::cuda::CUDACore::chunkt_size() {
 }
 
 void diff::cuda::CUDACore::alloc_arrays(uint8_t **h_frame, uint8_t **n_frame, uint8_t **o_frame, int **h_xs, int r, int c) {
-    cudaMallocHost((void **)h_frame, 3 * r * c * sizeof **h_frame + sizeof(chunk_t));
-    cudaMallocHost((void **)n_frame, 3 * r * c * sizeof **n_frame + sizeof(chunk_t));
-    cudaMallocHost((void **)o_frame, 3 * r * c * sizeof **o_frame + sizeof(chunk_t));
-    cudaMallocHost((void **)h_xs, 3 * r * c * sizeof **h_xs + sizeof(chunk_t));
+    CUDA_CHECK(cudaMallocHost((void **)h_frame, 3 * r * c * sizeof **h_frame + sizeof(chunk_t)));
+    CUDA_CHECK(cudaMallocHost((void **)n_frame, 3 * r * c * sizeof **n_frame + sizeof(chunk_t)));
+    CUDA_CHECK(cudaMallocHost((void **)o_frame, 3 * r * c * sizeof **o_frame + sizeof(chunk_t)));
+    CUDA_CHECK(cudaMallocHost((void **)h_xs, 3 * r * c * sizeof **h_xs + sizeof(chunk_t)));
 }

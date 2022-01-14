@@ -9,12 +9,14 @@
 
 // Noise visualizer: 1 heatmap, 2 red-black, 3 red-black overlap, 4 grayscale-kernel
 #define NOISE_VISUALIZER 5
+// Noise visualizer: 1 heatmap, 2 red-black, 3 red-black overlap
+// #define NOISE_VISUALIZER 1
 
-#define CHARS_STR "0123456789BFPSWbkps :"
+#define CHARS_STR "0123456789BFPSWbkps :/"
 #define LR_THRESHOLDS 20
 #define GPU
 #define KERNEL2_NEGFEED_OPT
 
-#define SERVER_IMSHOW
+// #define SERVER_IMSHOW
 
 #endif

@@ -96,8 +96,9 @@ ThreadsCore::ThreadsCore() {
         pready->pframe = new cv::Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type(), h_frame);
         show_ready->nframe = new cv::Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type(), n_frame);
 #else
-        pready->pframe = new cv::Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type());
         pready->h_xs = new int[3 * ctx.sampleMat->rows * ctx.sampleMat->cols];
+        pready->pframe = new cv::Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type());
+        show_ready->nframe = new cv::Mat(ctx.sampleMat->rows, ctx.sampleMat->cols, ctx.sampleMat->type());
 #endif
 
         pready->h_pos = 0;
