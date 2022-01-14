@@ -7,10 +7,8 @@
 #define TILE_SIZE 10
 #define BLOCK_SIZE (TILE_SIZE + K - 1)
 
-// Noise visualizer: 1 heatmap, 2 red-black, 3 red-black overlap, 4 grayscale-kernel
+// Noise visualizer: 1 heatmap, 2 red-black, 3 red-black overlap, 4 grayscale-kernel, 5 binarization
 #define NOISE_VISUALIZER 5
-// Noise visualizer: 1 heatmap, 2 red-black, 3 red-black overlap
-// #define NOISE_VISUALIZER 1
 
 #define CHARS_STR "0123456789BFPSWbkps :/"
 #define LR_THRESHOLDS 20
