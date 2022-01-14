@@ -553,7 +553,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
 
     // binarize_kernel<<<1, nMaxThreads>>>(d_binarize, d_grayscale, maxAtTime, threshold);
     binarize_kernel_v2<<<1, nMaxThreads>>>(d_binarize, d_grayscale, max4, threshold);
-    cudaMemcpyAsync(showReadyNData, d_binarize, total, cudaMemcpyDeviceToHost);
+    CUDA_CHECK(cudaMemcpyAsync(showReadyNData, d_binarize, total, cudaMemcpyDeviceToHost));
 
 #endif
 #endif
