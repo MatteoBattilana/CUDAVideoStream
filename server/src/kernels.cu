@@ -408,17 +408,10 @@ diff::cuda::CUDACore::CUDACore(uint8_t *charsPx, matsz &charsSz, float *k, int t
     this->charsSz = charsSz;
     this->frameSz = frameSz;
 
-    cudaMemcpyToSymbol(dev_k, k, K * K * sizeof(float));
-    cudaMalloc((void **)&d_diff, total * sizeof *d_diff);
-    cudaMalloc((void **)&d_xs, total * sizeof *d_xs);
-    cudaMalloc((void **)&d_current, total * sizeof *d_current);
-    cudaMalloc((void **)&d_previous, total * sizeof *d_previous);
-    cudaMalloc((void **)&d_filtered, total * sizeof *d_filtered);
-    cudaMalloc((void **)&d_noise_visualization, total * sizeof *d_noise_visualization);
-    cudaMalloc((void **)&d_grayscale, total * sizeof *d_grayscale);
-    cudaMalloc((void **)&d_binarize, total * sizeof *d_binarize);
-    cudaMalloc((void **)&d_histogram, 256 * sizeof *d_histogram);
-    cudaMalloc((void **)&d_indexes_max, 2 * sizeof *d_indexes_max);
+    CUDA_CHECK(cudaMalloc((void **)&d_grayscale, total * sizeof *d_grayscale));
+    CUDA_CHECK(cudaMalloc((void **)&d_binarize, total * sizeof *d_binarize));
+    CUDA_CHECK(cudaMalloc((void **)&d_histogram, 256 * sizeof *d_histogram));
+    CUDA_CHECK(cudaMalloc((void **)&d_indexes_max, 2 * sizeof *d_indexes_max));
     CUDA_CHECK(cudaMemcpyToSymbol(dev_k, k, K * K * sizeof(float)));
     CUDA_CHECK(cudaMalloc((void **)&d_diff, total * sizeof *d_diff));
     CUDA_CHECK(cudaMalloc((void **)&d_xs, total * sizeof *d_xs));
