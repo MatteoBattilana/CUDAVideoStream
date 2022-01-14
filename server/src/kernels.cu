@@ -476,12 +476,6 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     // Copy in the current pointer and run
 
 #ifdef NOISE_FILTER
-    cudaMemcpyAsync(d_filtered, frameData, total, cudaMemcpyHostToDevice);
-    convolution_kernel<<<CDIM3(pgridSize), CDIM3(pblockSize)>>>(d_filtered, d_current);
-#else
-    cudaMemcpyAsync(d_current, frameData, total, cudaMemcpyHostToDevice);
-#endif
-#ifdef NOISE_FILTER
     CUDA_CHECK(cudaMemcpyAsync(d_filtered, frameData, total, cudaMemcpyHostToDevice));
     convolution_kernel<<<CDIM3(pgridSize), CDIM3(pblockSize)>>>(d_filtered, d_current);
 #else
