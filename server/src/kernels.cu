@@ -533,16 +533,8 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     CUDA_CHECK(cudaMemcpyAsync(h_histogram, d_histogram, 256 * sizeof(int), cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaMemcpyAsync(h_indexes, d_indexes_max, 2 * sizeof(uint8_t), cudaMemcpyDeviceToHost));
 
-    // printf("\nIstogramma\n");
-
-    // for (int i = 0; i < 256; i++) {
-    //     printf("%d\n", h_histogram[i]);
-    // }
-    // printf("\nMassimi\n");
-
     index_max = h_indexes[0];
     index_sec_max = h_indexes[1];
-    // // printf("%d %d\n", index_max, index_sec_max);
     int threshold = (index_max + index_sec_max) / 2;
     if (threshold < 50) {
         threshold = 50;
