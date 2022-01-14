@@ -517,7 +517,7 @@ void diff::cuda::CUDACore::exec_core(uint8_t *frameData, uint8_t *showReadyNData
     // grayscale_kernel<<<1, nMaxThreads>>>(d_current, d_grayscale, maxAtTime);
     // grayscale_kernel_v2<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
     grayscale_kernel_v3<<<1, nMaxThreads>>>(d_current, d_grayscale, max4);
-    cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost);
+    CUDA_CHECK(cudaMemcpyAsync(showReadyNData, d_grayscale, total, cudaMemcpyDeviceToHost));
 
 #elif NOISE_VISUALIZER == 5
     int h_histogram[256] = {0};
