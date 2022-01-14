@@ -3138,7 +3138,11 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 		int x = threadIdx.x + blockDim.x * blockIdx.x;
 		int start = x * maxSect;
 		int max = start + maxSect;
-	
+
+	    if (tid < 256) {
+        	histogram[tid] = 0;
+    	}
+
 		for (int i = start; i < max; i = i + 3) {
 	        atomicAdd(&histogram[grayscale[i]], 1);
 		}
@@ -3191,24 +3195,55 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.65\linewidth]{images/binarization/hist2.png}
+		\includegraphics[width=0.65\linewidth]{images/binarization/hist3.png}
 		\caption{\textit{GPU implementation of grayscale + histogram shared memory}}
 		\label{fig:grayscale-histogram-v3}
 	\end{figure}
 
 	\subsection{Compute the two max of the histogram}
-
+				
 	After having computed the histogram is important to find a way to compute the threshold. There are two implementation, a simple one and a difficult one:
-
+				
 	\begin{enumerate}
 		\item Find the two max: this is the easy way. In fact there is the need to find the two maximum value and make an average.
 		\item Find the two peak: this is the more complex version. In fact, it would be easy if the value would be fully increasing or fully deacrising. However, in out case, we may have a mix of ascending and descending value, so it gets very complicated.
 	\end{enumerate}
-
+				
 	In this project a simple version is implemented. As a future work, the more difficult (and accurate) version may be implemented. 
 
-	The algorithm to compute two max of an array in CUDA is based on the reduction algorithm.
+	\subsubsection{CPU implementation}
+	
+	For the CPU implementation, there is a simple for loop that iterates over the histogram, and check wheather the current value is greater than the current max. If it is, the value of the max is updated. Same thing goes for the second greater number. The code, is quoted down:
+	
+	\begin{lstlisting}[style=CStyle]
+	int max = -1, sec_max = -1;
+	int index_max = -1, index_sec_max = -1;
+	for (int i = 0; i < 256; i++) {
+		if (histogram[i] >= max) {
+			index_sec_max = index_max;
+			index_max = i;
+			max = histogram[i];
+			sec_max = max;
+		} else if (histogram[i] > sec_max && histogram[i] < max) {
+			sec_max = histogram[i];
+			index_sec_max = i;
+		}
+	}
+	\end{lstlisting}
 
+	Performance, shown in \autoref{fig:cpu-grayscale-histogram-max} are not good, but with the GPU implementation, they will improve a lot.
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/binarization/max1.png}
+		\caption{\textit{CPU implementation of grayscale + histogram + max}}
+		\label{fig:cpu-grayscale-histogram-max}
+	\end{figure}
+
+				
+	\subsubsection{GPU implementation}
+	The algorithm to compute two max of an array in CUDA is based on the reduction algorithm.
+				
 	The schematic of the algorithm is shown in \autoref{fig:reduction-values} and \autoref{fig:reduction-indexes}.
 
 	\begin{figure}[H]
@@ -3228,12 +3263,12 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	The reduction algorithm needs a number of thread that is the same as the numbers of the vector, because initially is important to set the value inside the shared memory. The following code is the one used to declared the shared memory and initialized its values. After that, in order to be sure that all threads have initialized the shared memory, it is important to sync all threads. 
 
 	\begin{lstlisting}[style=CStyle]
-	__global__ void compute_max(int *histogram, uint8_t *indexes_max) {
+	__global__ void compute_max(int *histogram, uint8_t *threshold) {
 		int tid = threadIdx.x + blockDim.x * blockIdx.x;
-	
+
 		__shared__ int shared_histogram[256];
 		__shared__ int shared_indexes[256];
-	
+
 		shared_histogram[tid] = histogram[tid];
 		shared_indexes[tid] = tid;
 		__syncthreads();
@@ -3260,16 +3295,16 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	}
 	\end{lstlisting}
 
-	The last operation is copying back the data from the shared memory to the device data. Since is important to retrieve the two indexes of the two max values, they will be positioned at index 0 and 1 of the shared memory.
+	Since is important to retrieve the two indexes of the two max values, they will be positioned at index 0 and 1 of the shared memory.
 
-	\begin{lstlisting}[style=CStyle]
-	if (tid == 0) {
-		indexes_max[tid] = shared_indexes[tid];
-	}
-	if (tid == 1) {
-		indexes_max[tid] = shared_indexes[tid];
-	}
-	\end{lstlisting}
+	Performance are show in \autoref{fig:grayscale-histogram-max}.
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/binarization/max2.png}
+		\caption{\textit{GPU implementation of grayscale + histogram + max shared memory}}
+		\label{fig:grayscale-histogram-max}
+	\end{figure}
 
 	\subsection{Compute the threshold}
 
@@ -3279,8 +3314,22 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 		threshold = \frac{max1 + max2}{2}
 	\end{equation*}
 
+
 	An important detail is that if the threshold is too low it means that the the distribution is confined to small values. For this reason, if the threshold is smaller than 50, the threshold will be set manually to 50, in order to correctly detect the background. For the same reason, if the threshold if higher that 200 it will the set manually to 200.
 
+	The code, inserted inside the kernel that computes the max, is the following:
+
+	\begin{lstlisting}[style=CStyle]
+	if (tid == 0) {
+		threshold[0] = (shared_indexes[0] + shared_indexes[1]) / 2;
+		if (threshold[0] < 50) {
+			threshold[0] = 50;
+		}
+		if (threshold[0] > 200) {
+			threshold[0] = 200;
+		}
+	}
+	\end{lstlisting}
 
 	\subsection{Convert the grayscale to binary}
 
@@ -3301,6 +3350,90 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	\end{lstlisting}
 
 	The loop is incremented 3 by 3, because as alredy explained, there are 3 channels but, because they all have the same value, there is not the need to check all 3 channles. However, when modifying the channels, all of them need to be changed. 
+
+	\subsubsection{CPU Implementation}
+
+	The CPU implementation is really similiar to the pseudocode.
+
+	\begin{lstlisting}[style=CStyle]
+	for (int i = 0; i < total; i++) {
+		if (ready.data[i] > threshold) {
+			ready.data[i] = 255;
+		} else {
+			ready.data[i] = 0;
+		}
+	}
+	\end{lstlisting}
+
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/binarization/bin1.png}
+		\caption{\textit{CPU binarization}}
+		\label{fig:cpu-bin}
+	\end{figure}
+
+	
+	\subsubsection{GPU Implementation Improvements}
+	
+	\begin{lstlisting}[style=CStyle]
+	__global__ void binarize_kernel(uint8_t *binarize, uint8_t *grayscale, 
+		int maxSect, int threshold) {
+		int x = threadIdx.x + blockDim.x * blockIdx.x;
+		int start = x * maxSect;
+		int max = start + maxSect;
+	
+		for (int i = start; i < max; i++) {
+			if (grayscale[i] > threshold) {
+				binarize[i] = 255;
+			} else {
+				binarize[i] = 0;
+			}
+		}
+	}
+	\end{lstlisting}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/binarization/bin2.png}
+		\caption{\textit{GPU implementation of binarization with chunk}}
+		\label{fig:gpu-bin}
+	\end{figure}
+	
+
+	\subsubsection{GPU Implementation Improvements}
+
+	\begin{lstlisting}[style=CStyle]
+	__global__ void binarize_kernel_v2(uint8_t *binarize, uint8_t *grayscale, 
+		int maxSect, uint8_t *threshold) {
+		int x = threadIdx.x + blockDim.x * blockIdx.x;
+		int start = x * maxSect;
+		int max = start + maxSect;
+		chunk_t gs, bi;
+		int size = sizeof(chunk_t);
+	
+		for (int i = start; i < max; i++) {
+			gs = ((chunk_t *)grayscale)[i];
+			bi = ((chunk_t *)binarize)[i];
+			for (int j = 0; j < size; j++) {
+				if (((uint8_t *)&gs)[j] > threshold[0]) {
+					((uint8_t *)&bi)[j] = 255;
+				} else {
+					((uint8_t *)&bi)[j] = 0;
+				}
+			}
+			((chunk_t *)binarize)[i] = bi;
+		}
+	}
+	\end{lstlisting}
+
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=0.75\linewidth]{images/binarization/bin3.png}
+		\caption{\textit{GPU implementation of binarization with chunk}}
+		\label{fig:gpu-bin-chunk}
+	\end{figure}
 	
 
 	\newpage
