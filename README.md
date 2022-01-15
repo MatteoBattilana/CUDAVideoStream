@@ -17,6 +17,8 @@ The purpose of the project is to demonstrate the performances that are obtainabl
 :-------------------------:|:-------------------------:
 ![](./REPORT/images/chars_ok.png)  |  ![](./REPORT/images/streaming_ok.png)
 ![](./REPORT/images/heatmap/v0.png)  |  ![](./REPORT/images/heatmap/v0-red.png)
+![](./REPORT/images/readme/bw.png)  |  ![](./REPORT/images/readme/binarize.png)
+
 ## Build and Run
 
 This project is splitted into two parts: a client and a server. In the project root folder there are two main directories named as the two parts mentioned. Thanks to the use of GNU Make utility, is possibile to build and run the project in an easy way. 
