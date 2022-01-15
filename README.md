@@ -6,7 +6,7 @@ A classical video streaming algorithm over internet or over any other communicat
 
 If this can be arguable for video with a lower resolution, the heaviness of sending each frame as it is for high video resolution is notable. Let's take as an example a FULL HD video, means that each frame is composed of 1920x1080 pixels where 1920 is the width of the frame while 1080 is the height. Supposing the frame is in RGB24 format, means that each pixel is rapresented by 3 byte (one for each channel R, G, and B).
 
-By doing a rapid computation, each frame measures $3 \cdot 1920 \cdot 1080 B = 6220800 B = 5.93 MB $. Supposing now the video used by example is a 30 fps video, means that each second we have 30 frame, each of one measures 5.93 MB: each second we are sending about 178 MB. To send 178 MB/s we need a transfer link bandwith of 1492 Mbps, that is unfeasible.
+By doing a rapid computation, each frame measures 3 * 1920 * 1080 B = 6220800 B = 5.93 MB. Supposing now the video used by example is a 30 fps video, means that each second we have 30 frame, each of one measures 5.93 MB: each second we are sending about 178 MB. To send 178 MB/s we need a transfer link bandwith of 1492 Mbps, that is unfeasible.
 
 So the solution is to send the difference, and this means sending only the pixels that change or, better, pixels where their difference is above a certain threshold. 
 
