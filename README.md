@@ -46,3 +46,7 @@ Launching the make command inside the \textit{server} directory is possible to u
 * ```make clean```: cleans the build output files
                
 If a multi-core device is used, is possible to compile the server in a parallel way, this allows to reduce the compilation time by almost an half of the sequantial time, for example (supposing to be inside the server folder and 4 cores are available): ```make -j 4 prof```.
+
+## Slides
+
+https://docs.google.com/presentation/d/18GZT7R1gmEW7rZUYdf4B6lOFejbcKKttz0uWtJQNBzk/edit?usp=sharing
