@@ -2994,6 +2994,7 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	\end{figure}
 	
 	\section{Binarization}
+	\label{sec:binarization}
 
 	Image binarization is the process of taking a grayscale image and converting it to black-and-white, essentially reducing the information contained within the image from 256 shades of gray to 2: black and white, a binary image. It enhances the 
 	performance of document processing techniques like OCR and layout analysis. Another domain of application is the segmentation of an image into foreground and background. An example is shown in \autoref{fig:black-white} and \autoref{fig:binarized}.
@@ -3346,20 +3347,14 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	Knowing the correct threshold, the conversion from grayscale to binary is very easy. The pseudocode is the following;
 
 	\begin{lstlisting}[style=CStyle]
-	for (int i = 0; i < total_pixels; i = i + 3) {
+	for (int i = 0; i < total_pixels; i++) {
 		if(matrix[i] > threshold){
 			matrix[i] = 255;
-			matrix[i+1] = 255;
-			matrix[i+2] = 255;
 		} else {
 			matrix[i] = 0;
-			matrix[i+1] = 0;
-			matrix[i+2] = 0;
 		}
 	}
 	\end{lstlisting}
-
-	The loop is incremented 3 by 3, because as alredy explained, there are 3 channels but, because they all have the same value, there is not the need to check all 3 channles. However, when modifying the channels, all of them need to be changed. 
 
 	\subsubsection{CPU Implementation}
 
@@ -3375,6 +3370,7 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	}
 	\end{lstlisting}
 
+	In \autoref{fig:cpu-bin} are show the performance for the CPU implementation of the binarization. So it is basically the sum of the steps, implemented with the CPU, described in \autoref{sec:binarization}.
 
 	\begin{figure}[H]
 		\centering
@@ -3386,6 +3382,8 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	
 	\subsubsection{GPU Implementation Improvements}
 	
+	The first GPU implementation is simply the conversion fromt the CPU code to a GPU compatible one. As shown in \autoref{fig:gpu-bin}, performance are really good, but there is still some space from improvements.
+
 	\begin{lstlisting}[style=CStyle]
 	__global__ void binarize_kernel(uint8_t *binarize, uint8_t *grayscale, 
 		int maxSect, int threshold) {
@@ -3412,6 +3410,8 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 	
 
 	\subsubsection{GPU Implementation Improvements}
+
+	In this case the code is really similar to the one of the previous section. However, the big improvement is due to the fact that the whole matrix of pixels is divided into chunk, and the copy to the vector binarize is done only one chunk at a time. Thanks to this idea, as shown in \autoref{fig:gpu-bin-chunk} performance improves a lot.
 
 	\begin{lstlisting}[style=CStyle]
 	__global__ void binarize_kernel_v2(uint8_t *binarize, uint8_t *grayscale, 
