@@ -47,7 +47,7 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
     int start = x * maxSect;
     int max = start + maxSect;
     chunk_t cc, pc;
-    uint8_t redColor = 0;
+    bool redColor = false;
     int df;
     int size = sizeof(chunk_t);
 
@@ -59,12 +59,12 @@ __global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect, uint8_t
             df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
 
             if ((df < -LR_THRESHOLDS || df > LR_THRESHOLDS)){
-                redColor = 255;
+                redColor = true;
             }
             
-            if(((i*size)+ j ) % 3 == 2){
-                noise_visualization[(i*size)+j] = redColor;
-                redColor = 0;
+            if(redColor && ((i*size)+ j ) % 3 == 2){
+                noise_visualization[(i*size)+j] = 255;
+                redColor = false;
             }
         }
     }
@@ -125,6 +125,7 @@ int main(int argc, char *argv[]) {
         d_previous = tmp;
 
         start = std::chrono::high_resolution_clock::now();
+        cudaMemset ( d_heat_pixels , 0 , W*H*3 ) ;
         
         cudaMemcpy(d_current, image2.data,  W*H*3 * sizeof *image2.data, cudaMemcpyHostToDevice);
         kernel<<<1, threads>>>(d_current, d_previous, (((W*H*3)/threads)/(sizeof(chunk_t))), d_heat_pixels);
