@@ -23,13 +23,16 @@ build-v2-assembly:
 	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) -ptx -o v2.S v2.cu
 
 build-v3: 
-	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v3.cu -o heatMapRed
+	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v2_2.cu -o heatMapRed
 
 build-v3-assembly: 
 	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) -ptx -o heatMapRed.ptx v3.cu
 
 build-v4: 
-	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v4.cu -o heatMapRed
+	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v3.cu -o heatMapRed
+
+build-v5: 
+	$(CC) $(CFLAGS) $(LFLAGS) $(INCLUDES) $(SRCS) v3.cu -o heatMapRed
 
 run:
 	./heatMapRed

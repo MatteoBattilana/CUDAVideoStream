@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 
     auto start = std::chrono::high_resolution_clock::now();
     auto end = std::chrono::high_resolution_clock::now();
-    for (int i = 0;  i < 150; i++){
+    for (int i = 0;  i < 20; i++){
         cap >> image2;
         
         // imshow("Original", image2);

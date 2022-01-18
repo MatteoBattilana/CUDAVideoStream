@@ -1272,7 +1272,7 @@ A comparison chart is show in Figure \ref{fig:chart10}:
 
 	\section{HeatMap}
 	Since the basis of this project is to send the pixel difference, the lower the dissimilarities the higher the bandwidth saving. In order to better visualize which pixels changes the most and the different magnitudes, an heatmap is generated with the current and the previous frames.\newline\newline	
-	A heat map is nothing else than a data visualization technique that represents the magnitude of a measurement as colors in two dimensions, in this case an image. The idea is first compute the difference at the pixel level between two successive frames and then represent it using a color scale from blue to red, where blue means low difference and red high difference. The Image \ref{fig:heat_v0} shows a naif implementation of heat map, available at \texttt{heat\_map\_benchmark/v0.cu}, that generates in real time the image on the right.
+	A heat map is nothing else than a data visualization technique that represents the magnitude of a measurement as colors in two dimensions, in this case an image. The idea is to first compute the difference at the pixel level between two successive frames and then represent them using a color scale from blue to red, where blue means low difference and red high difference. The Image \ref{fig:heat_v0} shows a naif implementation of heat map, available at \texttt{heat\_map\_benchmark/v0.cu}, that generates in real time the image on the right.
 
 	\begin{figure}[H]
 		\centering
@@ -1292,18 +1292,18 @@ A comparison chart is show in Figure \ref{fig:chart10}:
 	
 	\subsection{Heat map pixel mapping - CPU Naif implementation}
 	
-	The first \textit{naif} version has been done on the CPU. This implementation can generate an heatmap in more or less 980ms, that is too much. This is also due to the complexity of the function itself that is used to map a normalized pixel difference to a blue-red scale and because the image is sequentially analyzed.
+	The first \textit{naif} version has been developed on the CPU. This implementation can generate an heatmap in more or less 980ms, that is too much. This is also due to the complexity of the function itself that is used to map a normalized pixel difference to a blue-red scale and because the image is sequentially analyzed.
 	In order to convert the difference of a pixel into the three color component (RGB), the usage of the \textit{sine} function has been done. The difference of the each pixel has been computed as the sum of the absolute value of the difference of the single color component, as:
 	\[
 		diff = abs(Previous[i,R] - Curr[i,R]) + abs(Previous[i,G] - Curr[i,G] + abs(Previous[i,B] - Curr[i,B])
 	\]
-	Where $Previous[i,R]$ is the pixel red color component of the pixel at index $i$. In the worst case, a pixel can be turned from black to white or vice versa and so, the $0 \leq diff \leq 765$, that is $255 \cdot 3$. Then the $diff$ value is taken and normalize, by using 765 so that, $0 \leq diff_{norm} \leq 1$.:
+	Where $Previous[i,R]$ is the pixel red color component of the pixel at index $i$. In the worst case, a pixel can be turned from black to white or vice versa and so, the $0 \leq diff \leq 765$, that is $255 \cdot 3$. Then the $diff$ value is taken and normalized, by using 765 so that, $0 \leq diff_{norm} \leq 1$.:
 	\[
 		diff_{norm} = \frac{diff}{765}
 	\]
 	
 	This value must be mapped into the tree RGB component of the heat map; the pixel must be more blue if the difference is more toward 0.0, yellow/green if near 0.5 and red if next to 1.0.
-	The smoothed way to perform this task is to use three different sine functions, centered respectively on 0.0, 0.5 and 1.0 as in the following way:
+	The smoothest way to perform this task is to use three different sine functions, centered respectively at 0.0, 0.5 and 1.0 as in the following way:
 	\begin{align*}
 		\text{RED    } & \quad sin(\pi \cdot diff_{norm} - \frac{\pi}{2.0})\\
 		\text{GREEN  } & \quad sin(\pi \cdot diff_{norm})\\
@@ -1374,7 +1374,7 @@ while (1) {
 	
 	The idea is to rewrite what described in the previous section into a CUDA code. The GPU allows to run in parallel multiple instance of the same kernel, so that the execution can be done in parallel in order to speed up the computation.
 	
-	From the perspective of the interaction, the GPU acts like an accelerator of the CPU, that ask it to execute the kernel by resorting to the following phases:
+	From the perspective of the interaction, the GPU acts like an accelerator of the CPU; the host asks it to execute the kernel by resorting to the following phases:
 	\begin{enumerate}
 		\itemsep0sp
 		\item Copy the frames from the Host to the Device memory
@@ -1401,7 +1401,7 @@ cudaMalloc((void **)&d_heat_pixels, W*H*C * sizeof *d_heat_pixels);\end{lstlisti
 
 	Unfortunately, this type of the problem doesn't need any shared or constant memory because each location in the image (all three colors of all pixels) are accessed only once and using a shared memory would have only reduced the performance due to the overhead of the useless copy. Moreover, there are no data that are constant.
 	
-	CUDA allows to get the information about the maximum number of thread by using the \texttt{cudaGetDeviceProperties} command and, by referring to the equation defined before, $K$ can be set to that value. In fact, the kernel is launched with the following configuration:
+	CUDA allows to get the information about the maximum number of threads by using the \texttt{cudaGetDeviceProperties} attribute and, by referring to the equation defined before, $K$ can be set to that value. In fact, the kernel is launched with the following configuration:
 	\begin{itemize}
 		\itemsep0sp
 		\item \textit{Grid dimensions}:  1, 0, 0
@@ -1477,7 +1477,7 @@ __global__ void kernel(uint8_t *current, uint8_t *previous,
 				\hline
 				\textbf{Type} & \textbf{Time} (\%) & \textbf{Avg} & \textbf{Name} \\ 
 				\hline
-				GPU activities & 86.14 & 49.958 & kernel \\ 
+				GPU activities & 86.14 & 49.958ms & kernel \\ 
 				& 9.38 & 2.5577ms & [CUDA memcpy HtoD] \\ 
 				& 4.48 & 2.4427ms & [CUDA memcpy DtoH] \\ 
 				\hline
@@ -1499,7 +1499,7 @@ __global__ void kernel(uint8_t *current, uint8_t *previous,
 			\includegraphics[width=0.6\linewidth]{images/heatmap/gpu_naif}
 		\end{center}
 	\label{fig:cpu_vs_gpu}
-	\caption{\textit{Loop time CPU vs GPU}}
+	\caption{\textit{CPU vs GPU execution time}}
 	\end{figure}
 	
 	\subsubsection{CUDA switching frames}
@@ -1530,7 +1530,7 @@ while(1){
 				\hline
 				\textbf{Type} & \textbf{Time} (\%) & \textbf{Avg} & \textbf{Name} \\ 
 				\hline
-				GPU activities & 90.54 & 46.023 & kernel \\ 
+				GPU activities & 90.54 & 46.023ms & kernel \\ 
 				& 4.85 & 2.4400ms & [CUDA memcpy HtoD] \\ 
 				& 4.61 & 2.3453ms & [CUDA memcpy DtoH] \\ 
 				\hline
@@ -1551,8 +1551,9 @@ while(1){
 	
 	\subsubsection{CUDA Global memory access granularity}
 	The problem with the generation of the heat map is that, the computation of the color must be done every time for all the pixels in order to compute the complete image.\newline\newline
-	Since each thread must perform 6075 iterations and need to write on the Global memory the same amount of times.
-	In order to reduce the number of accesses to the Global memory, the idea was to access at the \texttt{int} level instead of the \texttt{byte} level. This means that frame information are still copied from host to device as arrays of \textit{bytes} but they are accesses at the int level. So, if the current and the previous frames are passed as \texttt{uint8\_t *current, uint8\_t *previous}, the access is aligned at the 4 bytes. 
+	Since each thread must perform 6075 iterations and needs to write on the Global memory the same amount of times.
+	
+	In order to reduce the number of accesses to the Global memory, the idea was to access at the \texttt{int} level instead of the \texttt{byte} level. This means that frame information are still copied from host to the device as arrays of \textit{bytes} but they are accesses at the int level. So, if the current and the previous frames are passed as \texttt{uint8\_t *current, uint8\_t *previous}, the access is aligned at the 4 bytes. 
 	Another problem arises: the threads now access the memory with a granularity of 4 byte, but since the pixel difference needs needs only the first three bytes (RGB), in order to optimize and avoid to read twice from the memory, colors are updated only once every 3 bytes. So, when the position of the color in the image is the first, the colors of the heat map are set in the current and next two bytes of the output array, accordingly to the computed difference.
 	\begin{lstlisting}[style=CStyle]
 __global__ void kernel(uint8_t *current, uint8_t *previous,
@@ -1626,7 +1627,7 @@ cudaMemcpy(heatmap, d_out, W*H*C * sizeof *heatmap, cudaMemcpyDeviceToHost);\end
 		\includegraphics[width=0.6\linewidth]{images/heatmap/comp_heat_4}
 	\end{center}
 	
-	This can be pushed even more, so that instead of accessing the images that are in the global memory, at the \texttt{int} level, they are accessed via a vectorized access. The complete explanation is available at Section \ref{sec:cherry}. By the way, it is able to increase even more the performance, allowing to complete the for loop in around 27ms using \texttt{long4} data type.
+	This can be pushed even more, so that instead of accessing the images that are in the global memory, at the \texttt{int} level, they are accessed via a vectorized access with the \texttt{long4} alignment. The complete explanation is available at Section \ref{sec:cherry}. By the way, it is able to increase even more the performance, allowing to complete the for loop in around 27ms using \texttt{long4} data type.
 		\begin{table}[H]
 		\centering
 		\begin{center}
@@ -1651,7 +1652,7 @@ cudaMemcpy(heatmap, d_out, W*H*C * sizeof *heatmap, cudaMemcpyDeviceToHost);\end
 	\end{center}
 	
 	
-	\subsection{Evaluation of the number of threads}
+	\subsubsection{Evaluation of the number of threads}
 	\label{sec:thread_n}
 	For a first implementation, the number of thread has been set to the maximum allowable from the architecture, that is given by the \texttt{cudaGetDeviceProperties} CUDA function in order to make the program independent form the device used. For example, for the Jetson Nano, the maximum number of threads are 1024.\newline\newline
 	In order to understand how the number of threads impacts on the heat map generation, a bash script has been build in order to dynamically change the $K$ parameter via compiler directive. The number of threads must be a multiple of 4, so that the array of the pixels can be divided into portion in such a way that a pixel is not split between two kernel.
@@ -1682,7 +1683,7 @@ done\end{lstlisting}
 		\begin{subfigure}{.45\textwidth}
 			\centering
 			\includegraphics[width=1\linewidth]{images/heatmap/plot_kernel_times.png}
-			\caption{Time needed to perform an heatmap depending on the number of kernel set}
+			\caption{Time needed to perform an heatmap depending on the number of threads}
 			\label{fig:sub1}
 		\end{subfigure}%
 		\hspace{5mm}
@@ -1693,11 +1694,11 @@ done\end{lstlisting}
 			\label{fig:sub2}
 		\end{subfigure}
 	\end{figure}
-	This is not the behaviour that we would have expected, beside the time needed to copy is more or less constant, by increasing the number of threads for that kernel we would expect that the time needed for the heat map computation would be lower. This is probably due to the fact that the \textit{warp} has a fixed size of 32 threads and, even if by increasing the number of threads its execution time is lower, their management probably introduce too much overhead to obtain benefits.
+	This is not the behaviour that we would have expected, beside the time needed to copy is more or less constant, by increasing the number of threads for that kernel we would expect that the time needed for the heat map computation would be lower due to the higher threads availability. This is probably due to the fact that the \textit{warp} has a fixed size of 32 threads and, even if the threads number is increased, the average kernel execution time cannot go under a certain values maybe due to some management overhead.
 	
-	Beside this, the time needed to perform an heatmap vs the number of threads, shows a peculiar behaviour. After about $N > 280$ the times tend to oscillate between more or less 50ms and 27ms. Even if this seems not a big difference, in the filed of real-time image processing, it's a huge improvement. In order to avoid errors, the same script has been run multiple times and the results is always the same. Since the internal infrastructure is a black box, the hardware probably manage in different ways the threads with the respect to their number.\newline
-	The best observed thread configuration for the Jetson Nano, seems to be 716.\newline\newline
-	In fact, by running the same exact algorithm describe before but the number of threads is set to 718 (that is the best kernel accordingly to the plot above), the time needed to copy a frame, compute the heat map and then copy back the heat map matrix is about 27ms. This leads to a increasing of performance of 10\%, that in this domain is not negligible.
+	Beside this, the time needed to perform an heatmap vs the number of threads, shows a peculiar behaviour. After about $N > 280$ the times tend to oscillate between more or less 40ms and 20ms. Even if this seems not a big difference, in the filed of real-time image processing, it's a huge improvement. In order to avoid errors, the same script has been run multiple times and the results is always the same. Since the internal infrastructure is a black box, the hardware probably manage in different ways the threads with the respect to their number.\newline
+	The best observed thread configuration for the Jetson Nano, seems to be 718.\newline\newline
+	In fact, by running the same exact algorithm describe before but the number of threads is set to 718 (that is the best kernel accordingly to the plot above), the time needed to copy a frame, compute the heat map and then copy back the heat map matrix is about 25.7ms. This leads to a increasing of performance of 10\%, that in this domain is not negligible.
 	
 	The following table shows some meaningful data extracted from the profiler:
 		\begin{table}[H]
@@ -1707,12 +1708,12 @@ done\end{lstlisting}
 				\hline
 				\textbf{Type} & \textbf{Time} (\%) & \textbf{Avg} & \textbf{Name} \\ 
 				\hline
-				GPU activities & 84.30 & 24.380ms & kernel \\ 
-				& 8.04 & 2.4599ms & [CUDA memcpy HtoD] \\ 
-				& 7.66 & 2.383ms & [CUDA memcpy DtoH] \\ 
+				GPU activities & 80.29 & 20.990ms & kernel \\ 
+				& 10.26 & 2.6562ms & [CUDA memcpy HtoD] \\ 
+				& 9.45 & 2.4706ms & [CUDA memcpy DtoH] \\ 
 				\hline
-				API calls & 90.06 & 16.192ms & cudaMemcpy \\ 
-				& 9.57 & 115.27ms & cudaMalloc \\ 
+				API calls & 88.80 & 13.744ms & cudaMemcpy \\ 
+				& 10.75 & 111.48ms & cudaMalloc \\ 
 				\hline
 			\end{tabular}
 		\end{center}
@@ -1720,11 +1721,10 @@ done\end{lstlisting}
 		\caption{\textit{Profiling result v3.cu}}
 	\end{table}
 
-	\subsubsection{Heatmap Conclusions}
+	By considering only the CUDA algorithm, the optimizations shows a decreasing fashion of the time needed to process the two frames and generate the heat map. The plot shows only the average kernel time. All data are in ms. 
 
-	By considering only the CUDA algorithm, the optimizations shows a decreasing fashion of the time needed to process the two frames and generate the heat map. The Loop average time, is the time needed to copy the image from the Host to the Device, summed to the heat map time computation and the time needed to copy it back. On the other hand, the plot on the right shows only the average kernel time. All data are in ms. 
 	\begin{center}
-		\includegraphics[width=0.65\linewidth]{images/heatmap/histo_results}
+		\includegraphics[width=0.65\linewidth]{images/heatmap/comp_heat_7}
 	\end{center}
 	
 	
@@ -1799,15 +1799,15 @@ for (int y = 0; y < H; y++){
 	\subsubsection{CUDA implementation}
 	The same considerations and optimization steps done for the heat map can be done also for the generation of the frames that allows the user to better visualize the noise in the frames. So, starting from an already optimized memory management, the resulting kernel call is based as always on first copy the frame into the Device Global memory, call the kernel and then retrieve the image, as in the code below:
 \begin{lstlisting}[style=CStyle]
-	cudaGetDeviceProperties(&prop, 0);
-	int threads = prop.maxThreadsPerBlock;
-	
-	cudaMemcpy(d_curr, image2,  W*H*C * sizeof *image2, cudaMemcpyHostToDevice);
-	
-	// Kernel call /4
-	kernel_red<<<1, threads>>>(d_curr, d_prev, ((W*H*C)/threads/
-																(sizeof(chunk_t)), d_out);
-	cudaMemcpy(heatmap, d_out, W*H*C * sizeof *heatmap, cudaMemcpyDeviceToHost);\end{lstlisting}
+cudaGetDeviceProperties(&prop, 0);
+int threads = prop.maxThreadsPerBlock;
+
+cudaMemcpy(d_curr, image2,  W*H*C * sizeof *image2, cudaMemcpyHostToDevice);
+
+// Kernel call /4
+kernel_red<<<1, threads>>>(d_curr, d_prev, ((W*H*C)/threads/
+															(sizeof(chunk_t)), d_out);
+cudaMemcpy(heatmap, d_out, W*H*C * sizeof *heatmap, cudaMemcpyDeviceToHost);\end{lstlisting}
 	
 	In this case, the optimization described in the pixel difference generation, regarding the \textit{vectorized access} to memory is also applied here, where a new type called \texttt{chunk\_t} is defined. In this way more byte can be read with a single memory access.
 	
@@ -2009,10 +2009,102 @@ nvdisasm v1.sm_30.cubin\end{lstlisting}
 	\caption{Assembly extract of the second CUDA implementation of the noise visualizer}
 	\end{figure}
 	
+	\subsubsection{cudaMemset utilization}
+	By running the previous implementation, with the \textit{nvprof} flag set to \texttt{--metrics all}, it's possible to count the number of accesses to the Global memory in order to evaluate possible optimization. The previous implementation gives the following results:
+	
+	
+	\begin{lstlisting}[style=CStyle]
+                 Metric Description        Min     Max     Avg
+...
+gst_transactions Global Store Transactions 2064384 2064384 2064384
+...\end{lstlisting}
+	As you can see, each time the kernel is called, always 2064384 store transitions to the global memory are performed. This value corresponds to the number of pixels in the image (considering that only the black component is written, so $1920 \cdot 1080 \cdot 3 / 3$). Independently form the difference between any images, all the red components are updated with 0 or 255 to generate the image; the number of write to the Global memory can be drastically reduced by using a method directly given by the CUDA environment. In fact, the \texttt{cudaMemset} method allows to initialize an entire Device portion of memory with a specific value. 
+	
+	In order to exploit this, at the beginning of each loop, the \texttt{d\_heat\_pixels} array is initialized to 0 and only the pixels that should be changed are colored to red. This implementation resorts to the following CUDA kernel call:
+
+\begin{lstlisting}[style=CStyle]
+// Set all pixels to black
+cudaMemset(d_heat_pixels, 0 ,W*H*3 );
+	
+cudaMemcpy(d_curr, image2,  W*H*C * sizeof *image2, cudaMemcpyHostToDevice);
+// Kernel call
+kernel_red<<<1, threads>>>(d_curr, d_prev, ((W*H*C)/threads/
+(sizeof(chunk_t)), d_out);
+cudaMemcpy(heatmap, d_out, W*H*C * sizeof *heatmap, cudaMemcpyDeviceToHost);\end{lstlisting}
+
+As you can see, before calling the kernel the \texttt{d\_heat\_pixels} is set to all 0, that corresponds to a totally black image. The kernel is simplified in the following way:
+\begin{lstlisting}[style=CStyle]
+__global__ void kernel(uint8_t *current, uint8_t *previous, int maxSect,
+						uint8_t *noise_visualization){
+	int x = threadIdx.x + blockDim.x * blockIdx.x;
+	int start = x * maxSect;
+	int max = start + maxSect;
+	chunk_t cc, pc;
+	bool redColor = false;
+	int df;
+	int size = sizeof(chunk_t);
+	
+	for (int i = start; i < max; i++) {
+		cc = ((chunk_t *)current)[i];
+		pc = ((chunk_t *)previous)[i];
+		
+		for (int j = 0; j < size; j++) {
+			df = ((uint8_t *)&cc)[j] - ((uint8_t *)&pc)[j];
+			
+			if ((df < -LR_THRESHOLDS || df > LR_THRESHOLDS)){
+				redColor = true;
+			}
+			
+			if(redColor && ((i*size)+ j ) % 3 == 2){
+				noise_visualization[(i*size)+j] = 255;
+				redColor = false;
+			}
+		}
+	}
+}\end{lstlisting}
+
+The table below shows impact of the usage of the \texttt{cudaMemset} method that drastically reduces the kernel execution time from 16.684ms to 8.9415ms, in fact the impact of that additional call is around 1.8841ms per threads in average.
+
+\begin{table}[H]
+	\centering
+	\begin{center}
+		\begin{tabular}{ |c|c|c|c|c|c| } 
+			\hline
+			\textbf{Type} & \textbf{Time} (\%) & \textbf{Avg} & \textbf{Min} & \textbf{Max} & \textbf{Name} \\ 
+			\hline
+			GPU activities & 47.22 & 8.9415ms & 2.7886ms & 31.195ms & kernel\_red \\ 
+			& 22.58 & 4.0714ms & 2.4664ms & 6.6834ms & [CUDA memcpy HtoD] \\ 
+			& 20.25 & 4.0714ms & 2.4664ms & 6.6834ms & [CUDA memcpy DtoH] \\ 
+			& 9.95 & 1.8841ms & 765.87us & 3.7804ms & [CUDA memset] \\ 
+			\hline
+			API calls & 86.00 &  11.610ms & 2.6999ms & 41.414ms & cudaMemcpy \\ 
+			& 13.56 & 183.71ms & 3.7352ms & 543.50ms & cudaMalloc \\ 
+			&0.41 &  159.78us & 144.54us & 250.74us & cudaMemset\\
+			\hline
+		\end{tabular}
+	\end{center}
+	\label{fig:table_v2_2_red}
+	\caption{\textit{Profiling result v3.cu for noise visualizer, using cudaMemset}}
+\end{table}
+
+\begin{center}
+	\includegraphics[width=0.6\linewidth]{images/heatmap/red_v3_memset}
+\end{center}
+
+	The powerful application of this approach is justified also by the result of the Profiler with the \texttt{--metrics all} flag set. In fact, by using the same test environment, the Global memory store transactions are now 278644 in average. The \textit{Max} value is so high because when the camera turns on, the saturation of the image changes drastically in order to adapt to the light of the environment, causing a lot of different pixels.
+\begin{figure}[H]
+\begin{lstlisting}[style=CStyle]
+                 Metric Description        Min   Max     Avg
+...
+gst_transactions Global Store Transactions 21408 1927120 278644
+...\end{lstlisting}
+	\caption{\textit{Output of \texttt{nvprof --metrics all}}}
+\end{figure}
+
 
 	
 	\subsubsection{Overlapping implementation}
-	The fact that the we can have a frame that changes completely with the respect to the previous one, implies that not only the black pixels must be turned in red if above a certain threshold, but also the red ones that are below must be changed to black. This means that we if we have an image $1920*1080*3$ we can't go below $1920*1080$ access to Global Memory. 
+	The fact that the we can have a frame that changes completely with the respect to the previous one, implies that not only the black pixels must be turned in red if above a certain threshold, but also the red ones that are below must be changed to black. This means that we if we have an image $1920*1080*3$ we can't go below $1920*1080$ access to Global Memory (by considering also the \textit{cudaMemset} approach). 
 	
 	A second approach resort to not use the output \texttt{d\_heat\_pixels} as output array but instead write directly over the \textit{previous} frame. In this way, the red pixel will be placed over the frame itself; this is a completely different representation but, if we can modify the original frame (that will be discharged at the end of the loop), this solution is feasible. The result is visible at Figure \ref{fig:red_frame}.
 	
@@ -2090,7 +2182,7 @@ cudaMemcpy(res.data, d_previous, W*H*C * sizeof *res.data,
 		\caption{\textit{Profiling result v3.cu for noise visualizer, overwriting the red pixels over the previous frame}}
 	\end{table}
 	
-	As you can see from the time for the kernel execution, there is a huge improvement from the black and red implementation of about 25\% more.
+	As you can see from the time for the kernel execution, there is a huge improvement from the black and red implementation, that not suffer from the \texttt{cudaMemset} overhead.
 	
 	\begin{figure}[H]
 		\centering
@@ -2099,7 +2191,7 @@ cudaMemcpy(res.data, d_previous, W*H*C * sizeof *res.data,
 		\label{fig:noise2}
 	\end{figure}
 
-	\subsection{Fastest implementation}
+	\subsubsection{Pre-computed pixel difference implementation}
 	By exploiting the same idea described in the previous paragraph, the algorithm can be even more optimized from the point of view of the execution time. In fact, if instead of taking the two images and compute the difference at pixel level in order to decide if the pixel will be turned red or left as is, the difference computed from the dedicate kernel can be exploited.\newline\newline
 	By referring to the Section \ref{sec:streaming}, the output of the kernel that computes the difference pixel by pixel in order to send the difference is stored into the \texttt{h\_diff}. Moreover, an array called \texttt{h\_xs} contains the locations in which the pixels are changed.
 	
@@ -2163,15 +2255,16 @@ __global__ void red_black_map_overlap(unsigned int *pos, int *xs,
 				\hline
 				\textbf{Type} & \textbf{Time} (\%) & \textbf{Avg} & \textbf{Min} & \textbf{Max} & \textbf{Name} \\ 
 				\hline
-				GPU activities & 7.22 & 915.35us &  624.23us &  6.7692ms & kernel\_red\\
+				GPU activities & 7.22 & 915.35us &  624.23us &  6.7692ms & red\_black\_map\_overlap\\
 				\hline
 			\end{tabular}
 		\end{center}
 		\label{fig:table_v4_red}
-		\caption{\textit{Profiling result for noise visualizer, overwriting the red pixels over the previous frame using \texttt{d\_xs} array. The \textit{[CUDA memcpy DtoH]} and [CUDA memcpy HtoD] are not reported because they can be misleading, since they includes also the cost for the kernel that computes the difference}}
+		\caption{\textit{Profiling result for noise visualizer using the overlapping method, overwriting the red pixels over the previous frame using \texttt{d\_xs} array. The \textit{[CUDA memcpy DtoH]} and [CUDA memcpy HtoD] are not reported because they can be misleading, since they includes also the cost for the kernel that computes the difference}}
 	\end{table}
-	
-	By considering only the kernel time, the computation time is reduced by 94.5\%, that is pretty impressive.
+
+	The same approach can be used also with the red black implementation (the non overlapping one) to achieve better performances. The idea is to call this last implementation, with an empty array always set to all zeros (image totally black). The performance are very similar, but in this last one the computation is increase of 1.5ms due to the \texttt{cudaMemset} call at each iteration.
+	By considering only the kernel time, the best case allow to reduce by 94.5\% the computation time, that is pretty impressive.
 
 	\begin{center}
 		\includegraphics[width=0.6\linewidth]{images/heatmap/noise3}
@@ -2257,7 +2350,7 @@ float* computeMeanKernel(int K){
 	This solution can be exploited in order to make the pixels that suffers from the noise problem more smooth with the respect to the neighbors ones. In this way, even if the two consecutive frames are not exactly the same, the difference among the single pixels will be lower, resorting to a lower data sent over the socket. Let's take for simplicity two frames that are in gray scale, between 0 and 255, that are describes as two 3x3 matrices.
 	\begin{center}
 		$
-		A = \frac{1}{9}\begin{bmatrix}
+		A = \begin{bmatrix}
 		120 & 131 & 112\\
 			112 & 101 & 82\\
 			44 & 106 & 65
@@ -2272,7 +2365,7 @@ float* computeMeanKernel(int K){
 	If we simply compute the difference, and we set the threshold to 20, by computing the difference location by location, 5 pixels must be sent as difference. If we apply now the kernel to both the two frames, in order to simulate the behaviour of the algorithm, the two resulting matrices are the following:
 	\begin{center}
 		$
-		A = \frac{1}{9}\begin{bmatrix}
+		A = \begin{bmatrix}
 			51 & 73 & 47\\
 			68 & 96 & 66\\
 			40 & 56 & 39
@@ -2931,7 +3024,7 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\linewidth]{images/eye/2880px-Cone-fundamentals-with-srgb-spectrum.svg.png}
+		\includegraphics[width=0.75\linewidth]{images/eye/2880px-Cone-fundamentals-with-srgb-spectrum.png}
 		\caption{\textit{Cone response}}
 		\label{fig:cone-response}
 	\end{figure}
@@ -2941,7 +3034,7 @@ __global__ void median_kernel(uint8_t *image, uint8_t *R)
 
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.65\linewidth]{images/eye/2880px-Ventral-dorsal_streams.svg.png}
+		\includegraphics[width=0.65\linewidth]{images/eye/2880px-Ventral-dorsal_streams.png}
 		\caption{\textit{Visual pathways in the human brain. Dorsal flow (in green) is important in color recognition. Ventral flow (in purple) is also visible.}}
 		\label{fig:visual-paths}
 	\end{figure}
