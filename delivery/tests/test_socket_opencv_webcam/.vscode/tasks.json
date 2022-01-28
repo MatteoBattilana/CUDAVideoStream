@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "opencv",
+      "type": "shell",
+      "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+          }
+      },
+      "command": "make -f Makefile m2",
+    },
+    {
+      "label": "image_reader",
+      "type": "shell",
+      "command": "gcc -g ${file} -o ${fileBasenameNoExtension}"
+    }
+  ]
+}
